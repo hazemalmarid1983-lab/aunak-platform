@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Stethoscope, Mail, Phone, Award, ShieldCheck, Activity } from 'lucide-react';
 import { useAirtableData } from '../hooks/useAirtableData';
 import { AIRTABLE_TABLES } from '../lib/airtableTables';
@@ -6,12 +6,27 @@ import { mapSpecialist } from '../lib/airtableMappers';
 import { AirtableEmpty, AirtableErrorBanner, AirtableLoading } from './AirtableStatus';
 
 export default function AunakSpecialists({ lang = 'ar' }) {
-  const { records: specialists, loading, error, isEmpty } = useAirtableData(AIRTABLE_TABLES.specialists, {
+  const { records: specialists, loading, error } = useAirtableData(AIRTABLE_TABLES.specialists, {
     mapRecord: mapSpecialist,
     lang,
   });
 
   const [activeSpecialist, setActiveSpecialist] = useState(null);
+
+  const visibleSpecialists = useMemo(
+    () =>
+      specialists.filter(
+        (s) =>
+          s.email ||
+          s.phone ||
+          s.rating != null ||
+          (s.specialty && s.specialty !== '—') ||
+          (s.name &&
+            s.name !== (lang === 'en' ? 'Specialist' : 'أخصائي') &&
+            s.name !== s.specialty)
+      ),
+    [specialists, lang]
+  );
 
   const t = {
     ar: {
@@ -47,16 +62,17 @@ export default function AunakSpecialists({ lang = 'ar' }) {
   const copy = t[lang] ?? t.ar;
 
   useEffect(() => {
-    if (specialists.length > 0) {
+    if (visibleSpecialists.length > 0) {
       setActiveSpecialist((prev) =>
-        prev && specialists.some((s) => s.id === prev) ? prev : specialists[0].id
+        prev && visibleSpecialists.some((s) => s.id === prev) ? prev : visibleSpecialists[0].id
       );
     } else {
       setActiveSpecialist(null);
     }
-  }, [specialists]);
+  }, [visibleSpecialists]);
 
-  const active = specialists.find((s) => s.id === activeSpecialist) ?? null;
+  const active = visibleSpecialists.find((s) => s.id === activeSpecialist) ?? null;
+  const showEmpty = !loading && visibleSpecialists.length === 0;
 
   return (
     <div className="p-6 md:p-10 min-h-screen bg-[#050508] text-slate-200 font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
@@ -79,11 +95,11 @@ export default function AunakSpecialists({ lang = 'ar' }) {
           <h3 className="text-lg font-bold text-slate-300 mb-2 border-b border-slate-800 pb-2">{copy.staff}</h3>
           {loading ? (
             <AirtableLoading lang={lang} />
-          ) : isEmpty ? (
+          ) : showEmpty ? (
             <AirtableEmpty lang={lang} />
           ) : (
           <nav className="space-y-2">
-            {specialists.map(spec => (
+            {visibleSpecialists.map(spec => (
               <button 
                 key={spec.id}
                 type="button"
@@ -105,9 +121,11 @@ export default function AunakSpecialists({ lang = 'ar' }) {
                  <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-mono font-bold">{copy.verified}</span>
               </div>
               
-              {!active && !loading ? (
+              {loading ? (
+                <AirtableLoading lang={lang} />
+              ) : !active ? (
                 <AirtableEmpty lang={lang} />
-              ) : active ? (
+              ) : (
               <>
               <div className="grid md:grid-cols-2 gap-6 mb-6">
                  <div className="space-y-3">
@@ -142,7 +160,7 @@ export default function AunakSpecialists({ lang = 'ar' }) {
                  </p>
               </div>
               </>
-              ) : null}
+              )}
            </div>
 
            <div className="bg-teal-900/10 p-8 rounded-3xl border border-teal-500/20 shadow-[0_0_30px_rgba(20,184,166,0.05)] flex items-start gap-4">

@@ -43,7 +43,16 @@ function fieldValue(raw) {
       .map((v) => (typeof v === "object" && v !== null ? v.name ?? String(v) : String(v)))
       .join(", ");
   }
-  if (typeof raw === "object") return raw.name ?? String(raw);
+  if (typeof raw === "object") {
+    if ("value" in raw && raw.value != null && raw.value !== "") {
+      return fieldValue(raw.value);
+    }
+    if ("state" in raw && (raw.state === "error" || raw.state === "empty")) {
+      return null;
+    }
+    if (raw.name != null && raw.name !== "") return String(raw.name);
+    return null;
+  }
   return String(raw);
 }
 

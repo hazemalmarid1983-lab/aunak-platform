@@ -122,9 +122,11 @@ export default function AunakBehaviorMod({ lang = 'ar' }) {
                  )}
               </div>
               
-              {!active && !loading ? (
+              {loading ? (
+                <AirtableLoading lang={lang} />
+              ) : !active ? (
                 <AirtableEmpty lang={lang} />
-              ) : active ? (
+              ) : (
               <div className="space-y-5">
                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
                     <p className="text-sm text-slate-500 mb-2 font-bold flex items-center gap-2"><Target className="w-4 h-4" /> {copy.targetBehavior}</p>
@@ -135,7 +137,7 @@ export default function AunakBehaviorMod({ lang = 'ar' }) {
                     <textarea className="w-full h-24 bg-slate-950 border border-slate-700 rounded-xl p-4 text-slate-300 focus:border-orange-500 outline-none text-sm" placeholder={copy.strategyPlaceholder}></textarea>
                  </div>
               </div>
-              ) : null}
+              )}
            </div>
 
            <div className="grid md:grid-cols-2 gap-6">

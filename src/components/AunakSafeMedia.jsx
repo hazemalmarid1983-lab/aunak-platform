@@ -44,8 +44,9 @@ export default function AunakSafeMedia({ lang = 'ar' }) {
     lang,
   });
 
-  const categoryOptions = MEDIA_CATEGORIES[lang] ?? MEDIA_CATEGORIES.ar;
-  const [activeCategory, setActiveCategory] = useState(categoryOptions[0]);
+  const [activeCategory, setActiveCategory] = useState(
+    (MEDIA_CATEGORIES[lang] ?? MEDIA_CATEGORIES.ar)[0]
+  );
   const [activeVideo, setActiveVideo] = useState(null);
 
   const t = {
@@ -75,13 +76,25 @@ export default function AunakSafeMedia({ lang = 'ar' }) {
 
   const copy = t[lang] ?? t.ar;
 
+  const categoryOptions = useMemo(() => {
+    const fromData = [...new Set(mediaLibrary.map((m) => m.category).filter(Boolean))];
+    return fromData.length > 0 ? fromData : MEDIA_CATEGORIES[lang] ?? MEDIA_CATEGORIES.ar;
+  }, [mediaLibrary, lang]);
+
+  const usesDataCategories = useMemo(
+    () => [...new Set(mediaLibrary.map((m) => m.category).filter(Boolean))].length > 0,
+    [mediaLibrary]
+  );
+
   const normalizedLibrary = useMemo(
     () =>
       mediaLibrary.map((item) => ({
         ...item,
-        displayCategory: normalizeMediaCategory(item.category, lang),
+        displayCategory: usesDataCategories
+          ? item.category
+          : normalizeMediaCategory(item.category, lang),
       })),
-    [mediaLibrary, lang]
+    [mediaLibrary, lang, usesDataCategories]
   );
 
   const filteredLibrary = useMemo(
@@ -90,8 +103,14 @@ export default function AunakSafeMedia({ lang = 'ar' }) {
   );
 
   useEffect(() => {
-    setActiveCategory((MEDIA_CATEGORIES[lang] ?? MEDIA_CATEGORIES.ar)[0]);
-  }, [lang]);
+    setActiveCategory(categoryOptions[0]);
+  }, [lang, categoryOptions]);
+
+  useEffect(() => {
+    if (categoryOptions.length && !categoryOptions.includes(activeCategory)) {
+      setActiveCategory(categoryOptions[0]);
+    }
+  }, [categoryOptions, activeCategory]);
 
   useEffect(() => {
     if (filteredLibrary.length > 0) {

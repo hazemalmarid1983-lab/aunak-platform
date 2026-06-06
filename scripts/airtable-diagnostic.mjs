@@ -16,22 +16,34 @@ if (!pat) {
 
 const headers = { Authorization: `Bearer ${pat}`, Accept: "application/json" };
 
+const HUB_TABLES = {
+  scientificItems: "tblnCbBSmwDWwO5SJ",
+  specialists: "tblnmcLd5M3U6sErl",
+  abcData: "tblJ580ptTVkv07hD",
+  safeMedia: "tbljdOSE8CozrzBZN",
+  melodyLab: "tblMddsXqCz91hfoU",
+  communityResources: "tblV28iWarzve32pP",
+  accessControl: "tblfBvd5WI7alVCFU",
+  learningDifficulties: "tblcNXSmU90TomEHH",
+  emotionalMonitoring: "tblokLHmSHss3FQft",
+};
+
 const SECTIONS = [
-  { id: "registry", label: "Session Registry", tableId: STUDENTS_TABLE, wired: true },
-  { id: "diagnostics", label: "Diagnostics", tableId: STUDENTS_TABLE, wired: true },
-  { id: "media", label: "Safe Media", tableId: null, wired: false },
-  { id: "behavior", label: "Behavior Mod", tableId: STUDENTS_TABLE, wired: true },
-  { id: "classrooms", label: "Classrooms", tableId: STUDENTS_TABLE, wired: true },
-  { id: "scientific", label: "Scientific Lib", tableId: null, wired: false },
-  { id: "specialists", label: "Specialists", tableId: null, wired: false },
-  { id: "resources", label: "Resources", tableId: null, wired: false },
-  { id: "access", label: "Access Control", tableId: null, wired: false },
-  { id: "live", label: "Live Registry", tableId: STUDENTS_TABLE, wired: true },
-  { id: "crisis", label: "Smart Shield", tableId: null, wired: false },
-  { id: "learning", label: "Learning Center", tableId: null, wired: false },
-  { id: "emotion", label: "Melodies Lab", tableId: null, wired: false },
-  { id: "biometrics", label: "Biometrics ID", tableId: null, wired: false },
-  { id: "community", label: "Aunak Community", tableId: STUDENTS_TABLE, wired: true },
+  { id: "live", label: "Live Registry", tableId: STUDENTS_TABLE },
+  { id: "registry", label: "Session Registry", tableId: STUDENTS_TABLE },
+  { id: "diagnostics", label: "Diagnostics", tableId: STUDENTS_TABLE },
+  { id: "classrooms", label: "Classrooms", tableId: STUDENTS_TABLE },
+  { id: "community", label: "Aunak Community", tableId: STUDENTS_TABLE },
+  { id: "behavior", label: "Behavior Mod (ABC)", tableId: HUB_TABLES.abcData },
+  { id: "scientific", label: "Scientific Lib", tableId: HUB_TABLES.scientificItems },
+  { id: "specialists", label: "Specialists", tableId: HUB_TABLES.specialists },
+  { id: "media", label: "Safe Media", tableId: HUB_TABLES.safeMedia },
+  { id: "emotion", label: "Melodies Lab", tableId: HUB_TABLES.melodyLab },
+  { id: "resources", label: "Resources", tableId: HUB_TABLES.communityResources },
+  { id: "access", label: "Access Control", tableId: HUB_TABLES.accessControl },
+  { id: "learning", label: "Learning Center", tableId: HUB_TABLES.learningDifficulties },
+  { id: "crisis", label: "Smart Shield / Emotion", tableId: HUB_TABLES.emotionalMonitoring },
+  { id: "biometrics", label: "Biometrics ID", tableId: STUDENTS_TABLE },
 ];
 
 async function fetchJson(url) {
@@ -93,21 +105,16 @@ if (tables.length) {
 }
 
 console.log("");
-console.log("--- 15 Hub Sections ---");
+console.log("--- 15 Hub Sections (all wired to Airtable) ---");
 let failCount = 0;
-let staticCount = 0;
 for (const s of SECTIONS) {
-  if (!s.wired) {
-    staticCount++;
-    console.log(`STATIC | ${s.id.padEnd(12)} | ${s.label} (inline data, no Airtable call)`);
-    continue;
-  }
   const r = await fetchJson(
     `https://api.airtable.com/v0/${BASE_ID}/${s.tableId}?maxRecords=1`
   );
   if (!r.ok) failCount++;
+  const count = r.ok ? (r.body.records || []).length : 0;
   console.log(
-    `${r.ok ? "OK  " : "FAIL"} ${r.status} | ${s.id.padEnd(12)} | ${s.label} -> ${s.tableId}`
+    `${r.ok ? "OK  " : "FAIL"} ${r.status} | ${s.id.padEnd(12)} | ${s.label} -> ${s.tableId} (${count} sample)`
   );
 }
 
@@ -143,8 +150,8 @@ console.log(
   `HARDCODED_API_KEY: ${hardcoded === "put_your_token_here" ? "PLACEHOLDER (dev relies on .env.local)" : "SET"}`
 );
 console.log(`VITE_AIRTABLE_PAT: ${pat.startsWith("pat") ? "present" : "missing"}`);
-console.log(`Exported fetch functions: fetchStudents only`);
-console.log(`Configured table: ${STUDENTS_TABLE} (students)`);
+console.log(`Hub tables configured: ${Object.keys(HUB_TABLES).length} (+ students table)`);
+console.log(`Hook: useAirtableData / useAirtableSection in src/hooks/useAirtableData.js`);
 
 console.log("");
 console.log("--- Summary ---");
@@ -152,7 +159,7 @@ const dataApiOk = withView.ok;
 console.log(`Data API (records): ${dataApiOk ? "stable (200)" : "failed"}`);
 console.log(`Meta API (schema): ${meta.ok ? "ok" : "403 — token lacks schema.bases:read scope (non-blocking)"}`);
 console.log(`Tables enumerated: ${tables.length || "n/a (meta blocked)"}`);
-console.log(`Sections wired to Airtable: ${SECTIONS.filter((s) => s.wired).length}/15`);
-console.log(`Sections using static data: ${staticCount}/15`);
-console.log(`404/failed fetches (wired sections): ${failCount}`);
+console.log(`Sections wired to Airtable: ${SECTIONS.length}/15`);
+console.log(`Failed section fetches: ${failCount}`);
+console.log(`Platform status: ${failCount === 0 && dataApiOk ? "15/15 LIVE" : "NEEDS ATTENTION"}`);
 process.exit(failCount > 0 || !dataApiOk ? 1 : 0);

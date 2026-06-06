@@ -11,7 +11,7 @@ import {
 import { useAirtableData } from '../hooks/useAirtableData';
 import { AIRTABLE_TABLES } from '../lib/airtableTables';
 import { mapLearningRecord } from '../lib/airtableMappers';
-import { AirtableEmpty, AirtableErrorBanner } from './AirtableStatus';
+import { AirtableEmpty, AirtableErrorBanner, AirtableLoading } from './AirtableStatus';
 
 const GROWTH_PILLARS = {
   ar: [
@@ -175,11 +175,15 @@ export default function AunakLearningCenter({ lang = 'ar' }) {
         </div>
       </header>
 
-      {!loading && isEmpty && (
+      {loading ? (
+        <div className="mb-6">
+          <AirtableLoading lang={lang} />
+        </div>
+      ) : isEmpty ? (
         <div className="mb-6">
           <AirtableEmpty lang={lang} />
         </div>
-      )}
+      ) : null}
 
       <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
         <div className="lg:col-span-2 space-y-6">

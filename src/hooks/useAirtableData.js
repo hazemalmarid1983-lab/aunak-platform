@@ -1,5 +1,81 @@
 import { useState, useEffect, useCallback } from "react";
 import { fetchAirtableRecords } from "../lib/airtable";
+import { AIRTABLE_TABLES } from "../lib/airtableTables";
+import {
+  mapAbcPlan,
+  mapAccessUser,
+  mapEmotionSignal,
+  mapLearningRecord,
+  mapMedia,
+  mapMelodyPattern,
+  mapResource,
+  mapScientificItem,
+  mapSpecialist,
+} from "../lib/airtableMappers";
+
+/** All 9 non-student hub sections wired to Airtable (15/15 live platform). */
+export const AIRTABLE_SECTION_CONFIG = {
+  scientificItems: {
+    tableId: AIRTABLE_TABLES.scientificItems,
+    mapRecord: mapScientificItem,
+    label: "مكتبة البنود / Scientific Items",
+  },
+  specialists: {
+    tableId: AIRTABLE_TABLES.specialists,
+    mapRecord: mapSpecialist,
+    label: "الأخصائيين / Specialists",
+  },
+  abcData: {
+    tableId: AIRTABLE_TABLES.abcData,
+    mapRecord: mapAbcPlan,
+    label: "تعديل السلوك ABC / Behavior Mod",
+  },
+  safeMedia: {
+    tableId: AIRTABLE_TABLES.safeMedia,
+    mapRecord: mapMedia,
+    label: "الوسائط الآمنة / Safe Media",
+  },
+  melodyLab: {
+    tableId: AIRTABLE_TABLES.melodyLab,
+    mapRecord: mapMelodyPattern,
+    label: "مختبر الألحان / Melody Lab",
+  },
+  communityResources: {
+    tableId: AIRTABLE_TABLES.communityResources,
+    mapRecord: mapResource,
+    label: "موارد المجتمع / Resources",
+  },
+  accessControl: {
+    tableId: AIRTABLE_TABLES.accessControl,
+    mapRecord: mapAccessUser,
+    label: "صلاحيات الوصول / Access Control",
+  },
+  learningDifficulties: {
+    tableId: AIRTABLE_TABLES.learningDifficulties,
+    mapRecord: mapLearningRecord,
+    label: "صعوبات التعلم / Learning Center",
+  },
+  emotionalMonitoring: {
+    tableId: AIRTABLE_TABLES.emotionalMonitoring,
+    mapRecord: mapEmotionSignal,
+    label: "كاميرا الرصد العاطفي / Emotional Monitoring",
+  },
+};
+
+/**
+ * Load a named hub section (one of the 9 Airtable-backed tables).
+ * @param {keyof typeof AIRTABLE_SECTION_CONFIG} sectionKey
+ */
+export function useAirtableSection(sectionKey, options = {}) {
+  const config = AIRTABLE_SECTION_CONFIG[sectionKey];
+  if (!config) {
+    throw new Error(`Unknown Airtable section: ${sectionKey}`);
+  }
+  return useAirtableData(config.tableId, {
+    mapRecord: config.mapRecord,
+    ...options,
+  });
+}
 
 /**
  * Generic hook: load any Airtable table by ID with loading/error states.

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { FolderOpen, FileText, Download, Star, BrainCircuit, Users } from 'lucide-react';
 import { useAirtableData } from '../hooks/useAirtableData';
 import { AIRTABLE_TABLES } from '../lib/airtableTables';
@@ -16,12 +16,23 @@ export default function AunakResources({ lang = 'ar' }) {
     lang,
   });
 
-  const filterOptions = FILTER_OPTIONS[lang] ?? FILTER_OPTIONS.ar;
+  const filterOptions = useMemo(() => {
+    const types = [...new Set(resources.map((r) => r.type).filter(Boolean))];
+    const allLabel = lang === 'en' ? 'All' : 'الكل';
+    return types.length > 0 ? [allLabel, ...types] : FILTER_OPTIONS[lang] ?? FILTER_OPTIONS.ar;
+  }, [resources, lang]);
+
   const [activeFilter, setActiveFilter] = useState(filterOptions[0]);
 
   useEffect(() => {
-    setActiveFilter((FILTER_OPTIONS[lang] ?? FILTER_OPTIONS.ar)[0]);
-  }, [lang]);
+    setActiveFilter(filterOptions[0]);
+  }, [lang, filterOptions]);
+
+  useEffect(() => {
+    if (filterOptions.length && !filterOptions.includes(activeFilter)) {
+      setActiveFilter(filterOptions[0]);
+    }
+  }, [filterOptions, activeFilter]);
 
   const t = {
     ar: {

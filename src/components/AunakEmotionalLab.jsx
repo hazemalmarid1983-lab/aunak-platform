@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Camera, Music, Smile, Activity, BrainCircuit, PlayCircle } from 'lucide-react';
 import { useAirtableData } from '../hooks/useAirtableData';
 import { AIRTABLE_TABLES } from '../lib/airtableTables';
@@ -11,12 +11,32 @@ export default function AunakEmotionalLab({ lang = 'ar' }) {
     lang,
   });
 
-  const { records: emotionSignals } = useAirtableData(AIRTABLE_TABLES.emotionalMonitoring, {
+  const {
+    records: emotionSignals,
+    loading: emotionLoading,
+    error: emotionError,
+    isEmpty: emotionEmpty,
+  } = useAirtableData(AIRTABLE_TABLES.emotionalMonitoring, {
     mapRecord: mapEmotionSignal,
     lang,
   });
 
   const topEmotion = emotionSignals[0] ?? null;
+
+  const resolvedEmotionLabel = useMemo(() => {
+    if (!topEmotion) return null;
+    if (topEmotion.linkedPatternId) {
+      const linked = patterns.find((p) => p.id === topEmotion.linkedPatternId);
+      if (linked?.name) return linked.name;
+    }
+    if (topEmotion.label && !/^rec[a-zA-Z0-9]{10,}$/.test(topEmotion.label)) {
+      return topEmotion.label;
+    }
+    if (topEmotion.preferredPattern) {
+      return lang === 'en' ? 'Preferred pattern active' : 'نمط مفضل نشط';
+    }
+    return lang === 'en' ? 'Emotional monitoring active' : 'رصد عاطفي نشط';
+  }, [topEmotion, patterns, lang]);
 
   const [activePattern, setActivePattern] = useState(null);
 
@@ -67,7 +87,7 @@ export default function AunakEmotionalLab({ lang = 'ar' }) {
          <p className="text-slate-400 mt-2">{copy.subtitle}</p>
        </header>
 
-       <AirtableErrorBanner error={error} />
+       <AirtableErrorBanner error={error || emotionError} />
 
        <div className="grid lg:grid-cols-2 gap-8">
          <div className="bg-slate-900/60 p-6 rounded-3xl border border-slate-800 shadow-xl">
@@ -82,11 +102,17 @@ export default function AunakEmotionalLab({ lang = 'ar' }) {
              <Smile className="w-16 h-16 text-cyan-400 mb-4" strokeWidth={1.5} />
              <div className="text-center z-10">
                <h3 className="font-bold text-slate-200">{copy.liveMonitoring}</h3>
+               {emotionLoading ? (
+                 <AirtableLoading lang={lang} />
+               ) : emotionEmpty ? (
+                 <AirtableEmpty lang={lang} />
+               ) : (
                <p className="text-xs text-slate-400 font-mono mt-2">
-                 {topEmotion
-                   ? copy.detected(topEmotion.label, topEmotion.score)
-                   : copy.scanning(active?.au)}
+                 {resolvedEmotionLabel
+                   ? copy.detected(resolvedEmotionLabel, topEmotion?.score ?? 50)
+                   : copy.scanning(active?.au !== '—' ? active?.au : null)}
                </p>
+               )}
              </div>
            </div>
          </div>
