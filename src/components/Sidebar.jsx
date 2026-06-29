@@ -8,7 +8,14 @@ import {
   PanelLeftOpen,
   ShieldCheck,
 } from 'lucide-react';
-import { getDisplayStudentName, getDisplayStudentCode, getMaskedStudentLabel } from '../lib/studentPrivacy';
+import {
+  getDisplayStudentName,
+  getDisplayStudentCode,
+  getMaskedStudentLabel,
+  isAppStealthActive,
+  shouldForceStudentNameMask,
+} from '../lib/studentPrivacy';
+import { LUX } from '../lib/luxTheme.js';
 
 const STORAGE_REVEAL = 'aunak-sidebar-reveal-names';
 const STORAGE_COLLAPSED = 'aunak-sidebar-collapsed';
@@ -30,25 +37,32 @@ export default function Sidebar({
   refetch,
   selectedStudentId,
   onSelectStudent,
+  liveSessionFocus = false,
+  className = '',
 }) {
   const [revealNames, setRevealNames] = useState(() => readStoredBoolean(STORAGE_REVEAL, false));
   const [collapsed, setCollapsed] = useState(() => readStoredBoolean(STORAGE_COLLAPSED, false));
 
   useEffect(() => {
+    if (liveSessionFocus) setCollapsed(true);
+  }, [liveSessionFocus]);
+
+  useEffect(() => {
     try {
       localStorage.setItem(STORAGE_REVEAL, String(revealNames));
     } catch {
-      /* ignore storage errors */
+      /* ignore */
     }
   }, [revealNames]);
 
   useEffect(() => {
+    if (liveSessionFocus) return;
     try {
       localStorage.setItem(STORAGE_COLLAPSED, String(collapsed));
     } catch {
-      /* ignore storage errors */
+      /* ignore */
     }
-  }, [collapsed]);
+  }, [collapsed, liveSessionFocus]);
 
   const t = {
     ar: {
@@ -80,32 +94,57 @@ export default function Sidebar({
   const copy = t[lang] ?? t.ar;
   const studentList = Array.isArray(students) ? students : [];
   const textAlign = lang === 'ar' ? 'text-right' : 'text-left';
+  const shellClass = `relative z-10 flex flex-col min-h-0 max-h-full ${LUX.glass} rounded-2xl overflow-hidden shadow-xl ${className}`.trim();
 
   if (collapsed) {
     return (
       <aside
-        className="w-12 shrink-0 bg-slate-900/60 backdrop-blur border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex flex-col items-center py-3 gap-2"
+        className={`w-12 shrink-0 ${shellClass}`}
         aria-label={copy.studentsTable}
       >
-        <button
-          type="button"
-          onClick={() => setCollapsed(false)}
-          className="p-2 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition-all"
-          title={copy.expandSidebar}
-          aria-label={copy.expandSidebar}
-        >
-          <PanelLeftOpen className="w-5 h-5" />
-        </button>
-        <div className="p-2 rounded-lg text-emerald-500/70" title={copy.privacyProtected}>
-          <ShieldCheck className="w-4 h-4" />
+        <div className="flex flex-col items-center py-3 gap-2 shrink-0 border-b border-[#c9a962]/15 bg-[#12121a]/55 backdrop-blur-xl">
+          <button
+            type="button"
+            onClick={() => setCollapsed(false)}
+            className={LUX.sovereignIconBtn}
+            title={copy.expandSidebar}
+            aria-label={copy.expandSidebar}
+          >
+            <PanelLeftOpen className="w-4 h-4" />
+          </button>
+          <div className="p-1.5 rounded-lg text-emerald-500/70" title={copy.privacyProtected}>
+            <ShieldCheck className="w-4 h-4" />
+          </div>
+        </div>
+        <div className="flex-1 min-h-0 overflow-y-auto lux-nav-scroll p-1.5 space-y-1">
+          {studentList.map((student, index) => {
+            const forceMask = shouldForceStudentNameMask(revealNames);
+            return (
+              <button
+                key={student.id}
+                type="button"
+                onClick={() => onSelectStudent?.(student.id)}
+                title={forceMask ? getMaskedStudentLabel(index, lang) : (student.name ?? undefined)}
+                className={`w-full p-2 rounded-lg border transition-all ${
+                  selectedStudentId === student.id
+                    ? 'bg-emerald-500/10 border-emerald-400/35 text-emerald-300'
+                    : 'border-transparent text-slate-500 hover:bg-[#12121a]/70 hover:border-white/[0.06]'
+                }`}
+              >
+                <span className="text-[10px] font-mono font-bold">
+                  {forceMask ? String(index + 1).padStart(2, '0') : (student.name || '?').charAt(0)}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </aside>
     );
   }
 
   return (
-    <aside className="w-64 shrink-0 bg-slate-900/60 backdrop-blur border border-slate-800 rounded-2xl overflow-hidden shadow-xl flex flex-col">
-      <div className="p-3 border-b border-slate-800 bg-slate-800/50 space-y-2">
+    <aside className={`w-64 shrink-0 ${shellClass}`}>
+      <div className="shrink-0 p-3 border-b border-[#c9a962]/15 bg-[#12121a]/55 backdrop-blur-xl space-y-2 relative z-20">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <Users className="w-5 h-5 text-emerald-400 shrink-0" />
@@ -114,7 +153,7 @@ export default function Sidebar({
           <button
             type="button"
             onClick={() => setCollapsed(true)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-700/60 transition-all shrink-0"
+            className={LUX.sovereignIconBtn}
             title={copy.collapseSidebar}
             aria-label={copy.collapseSidebar}
           >
@@ -122,22 +161,28 @@ export default function Sidebar({
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setRevealNames((prev) => !prev)}
-          className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border ${
-            revealNames
-              ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/15'
-              : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/15'
-          }`}
-          aria-pressed={revealNames}
-        >
-          {revealNames ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-          {revealNames ? copy.hideNames : copy.revealNames}
-        </button>
+        {!isAppStealthActive() && (
+          <button
+            type="button"
+            onClick={() => setRevealNames((prev) => !prev)}
+            className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border ${
+              revealNames
+                ? 'bg-[#c9a962]/10 border-[#c9a962]/30 text-[#e8c872] hover:bg-[#c9a962]/15'
+                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/15'
+            }`}
+            aria-pressed={revealNames}
+          >
+            {revealNames ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+            {revealNames ? copy.hideNames : copy.revealNames}
+          </button>
+        )}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2 space-y-1" dir={lang === 'ar' ? 'rtl' : 'ltr'} lang={lang}>
+      <div
+        className="flex-1 min-h-0 overflow-y-auto lux-nav-scroll p-2 space-y-1 relative z-10"
+        dir={lang === 'ar' ? 'rtl' : 'ltr'}
+        lang={lang}
+      >
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-8 text-slate-500 text-sm">
             <Loader2 className="w-4 h-4 animate-spin" /> {copy.loadingStudents(copy.studentsTable)}
@@ -146,7 +191,7 @@ export default function Sidebar({
           <div className="text-center py-6 px-2 space-y-2">
             <p className="text-xs text-rose-400">{error}</p>
             {refetch && (
-              <button type="button" onClick={refetch} className="text-xs text-cyan-400 hover:underline">
+              <button type="button" onClick={refetch} className="text-xs text-emerald-400 hover:underline">
                 {copy.retry}
               </button>
             )}
@@ -155,6 +200,7 @@ export default function Sidebar({
           <p className="text-xs text-slate-500 text-center py-8 px-2">{copy.noRecords(copy.studentsTable)}</p>
         ) : (
           studentList.map((student, index) => {
+            const forceMask = shouldForceStudentNameMask(revealNames);
             const displayName = getDisplayStudentName(student, index, revealNames, lang, copy.noName);
             const displayCode = getDisplayStudentCode(student, revealNames);
             const maskedLabel = getMaskedStudentLabel(index, lang);
@@ -164,22 +210,22 @@ export default function Sidebar({
                 key={student.id}
                 type="button"
                 onClick={() => onSelectStudent?.(student.id)}
-                title={revealNames ? (student.name ?? undefined) : maskedLabel}
+                title={forceMask ? maskedLabel : (student.name ?? undefined)}
                 className={`w-full ${textAlign} px-3 py-2.5 rounded-xl transition-all border flex items-center gap-2.5 ${
                   selectedStudentId === student.id
                     ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
-                    : 'border-transparent text-slate-300 hover:bg-slate-800 hover:border-slate-700'
+                    : 'border-transparent text-slate-300 hover:bg-[#12121a]/70 hover:border-white/[0.08]'
                 }`}
               >
                 <span
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 border ${
-                    revealNames
-                      ? 'bg-slate-800 border-slate-600 text-slate-300'
-                      : 'bg-slate-800/80 border-slate-700 text-slate-500 font-mono'
+                    !forceMask
+                      ? 'bg-[#12121a]/70 border-slate-600 text-slate-300'
+                      : 'bg-slate-800/80 border-white/[0.08] text-slate-500 font-mono'
                   }`}
                   aria-hidden="true"
                 >
-                  {revealNames
+                  {!forceMask
                     ? (student.name || '?').charAt(0)
                     : String(index + 1).padStart(2, '0')}
                 </span>

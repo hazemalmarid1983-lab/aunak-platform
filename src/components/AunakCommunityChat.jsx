@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { ShieldAlert, Send, ShieldCheck, UserCircle2, UserCheck } from 'lucide-react';
 import { useStudents } from '../hooks/useStudents';
 import Sidebar from './Sidebar';
 import PlatformLogo from './PlatformLogo';
+import { LUX } from '../lib/luxTheme.js';
 
 export default function AunakCommunityChat({ lang = 'ar' }) {
   const { students, loading: studentsLoading, error: studentsError, refetch } = useStudents(lang);
@@ -20,11 +21,7 @@ export default function AunakCommunityChat({ lang = 'ar' }) {
       you: 'أنت',
       placeholder: 'اكتب رسالتك هنا...',
       securityAlert: 'تنبيه أمني: اكتشف الرقيب الذكي بيانات حساسة. يرجى مسحها.',
-      initialChat: [
-        { id: 1, sender: "أم محمد", role: "parent", text: "السلام عليكم، طفلي عمره 3 سنوات وما زال لا يتكلم بوضوح. هل هذا طبيعي؟", time: "09:21 AM" },
-        { id: 2, sender: "د. سارة المنصوري", role: "specialist", text: "وعليكم السلام! في عمر الثلاث سنوات يُتوقع جملاً من 3-4 كلمات. تواصلي مع أخصائي عبر قسم التقييم.", time: "09:23 AM" },
-        { id: 3, sender: "Parent Ahmed", role: "parent", text: "My daughter started speech therapy last month — already seeing improvements! 🙏", time: "09:31 AM" },
-      ],
+      emptyChat: 'لا توجد رسائل بعد — ابدأ المحادثة الأولى.',
     },
     en: {
       title: 'Aunak Community',
@@ -34,20 +31,12 @@ export default function AunakCommunityChat({ lang = 'ar' }) {
       you: 'You',
       placeholder: 'Type your message here...',
       securityAlert: 'Security alert: sensitive data detected. Please remove it.',
-      initialChat: [
-        { id: 1, sender: "Umm Mohammed", role: "parent", text: "Hello, my child is 3 and still not speaking clearly. Is this normal?", time: "09:21 AM" },
-        { id: 2, sender: "Dr. Sara Al-Mansouri", role: "specialist", text: "Hello! At age three, 3–4 word sentences are expected. Contact a specialist through the assessment section.", time: "09:23 AM" },
-        { id: 3, sender: "Parent Ahmed", role: "parent", text: "My daughter started speech therapy last month — already seeing improvements! 🙏", time: "09:31 AM" },
-      ],
+      emptyChat: 'No messages yet — start the conversation.',
     },
   };
 
   const copy = t[lang] ?? t.ar;
-  const [chatLogs, setChatLogs] = useState(() => (t[lang] ?? t.ar).initialChat);
-
-  useEffect(() => {
-    setChatLogs((t[lang] ?? t.ar).initialChat);
-  }, [lang]);
+  const [chatLogs, setChatLogs] = useState([]);
 
   const SENSITIVE_PATTERNS = [
     /\b(اسم[ي ه]|اسم الطفل|طفل[ي ه]|ابن[ي ه]|بنت[ي ه])\b/i,
@@ -72,8 +61,8 @@ export default function AunakCommunityChat({ lang = 'ar' }) {
   };
 
   return (
-    <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen bg-[#050508] text-slate-100 font-sans p-4 md:p-8">
-      <header className="max-w-6xl mx-auto mb-8 flex items-center justify-between border-b border-slate-800 pb-6">
+    <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className="min-h-screen bg-[#0a0a0c] text-slate-300 font-sans p-4 md:p-8">
+      <header className="max-w-6xl mx-auto mb-8 flex items-center justify-between border-b border-[#c9a962]/15 pb-6">
         <div className="flex items-center gap-4">
           <PlatformLogo lang={lang} className="w-16 h-20 rounded-2xl" />
           <div>
@@ -87,7 +76,7 @@ export default function AunakCommunityChat({ lang = 'ar' }) {
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto flex gap-4 h-[600px]">
+      <div className="max-w-6xl mx-auto flex gap-4 h-[min(600px,calc(100vh-12rem))] min-h-0">
         <Sidebar
           lang={lang}
           students={studentList}
@@ -96,47 +85,52 @@ export default function AunakCommunityChat({ lang = 'ar' }) {
           refetch={refetch}
           selectedStudentId={selectedStudentId}
           onSelectStudent={setSelectedStudentId}
+          className="self-stretch"
         />
 
-      <main className="flex-1 bg-slate-900/60 backdrop-blur border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col min-w-0">
-        <div className="bg-slate-800/50 p-4 border-b border-slate-800 flex items-center gap-3">
-          <ShieldAlert className="w-5 h-5 text-amber-400" />
+      <main className="flex-1 min-w-0 min-h-0 relative z-0 bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] rounded-2xl overflow-hidden flex flex-col">
+        <div className="bg-[#12121a]/55 backdrop-blur-xl p-4 border-b border-[#c9a962]/15 flex items-center gap-3">
+          <ShieldAlert className="w-5 h-5 text-[#d4af37]" />
           <p className="text-sm text-amber-200">{copy.privacyBanner}</p>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {chatLogs.map(log => (
+          {chatLogs.length === 0 ? (
+            <p className="text-center text-slate-500 text-sm py-16">{copy.emptyChat}</p>
+          ) : (
+          chatLogs.map(log => (
             <div key={log.id} className={`flex gap-4 ${log.sender === copy.you ? "flex-row-reverse" : ""}`}>
-              <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center shrink-0 border border-slate-700">
-                {log.role === "specialist" ? <UserCheck className="w-5 h-5 text-cyan-400" /> : <UserCircle2 className="w-5 h-5 text-slate-400" />}
+              <div className="w-10 h-10 rounded-full bg-[#12121a]/70 flex items-center justify-center shrink-0 border border-white/[0.08]">
+                {log.role === "specialist" ? <UserCheck className="w-5 h-5 text-emerald-400" /> : <UserCircle2 className="w-5 h-5 text-slate-400" />}
               </div>
               <div className={`max-w-[80%] ${log.sender === copy.you ? (lang === 'ar' ? 'text-left' : 'text-right') : (lang === 'ar' ? 'text-right' : 'text-left')}`}>
                 <div className={`flex items-center gap-2 mb-1 ${lang === 'ar' ? 'justify-end flex-row-reverse' : 'justify-start'}`}>
                   <span className="text-xs text-slate-500">{log.time}</span>
-                  <span className={`text-sm font-bold ${log.role === "specialist" ? "text-cyan-400" : "text-amber-400"}`}>{log.sender}</span>
+                  <span className={`text-sm font-bold ${log.role === "specialist" ? "text-emerald-400" : "text-[#d4af37]"}`}>{log.sender}</span>
                 </div>
-                <div className={`p-4 rounded-2xl ${log.sender === copy.you ? "bg-cyan-600/20 border border-cyan-500/30 text-cyan-50" : "bg-slate-800 border border-slate-700 text-slate-200"}`}>
+                <div className={`p-4 rounded-2xl ${log.sender === copy.you ? "bg-cyan-600/20 border border-emerald-400/30 text-cyan-50" : "bg-[#12121a]/70 border border-white/[0.08] text-slate-200"}`}>
                   {log.text}
                 </div>
               </div>
             </div>
-          ))}
+          ))
+          )}
         </div>
 
-        <div className="p-4 border-t border-slate-800 bg-slate-950">
+        <div className="p-4 border-t border-[#c9a962]/15 bg-[#0d0d10]/90">
           <div className="relative flex items-center gap-4">
             <input
               type="text"
               value={message}
               onChange={handleTextChange}
               placeholder={copy.placeholder}
-              className={`flex-1 bg-slate-900 border ${isBlocked ? 'border-rose-500 focus:ring-rose-500/20' : 'border-slate-700 focus:ring-cyan-500/20'} rounded-xl px-4 py-3 text-slate-100 outline-none focus:ring-2 transition-all`}
+              className={`flex-1 bg-slate-900 border ${isBlocked ? 'border-rose-500 focus:ring-rose-500/20' : 'border-white/[0.08] focus:ring-cyan-500/20'} rounded-xl px-4 py-3 text-slate-300 outline-none focus:ring-2 transition-all`}
             />
             <button
               type="button"
               onClick={handleSendMessage}
               disabled={isBlocked || !message.trim()}
-              className={`p-3 rounded-xl flex items-center justify-center transition-all ${isBlocked || !message.trim() ? 'bg-slate-800 text-slate-600' : 'bg-cyan-500 text-slate-950 hover:bg-cyan-400'}`}
+              className={`p-3 rounded-xl flex items-center justify-center transition-all ${isBlocked || !message.trim() ? 'bg-[#12121a]/70 text-slate-600' : 'bg-emerald-500 text-slate-950 hover:bg-cyan-400'}`}
             >
               <Send className="w-5 h-5" />
             </button>

@@ -44,6 +44,7 @@ const SECTIONS = [
   { id: "learning", label: "Learning Center", tableId: HUB_TABLES.learningDifficulties },
   { id: "crisis", label: "Smart Shield / Emotion", tableId: HUB_TABLES.emotionalMonitoring },
   { id: "biometrics", label: "Biometrics ID", tableId: STUDENTS_TABLE },
+  { id: "goalAttempts", label: "Goal Attempts (Dynamic Flow)", tableId: process.env.VITE_AIRTABLE_GOAL_ATTEMPTS_TABLE_ID || "" },
 ];
 
 async function fetchJson(url) {

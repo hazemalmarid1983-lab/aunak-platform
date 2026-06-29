@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import { LUX } from '../lib/luxTheme.js';
 
 export default class ErrorBoundary extends Component {
   constructor(props) {
@@ -17,7 +18,7 @@ export default class ErrorBoundary extends Component {
   render() {
     if (this.state.error) {
       return (
-        <div dir="rtl" className="min-h-screen bg-[#050508] text-slate-200 p-8 font-sans">
+        <div dir="rtl" className="min-h-screen bg-[#0a0a0c] text-slate-200 p-8 font-sans">
           <h1 className="text-xl font-bold text-rose-400 mb-2">حدث خطأ في التطبيق</h1>
           <p className="text-sm text-slate-400 mb-4">{this.state.error.message}</p>
           <button

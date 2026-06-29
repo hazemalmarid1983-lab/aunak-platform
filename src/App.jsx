@@ -1,10 +1,157 @@
+import { useEffect, useState } from 'react';
 import ErrorBoundary from './components/ErrorBoundary';
 import AunakEcosystemHub from './components/AunakEcosystemHub';
+import AunakGate from './components/AunakGate';
+import AunakActivationGate from './components/AunakActivationGate';
+import AunakSummerAcademy from './components/AunakSummerAcademy';
+import ChildInteractiveShell from './components/child/ChildInteractiveShell';
+import ParentShell from './components/parent/ParentShell';
+import PostActivationBiometric from './components/PostActivationBiometric';
+import { AuthProvider, useAuth, isSubscriptionActive } from './lib/auth';
+import { fetchStudents } from './lib/airtable';
+import { needsActivationGate, activationGateReason } from './lib/subscriptionEngine';
+import { landingForPlan, PLAN_CODES } from './lib/plans';
+import { studentHasFaceBiometric } from './lib/biometricMatch';
+import { Loader2 } from 'lucide-react';
+import PaymentReturn from './components/PaymentReturn';
+
+function isSummerAcademyRoute() {
+  const path = (typeof window !== 'undefined' ? window.location.pathname : '').replace(/\/$/, '') || '/';
+  return path === '/summer-academy' || path.startsWith('/summer-academy/');
+}
+
+function isChildPlayRoute() {
+  const path = (typeof window !== 'undefined' ? window.location.pathname : '').replace(/\/$/, '') || '/';
+  return path === '/child' || path.startsWith('/child/');
+}
+
+function isParentDashboardRoute() {
+  const path = (typeof window !== 'undefined' ? window.location.pathname : '').replace(/\/$/, '') || '/';
+  return path === '/parent' || path.startsWith('/parent/');
+}
+
+function isPaymentReturnRoute() {
+  const path = (typeof window !== 'undefined' ? window.location.pathname : '').replace(/\/$/, '') || '/';
+  return path === '/payment/return' || path.startsWith('/payment/return');
+}
+
+function SummerAcademyShell() {
+  const { user } = useAuth();
+  if (!user) return <AunakGate />;
+  return <AunakSummerAcademy />;
+}
+
+function GatedPlatform() {
+  const { user, patchSession } = useAuth();
+  const [biometricGate, setBiometricGate] = useState(null);
+
+  useEffect(() => {
+    if (!user?.childId) {
+      setBiometricGate('skip');
+      return;
+    }
+    if (!isSubscriptionActive(user.subscriptionRaw) && !user.subscriptionActivated) {
+      setBiometricGate('skip');
+      return;
+    }
+    let cancelled = false;
+    fetchStudents()
+      .then((students) => {
+        if (cancelled) return;
+        const row = students.find((s) => s.id === user.childId);
+        setBiometricGate(studentHasFaceBiometric(row) ? 'done' : 'required');
+      })
+      .catch(() => {
+        if (!cancelled) setBiometricGate('skip');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.childId, user?.subscriptionRaw, user?.subscriptionActivated]);
+
+  if (!user) return <AunakGate />;
+
+  if (needsActivationGate(user)) {
+    return (
+      <>
+        <div className="fixed inset-0 z-0 bg-[#0a0a0c]" aria-hidden>
+          <div className="absolute inset-0 opacity-30 blur-xl bg-[radial-gradient(ellipse_at_30%_20%,rgba(59,130,246,0.12)_0%,transparent_55%),radial-gradient(ellipse_at_70%_80%,rgba(201,169,98,0.08)_0%,transparent_50%)]" />
+          <div className="absolute inset-4 rounded-3xl border border-white/[0.04] bg-[#12121a]/40" />
+        </div>
+        <AunakActivationGate
+          studentId={user.childId ?? user.activeStudentId}
+          childName={user.childName}
+          reason={activationGateReason(user)}
+          onActivated={(data) => {
+            patchSession({
+              subscriptionActivated: true,
+              subscriptionRaw: 'Active',
+              plan: data?.plan ?? user.plan,
+              landingSection: data?.landing ?? landingForPlan(data?.plan),
+              assessmentOnlyMode: data?.plan === PLAN_CODES.ASSESSMENT_ONLY,
+            });
+            setBiometricGate('required');
+          }}
+          onSkip={(data) => {
+            patchSession({
+              subscriptionActivated: true,
+              subscriptionRaw: 'Active',
+              plan: data?.plan ?? user.plan,
+              landingSection: data?.landing ?? landingForPlan(data?.plan),
+              assessmentOnlyMode: data?.plan === PLAN_CODES.ASSESSMENT_ONLY,
+            });
+            setBiometricGate('required');
+          }}
+        />
+      </>
+    );
+  }
+
+  if (biometricGate === null) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0c] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-emerald-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (biometricGate === 'required') {
+    return (
+      <div className="min-h-screen bg-[#0a0a0c] p-6 flex flex-col items-center justify-center">
+        <PostActivationBiometric
+          lang="ar"
+          recordId={user.childId ?? user.activeStudentId}
+          studentName={user.childName}
+          onComplete={() => setBiometricGate('done')}
+        />
+      </div>
+    );
+  }
+
+  return <AunakEcosystemHub />;
+}
 
 export default function App() {
+  const summerRoute = isSummerAcademyRoute();
+  const childRoute = isChildPlayRoute();
+  const parentRoute = isParentDashboardRoute();
+  const paymentReturnRoute = isPaymentReturnRoute();
+
   return (
     <ErrorBoundary>
-      <AunakEcosystemHub />
+      <AuthProvider>
+        {paymentReturnRoute ? (
+          <PaymentReturn lang="ar" />
+        ) : parentRoute ? (
+          <ParentShell />
+        ) : childRoute ? (
+          <ChildInteractiveShell />
+        ) : summerRoute ? (
+          <SummerAcademyShell />
+        ) : (
+          <GatedPlatform />
+        )}
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

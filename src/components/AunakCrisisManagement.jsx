@@ -1,11 +1,31 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
+import { useCrisisAlerts } from '../hooks/useCrisisAlerts';
+import { useAirtableData } from '../hooks/useAirtableData';
+import { AIRTABLE_TABLES } from '../lib/airtableTables';
+import { mapAbcPlan } from '../lib/airtableMappers';
 import { ShieldAlert, Activity, AlertTriangle, BrainCircuit, ShieldCheck } from 'lucide-react';
+import { LUX } from '../lib/luxTheme.js';
 
 export default function AunakCrisisManagement({ lang = 'ar' }) {
-  const [intensity, setIntensity] = useState(1);
-  const [frequency, setFrequency] = useState(1);
-  const [duration, setDuration] = useState(1);
-  const [riskScore, setRiskScore] = useState(4.5);
+  const { records: plans } = useAirtableData(AIRTABLE_TABLES.abcData, {
+    mapRecord: mapAbcPlan,
+    lang,
+  });
+
+  const livePlan = plans?.[0];
+  const liveIntensity = Math.min(5, Math.max(1, Number(String(livePlan?.intensity ?? '1').replace(/\D/g, '')) || 1));
+  const liveFrequency = Math.min(5, Math.max(1, Number(livePlan?.fields?.Frequency ?? livePlan?.fields?.['التكرار']) || 1));
+  const liveDuration = Math.min(20, Math.max(1, Number(livePlan?.fields?.Duration ?? livePlan?.fields?.['المدة']) || 1));
+
+  const [intensity, setIntensity] = useState(liveIntensity);
+  const [frequency, setFrequency] = useState(liveFrequency);
+  const [duration, setDuration] = useState(liveDuration);
+
+  useEffect(() => {
+    setIntensity(liveIntensity);
+    setFrequency(liveFrequency);
+    setDuration(liveDuration);
+  }, [liveIntensity, liveFrequency, liveDuration]);
 
   const t = {
     ar: {
@@ -34,16 +54,11 @@ export default function AunakCrisisManagement({ lang = 'ar' }) {
 
   const copy = t[lang] ?? t.ar;
 
-  useEffect(() => {
-    const score = (intensity * 2) + (frequency * 1.5) + duration;
-    setRiskScore(score);
-  }, [intensity, frequency, duration]);
-
-  const isCritical = riskScore > 15;
+  const { riskScore, isCritical } = useCrisisAlerts(intensity, frequency, duration);
 
   return (
-    <div className="p-6 md:p-10 bg-[#050508] min-h-screen text-slate-200 font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-       <header className="mb-10 border-b border-slate-800 pb-6">
+    <div className="p-6 md:p-10 bg-[#0a0a0c] min-h-screen text-slate-200 font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+       <header className="mb-10 border-b border-[#c9a962]/15 pb-6">
          <h2 className="text-3xl md:text-4xl font-bold text-rose-400 flex items-center gap-3">
            <ShieldAlert className="w-10 h-10" /> {copy.title}
          </h2>
@@ -51,27 +66,27 @@ export default function AunakCrisisManagement({ lang = 'ar' }) {
        </header>
 
        <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
-         <div className="bg-slate-900/60 backdrop-blur p-8 rounded-3xl border border-slate-800 shadow-2xl">
-           <h3 className="text-2xl font-bold text-amber-400 mb-8 flex items-center gap-2"><Activity className="w-6 h-6" /> {copy.abcInputs}</h3>
+         <div className="bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] backdrop-blur p-8 rounded-3xl border border-[#c9a962]/15 shadow-2xl">
+           <h3 className="text-2xl font-bold text-[#d4af37] mb-8 flex items-center gap-2"><Activity className="w-6 h-6" /> {copy.abcInputs}</h3>
            <div className="space-y-8">
              <div>
-               <label className="flex justify-between text-lg mb-3 text-slate-300"><span>{copy.intensity}</span> <span className="font-bold text-amber-400 text-xl">{intensity}</span></label>
-               <input type="range" min="1" max="5" value={intensity} onChange={e => setIntensity(Number(e.target.value))} className="w-full accent-amber-500 h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer" />
+               <label className="flex justify-between text-lg mb-3 text-slate-300"><span>{copy.intensity}</span> <span className="font-bold text-[#d4af37] text-xl">{intensity}</span></label>
+               <input type="range" min="1" max="5" value={intensity} onChange={e => setIntensity(Number(e.target.value))} className="w-full accent-amber-500 h-2 bg-[#12121a]/70 rounded-lg appearance-none cursor-pointer" />
              </div>
              <div>
-               <label className="flex justify-between text-lg mb-3 text-slate-300"><span>{copy.frequency}</span> <span className="font-bold text-amber-400 text-xl">{frequency}</span></label>
-               <input type="range" min="1" max="5" value={frequency} onChange={e => setFrequency(Number(e.target.value))} className="w-full accent-amber-500 h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer" />
+               <label className="flex justify-between text-lg mb-3 text-slate-300"><span>{copy.frequency}</span> <span className="font-bold text-[#d4af37] text-xl">{frequency}</span></label>
+               <input type="range" min="1" max="5" value={frequency} onChange={e => setFrequency(Number(e.target.value))} className="w-full accent-amber-500 h-2 bg-[#12121a]/70 rounded-lg appearance-none cursor-pointer" />
              </div>
              <div>
-               <label className="flex justify-between text-lg mb-3 text-slate-300"><span>{copy.duration}</span> <span className="font-bold text-amber-400 text-xl">{duration}</span></label>
-               <input type="range" min="1" max="20" value={duration} onChange={e => setDuration(Number(e.target.value))} className="w-full accent-amber-500 h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer" />
+               <label className="flex justify-between text-lg mb-3 text-slate-300"><span>{copy.duration}</span> <span className="font-bold text-[#d4af37] text-xl">{duration}</span></label>
+               <input type="range" min="1" max="20" value={duration} onChange={e => setDuration(Number(e.target.value))} className="w-full accent-amber-500 h-2 bg-[#12121a]/70 rounded-lg appearance-none cursor-pointer" />
              </div>
            </div>
          </div>
 
-         <div className={`p-10 rounded-3xl border-2 flex flex-col items-center justify-center transition-all duration-500 shadow-2xl ${isCritical ? 'bg-rose-950/40 border-rose-500 shadow-[0_0_70px_rgba(244,63,94,0.2)]' : 'bg-slate-900/60 border-emerald-500/30'}`}>
+         <div className={`p-10 rounded-3xl border-2 flex flex-col items-center justify-center transition-all duration-500 shadow-2xl ${isCritical ? 'bg-rose-950/40 border-rose-500 shadow-[0_0_70px_rgba(244,63,94,0.2)]' : 'bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] border-emerald-500/30'}`}>
            <BrainCircuit className={`w-24 h-24 mb-6 ${isCritical ? 'text-rose-500 animate-pulse' : 'text-emerald-400'}`} />
-           <h3 className="text-2xl font-bold text-slate-100 mb-4">{copy.riskIndex}</h3>
+           <h3 className="text-2xl font-bold text-slate-300 mb-4">{copy.riskIndex}</h3>
            <div className={`text-8xl font-black font-mono mb-6 ${isCritical ? 'text-rose-400' : 'text-emerald-400'}`}>
              {riskScore.toFixed(1)}
            </div>

@@ -4,11 +4,7 @@ import { useAirtableData } from '../hooks/useAirtableData';
 import { AIRTABLE_TABLES } from '../lib/airtableTables';
 import { mapScientificItem } from '../lib/airtableMappers';
 import { AirtableEmpty, AirtableErrorBanner, AirtableLoading } from './AirtableStatus';
-
-const DEFAULT_CATEGORIES = {
-  ar: ['اللغة الاستقبالية', 'اللغة التعبيرية', 'التفاعل الاجتماعي', 'صعوبات التعلم', 'المهارات الحركية'],
-  en: ['Receptive Language', 'Expressive Language', 'Social Interaction', 'Learning Difficulties', 'Motor Skills'],
-};
+import { LUX } from '../lib/luxTheme.js';
 
 export default function AunakScientificItems({ lang = 'ar' }) {
   const { records, loading, error, isEmpty } = useAirtableData(AIRTABLE_TABLES.scientificItems, {
@@ -50,32 +46,30 @@ export default function AunakScientificItems({ lang = 'ar' }) {
   };
 
   const copy = t[lang] ?? t.ar;
-  const fallbackCategories = DEFAULT_CATEGORIES[lang] ?? DEFAULT_CATEGORIES.ar;
 
   const categories = useMemo(() => {
-    const fromData = [...new Set(records.map((r) => r.category).filter(Boolean))];
-    return fromData.length > 0 ? fromData : fallbackCategories;
-  }, [records, fallbackCategories]);
+    return [...new Set(records.map((r) => r.category).filter(Boolean))];
+  }, [records]);
 
-  const [activeCategory, setActiveCategory] = useState(fallbackCategories[0]);
-
-  useEffect(() => {
-    const next = (DEFAULT_CATEGORIES[lang] ?? DEFAULT_CATEGORIES.ar)[0];
-    setActiveCategory(next);
-  }, [lang]);
+  const [activeCategory, setActiveCategory] = useState(null);
 
   useEffect(() => {
     if (categories.length && !categories.includes(activeCategory)) {
       setActiveCategory(categories[0]);
     }
+    if (!categories.length) {
+      setActiveCategory(null);
+    }
   }, [categories, activeCategory]);
 
-  const filteredItems = records.filter((item) => item.category === activeCategory);
+  const filteredItems = activeCategory
+    ? records.filter((item) => item.category === activeCategory)
+    : [];
   const totalCount = records.length;
 
   return (
-    <div className="p-6 md:p-10 min-h-screen bg-[#050508] text-slate-200 font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <header className="mb-8 border-b border-slate-800 pb-6 flex justify-between items-center">
+    <div className="p-6 md:p-10 min-h-screen bg-[#0a0a0c] text-slate-200 font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <header className="mb-8 border-b border-[#c9a962]/15 pb-6 flex justify-between items-center">
         <div>
           <h2 className="text-3xl md:text-4xl font-bold text-violet-400 flex items-center gap-3">
             <Database className="w-10 h-10" /> {copy.title}
@@ -91,36 +85,40 @@ export default function AunakScientificItems({ lang = 'ar' }) {
 
       <div className="grid lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
         <div className="lg:col-span-1 space-y-4">
-          <div className="bg-slate-900/60 p-5 rounded-2xl border border-slate-800 mb-4 flex items-center gap-3">
+          <div className="bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] p-5 rounded-2xl border border-[#c9a962]/15 mb-4 flex items-center gap-3">
              <Layers className="w-8 h-8 text-violet-500" />
              <div>
                 <h3 className="text-sm text-slate-400 font-bold">{copy.totalItems}</h3>
-                <p className="text-2xl font-black text-slate-100">
+                <p className="text-2xl font-black text-slate-300">
                   {loading ? '…' : totalCount} <span className="text-sm font-normal text-slate-500">{copy.itemsUnit}</span>
                 </p>
              </div>
           </div>
           
-          <h3 className="text-lg font-bold text-slate-300 mb-2 border-b border-slate-800 pb-2">{copy.categories}</h3>
+          <h3 className="text-lg font-bold text-slate-300 mb-2 border-b border-[#c9a962]/15 pb-2">{copy.categories}</h3>
+          {categories.length === 0 && !loading ? (
+            <p className="text-sm text-slate-500">{copy.emptyLibrary}</p>
+          ) : (
           <nav className="space-y-2">
             {categories.map(cat => (
               <button 
                 key={cat}
                 type="button"
                 onClick={() => setActiveCategory(cat)}
-                className={`w-full flex items-center justify-between p-3.5 rounded-xl border font-bold transition-all text-sm ${activeCategory === cat ? 'bg-violet-500/10 border-violet-500/50 text-violet-300 shadow-lg' : 'bg-slate-900/50 border-slate-800 text-slate-400 hover:bg-slate-800'}`}
+                className={`w-full flex items-center justify-between p-3.5 rounded-xl border font-bold transition-all text-sm ${activeCategory === cat ? 'bg-violet-500/10 border-violet-500/50 text-violet-300 shadow-lg' : 'bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] border-[#c9a962]/15 text-slate-400 hover:bg-[#12121a]/70'}`}
               >
                 {cat}
                 {activeCategory === cat && <Activity className="w-4 h-4" />}
               </button>
             ))}
           </nav>
+          )}
         </div>
 
         <div className="lg:col-span-3 space-y-6">
-           <div className="bg-slate-900/60 p-8 rounded-3xl border border-slate-800 shadow-xl">
-              <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-                 <h3 className="text-xl font-bold text-slate-100 flex items-center gap-2"><BookMarked className="w-6 h-6 text-violet-400" /> {copy.domainItems(activeCategory)}</h3>
+           <div className="bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] p-8 rounded-3xl border border-[#c9a962]/15 shadow-xl">
+              <div className="flex justify-between items-center mb-6 border-b border-[#c9a962]/15 pb-4">
+                 <h3 className="text-xl font-bold text-slate-300 flex items-center gap-2"><BookMarked className="w-6 h-6 text-violet-400" /> {activeCategory ? copy.domainItems(activeCategory) : copy.emptyLibrary}</h3>
               </div>
               
               {loading ? (
@@ -130,14 +128,14 @@ export default function AunakScientificItems({ lang = 'ar' }) {
               ) : (
               <div className="space-y-4">
                  {filteredItems.length > 0 ? filteredItems.map(item => (
-                    <div key={item.id} className="p-5 bg-slate-950 rounded-2xl border border-slate-800 hover:border-violet-500/30 transition-colors flex justify-between items-center group">
+                    <div key={item.id} className="p-5 bg-[#0d0d10]/90 rounded-2xl border border-[#c9a962]/15 hover:border-violet-500/30 transition-colors flex justify-between items-center group">
                        <div>
                           <h4 className="text-md font-bold text-slate-200">{item.title}</h4>
                           <p className="text-xs text-slate-500 mt-1 font-mono">{copy.usage(item.usage)}</p>
                        </div>
                        <div className="flex flex-col items-end">
                           <span className="text-xs text-slate-400 mb-1">{copy.weight}</span>
-                          <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-sm font-bold font-mono">{item.weight}</span>
+                          <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg text-sm font-bold font-mono">{item.weight ?? '—'}</span>
                        </div>
                     </div>
                  )) : (

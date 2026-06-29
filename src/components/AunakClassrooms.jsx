@@ -3,6 +3,7 @@ import { useStudents } from '../hooks/useStudents';
 import { STUDENT_CLASS_FIELD } from '../hooks/useStudents';
 import { BookOpen, Users, BrainCircuit, School, Activity, Loader2 } from 'lucide-react';
 import { AirtableEmpty, AirtableErrorBanner } from './AirtableStatus';
+import { LUX } from '../lib/luxTheme.js';
 
 const UNASSIGNED_KEY = '__unassigned__';
 
@@ -100,8 +101,8 @@ export default function AunakClassrooms({ lang = 'ar' }) {
   const capacityPercent = Math.min(100, Math.round((capacityUsed / capacityMax) * 100));
 
   return (
-    <div className="p-6 md:p-10 min-h-screen bg-[#050508] text-slate-200 font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <header className="mb-8 border-b border-slate-800 pb-6 flex justify-between items-center">
+    <div className="p-6 md:p-10 min-h-screen bg-[#0a0a0c] text-slate-200 font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <header className="mb-8 border-b border-[#c9a962]/15 pb-6 flex justify-between items-center">
         <div>
           <h2 className="text-3xl md:text-4xl font-bold text-blue-400 flex items-center gap-3">
             <School className="w-10 h-10" /> {copy.title}
@@ -115,9 +116,9 @@ export default function AunakClassrooms({ lang = 'ar' }) {
 
       <div className="grid lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
         <div className="lg:col-span-1 space-y-4">
-          <div className="bg-slate-900/60 p-5 rounded-2xl border border-slate-800 mb-4">
+          <div className="bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] p-5 rounded-2xl border border-[#c9a962]/15 mb-4">
             <h3 className="text-sm text-slate-500 mb-2 font-bold">{copy.distributing}</h3>
-            <p className="text-xl font-bold text-slate-100 flex items-center gap-2">
+            <p className="text-xl font-bold text-slate-300 flex items-center gap-2">
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin text-blue-400" /> {copy.loading}
@@ -128,7 +129,7 @@ export default function AunakClassrooms({ lang = 'ar' }) {
             </p>
           </div>
 
-          <h3 className="text-lg font-bold text-slate-300 mb-2 border-b border-slate-800 pb-2">{copy.roomList}</h3>
+          <h3 className="text-lg font-bold text-slate-300 mb-2 border-b border-[#c9a962]/15 pb-2">{copy.roomList}</h3>
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-8 text-slate-500 text-sm">
               <Loader2 className="w-4 h-4 animate-spin" /> {copy.loading}
@@ -145,7 +146,7 @@ export default function AunakClassrooms({ lang = 'ar' }) {
                   className={`w-full ${lang === 'ar' ? 'text-right' : 'text-left'} p-4 rounded-xl border transition-all ${
                     activeClassKey === room.key
                       ? 'bg-blue-500/10 border-blue-500/50 text-blue-300 shadow-lg'
-                      : 'bg-slate-900/50 border-slate-800 text-slate-400 hover:bg-slate-800'
+                      : 'bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] border-[#c9a962]/15 text-slate-400 hover:bg-[#12121a]/70'
                   }`}
                 >
                   <h4 className="font-bold text-sm mb-1 flex items-center gap-2">
@@ -163,16 +164,16 @@ export default function AunakClassrooms({ lang = 'ar' }) {
           )}
           <button
             type="button"
-            className="w-full py-3 mt-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition-all border border-slate-600 border-dashed"
+            className="w-full py-3 mt-2 bg-[#12121a]/70 hover:bg-[#12121a]/90 text-white rounded-xl font-bold transition-all border border-slate-600 border-dashed"
           >
             {copy.addRoom}
           </button>
         </div>
 
         <div className="lg:col-span-3 space-y-6">
-          <div className="bg-slate-900/60 p-8 rounded-3xl border border-slate-800 shadow-xl">
-            <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-              <h3 className="text-2xl font-bold text-slate-100 flex items-center gap-2">{copy.roomDetails}</h3>
+          <div className="bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] p-8 rounded-3xl border border-[#c9a962]/15 shadow-xl">
+            <div className="flex justify-between items-center mb-6 border-b border-[#c9a962]/15 pb-4">
+              <h3 className="text-2xl font-bold text-slate-300 flex items-center gap-2">{copy.roomDetails}</h3>
               <span className="px-3 py-1 bg-blue-500/10 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-mono font-bold">
                 {copy.schedule}
               </span>
@@ -181,13 +182,13 @@ export default function AunakClassrooms({ lang = 'ar' }) {
             {activeRoom ? (
               <>
                 <div className="grid grid-cols-2 gap-6 mb-6">
-                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                  <div className="p-4 bg-[#0d0d10]/90 rounded-xl border border-[#c9a962]/15">
                     <p className="text-sm text-slate-500 mb-2 font-bold">{copy.specialist}</p>
                     <p className="text-lg text-slate-200 font-semibold">{activeRoom.name}</p>
                   </div>
-                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                  <div className="p-4 bg-[#0d0d10]/90 rounded-xl border border-[#c9a962]/15">
                     <p className="text-sm text-slate-500 mb-2 font-bold">{copy.capacity}</p>
-                    <div className="w-full bg-slate-800 rounded-full h-2.5 mb-1 mt-3">
+                    <div className="w-full bg-[#12121a]/70 rounded-full h-2.5 mb-1 mt-3">
                       <div className="bg-blue-400 h-2.5 rounded-full transition-all" style={{ width: `${capacityPercent}%` }} />
                     </div>
                     <p className="text-xs text-slate-400 font-mono">
@@ -196,7 +197,7 @@ export default function AunakClassrooms({ lang = 'ar' }) {
                   </div>
                 </div>
 
-                <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
+                <div className="p-4 bg-[#0d0d10]/90 rounded-xl border border-[#c9a962]/15">
                   <h4 className="text-slate-300 font-bold mb-3 flex items-center gap-2">
                     <Activity className="w-4 h-4 text-emerald-400" /> {copy.enrolled}
                   </h4>
@@ -207,7 +208,7 @@ export default function AunakClassrooms({ lang = 'ar' }) {
                       {enrolledStudents.map((student) => (
                         <div
                           key={student.id}
-                          className="flex items-center gap-3 p-3 rounded-lg border border-slate-800 bg-slate-900/50"
+                          className="flex items-center gap-3 p-3 rounded-lg border border-[#c9a962]/15 bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)]"
                         >
                           <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs text-white shrink-0">
                             {(student.name || '?').charAt(0)}

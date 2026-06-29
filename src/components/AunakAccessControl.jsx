@@ -1,12 +1,60 @@
-import { useState } from 'react';
-import { ShieldCheck, Key, Users, Lock, Server, BrainCircuit, EyeOff } from 'lucide-react';
+﻿import { useState, useEffect, useMemo } from 'react';
+import { ShieldCheck, Key, Users, Lock, Server, BrainCircuit, EyeOff, Map, HandMetal, Loader2 } from 'lucide-react';
 import { useAirtableData } from '../hooks/useAirtableData';
 import { AIRTABLE_TABLES } from '../lib/airtableTables';
 import { mapAccessUser } from '../lib/airtableMappers';
+import { fetchStudents } from '../lib/airtable';
+import { isStealthMode, setStealthMode } from '../lib/sovereignAudio';
+import { useAuth, isSovereignOwner } from '../lib/auth';
 import { AirtableEmpty, AirtableErrorBanner, AirtableLoading } from './AirtableStatus';
+import { LUX } from '../lib/luxTheme.js';
 
-export default function AunakAccessControl({ lang = 'ar' }) {
-  const [stealthMode, setStealthMode] = useState(false);
+export default function AunakAccessControl({ lang = 'ar', defaultStealth = false }) {
+  const { user, patchSession } = useAuth();
+  const sovereign = isSovereignOwner(user);
+  const manualOverride = Boolean(user?.manualOverride);
+
+  const [stealthMode, setStealthModeLocal] = useState(() => isStealthMode() || Boolean(defaultStealth));
+  const [roadmapLoading, setRoadmapLoading] = useState(false);
+  const [roadmapStudents, setRoadmapStudents] = useState([]);
+
+  useEffect(() => {
+    setStealthMode(stealthMode);
+  }, [stealthMode]);
+
+  useEffect(() => {
+    if (!sovereign) return;
+    let cancelled = false;
+    setRoadmapLoading(true);
+    fetchStudents()
+      .then((rows) => {
+        if (!cancelled) setRoadmapStudents(Array.isArray(rows) ? rows : []);
+      })
+      .catch(() => {
+        if (!cancelled) setRoadmapStudents([]);
+      })
+      .finally(() => {
+        if (!cancelled) setRoadmapLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [sovereign]);
+
+  const roadmapStats = useMemo(() => {
+    const counts = { new: 0, active: 0, other: 0 };
+    for (const s of roadmapStudents) {
+      const raw = String(s?.status ?? s?.fields?.Status ?? "").trim().toLowerCase();
+      if (raw === "new" || raw === "جديد") counts.new += 1;
+      else if (raw === "active" || raw === "نشط") counts.active += 1;
+      else counts.other += 1;
+    }
+    return counts;
+  }, [roadmapStudents]);
+
+  const toggleManualOverride = () => {
+    patchSession({ manualOverride: !manualOverride });
+  };
   const { records: users, loading, error, isEmpty } = useAirtableData(AIRTABLE_TABLES.accessControl, {
     mapRecord: mapAccessUser,
     lang,
@@ -28,6 +76,15 @@ export default function AunakAccessControl({ lang = 'ar' }) {
       militaryEncryption: 'التشفير العسكري',
       mirrorSync: 'النسخ المرآتي اللحظي',
       auditLogs: 'استخراج سجل التدقيق (Audit Logs)',
+      roadmapTitle: 'خارطة الطريق — حالة الطلاب (Status)',
+      roadmapNew: 'New — تقييم شامل',
+      roadmapActive: 'Active — سجل حي / عالم الجزر',
+      roadmapOther: 'أخرى / غير مصنف',
+      manualOverride: 'التحكم اليدوي (Manual Override)',
+      manualOn: 'مفعّل — تجاوز قفل الباقات والبوابات',
+      manualOff: 'معطّل — السياسات الافتراضية نشطة',
+      enableManual: 'تفعيل التحكم اليدوي',
+      disableManual: 'إيقاف التحكم اليدوي',
     },
     en: {
       title: 'Access Control (Sovereign)',
@@ -44,24 +101,33 @@ export default function AunakAccessControl({ lang = 'ar' }) {
       militaryEncryption: 'Military-Grade Encryption',
       mirrorSync: 'Real-Time Mirror Sync',
       auditLogs: 'Export Audit Logs',
+      roadmapTitle: 'Roadmap — student Status',
+      roadmapNew: 'New — full assessment',
+      roadmapActive: 'Active — live registry / island world',
+      roadmapOther: 'Other / unclassified',
+      manualOverride: 'Manual Override',
+      manualOn: 'Active — bypass plan locks and gates',
+      manualOff: 'Inactive — default policies enforced',
+      enableManual: 'Enable Manual Override',
+      disableManual: 'Disable Manual Override',
     },
   };
 
   const copy = t[lang] ?? t.ar;
 
   return (
-    <div className="p-6 md:p-10 min-h-screen bg-[#050508] text-slate-200 font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <header className="mb-8 border-b border-slate-800 pb-6 flex justify-between items-center">
+    <div className="p-6 md:p-10 min-h-screen bg-[#0a0a0c] text-slate-200 font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <header className="mb-8 border-b border-[#c9a962]/15 pb-6 flex justify-between items-center">
         <div>
-          <h2 className="text-3xl md:text-4xl font-bold text-amber-400 flex items-center gap-3">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#d4af37] flex items-center gap-3">
             <ShieldCheck className="w-10 h-10" /> {copy.title}
           </h2>
           <p className="text-slate-400 mt-2 text-lg font-mono">{copy.subtitle}</p>
         </div>
         <button 
           type="button"
-          onClick={() => setStealthMode(!stealthMode)}
-          className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all ${stealthMode ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_20px_rgba(225,29,72,0.4)]' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'}`}
+          onClick={() => setStealthModeLocal((v) => !v)}
+          className={`flex items-center gap-2 px-5 py-3 rounded-xl font-bold transition-all ${stealthMode ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-[0_0_20px_rgba(225,29,72,0.4)]' : 'bg-[#12121a]/70 hover:bg-[#12121a]/90 text-slate-300'}`}
         >
           {stealthMode ? <EyeOff className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
           {stealthMode ? copy.disableStealth : copy.enableStealth}
@@ -72,9 +138,9 @@ export default function AunakAccessControl({ lang = 'ar' }) {
 
       <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
         <div className="lg:col-span-2 space-y-6">
-           <div className="bg-slate-900/60 p-8 rounded-3xl border border-slate-800 shadow-xl">
-              <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-                 <h3 className="text-xl font-bold text-slate-100 flex items-center gap-2"><Users className="w-6 h-6 text-amber-400" /> {copy.userManagement}</h3>
+           <div className="bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] p-8 rounded-3xl border border-[#c9a962]/15 shadow-xl">
+              <div className="flex justify-between items-center mb-6 border-b border-[#c9a962]/15 pb-4">
+                 <h3 className="text-xl font-bold text-slate-300 flex items-center gap-2"><Users className="w-6 h-6 text-[#d4af37]" /> {copy.userManagement}</h3>
               </div>
               
               {loading ? (
@@ -84,9 +150,9 @@ export default function AunakAccessControl({ lang = 'ar' }) {
               ) : (
               <div className="space-y-4">
                  {users.map(user => (
-                    <div key={user.id} className="p-5 bg-slate-950 rounded-2xl border border-slate-800 flex justify-between items-center hover:border-amber-500/30 transition-colors">
+                    <div key={user.id} className="p-5 bg-[#0d0d10]/90 rounded-2xl border border-[#c9a962]/15 flex justify-between items-center hover:border-amber-500/30 transition-colors">
                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-xl">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#c9a962] to-[#d4af37]/10 border border-amber-500/30 flex items-center justify-center text-[#d4af37] font-bold text-xl">
                              {(user.name || '?').charAt(0)}
                           </div>
                           <div>
@@ -95,7 +161,7 @@ export default function AunakAccessControl({ lang = 'ar' }) {
                           </div>
                        </div>
                        <div className="flex flex-col items-end gap-2">
-                          <span className="px-3 py-1 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold">{user.access}</span>
+                          <span className="px-3 py-1 bg-[#12121a]/70 text-slate-300 rounded-lg text-xs font-bold">{user.access}</span>
                           <span className="text-[10px] text-slate-500 font-mono">{copy.lastLogin(user.lastLogin)}</span>
                        </div>
                     </div>
@@ -105,7 +171,7 @@ export default function AunakAccessControl({ lang = 'ar' }) {
            </div>
 
            <div className="bg-amber-900/10 p-8 rounded-3xl border border-amber-500/20 shadow-[0_0_30px_rgba(245,158,11,0.05)]">
-              <h3 className="text-xl font-bold text-amber-300 mb-4 flex items-center gap-2"><BrainCircuit className="w-6 h-6" /> {copy.aiTitle}</h3>
+              <h3 className="text-xl font-bold text-[#e8c872] mb-4 flex items-center gap-2"><BrainCircuit className="w-6 h-6" /> {copy.aiTitle}</h3>
               <p className="text-md text-amber-200/80 leading-relaxed bg-amber-950/50 p-5 rounded-xl border border-amber-500/30">
                  {copy.aiBody}
                  <br/><br/>
@@ -117,20 +183,71 @@ export default function AunakAccessControl({ lang = 'ar' }) {
         </div>
 
         <div className="space-y-6">
-           <div className="bg-slate-900/60 p-6 rounded-3xl border border-slate-800">
-              <h3 className="text-md font-bold text-slate-300 mb-5 flex items-center gap-2 border-b border-slate-800 pb-3"><Server className="w-5 h-5 text-cyan-400" /> {copy.serverProtocols}</h3>
+           {sovereign && (
+             <>
+               <div className={`${LUX.glassCard} p-6`}>
+                 <h3 className={`${LUX.headingGold} mb-4 flex items-center gap-2 border-b border-[#c9a962]/15 pb-3`}>
+                   <Map className="w-5 h-5 text-emerald-400" /> {copy.roadmapTitle}
+                 </h3>
+                 {roadmapLoading ? (
+                   <div className={`flex items-center gap-2 text-sm ${LUX.muted}`}>
+                     <Loader2 className="w-4 h-4 animate-spin" /> …
+                   </div>
+                 ) : (
+                   <div className="space-y-3">
+                     <div className="flex justify-between items-center p-4 bg-[#0d0d10]/90 rounded-xl border border-emerald-400/20">
+                       <span className="text-sm text-slate-400">{copy.roadmapNew}</span>
+                       <span className={`text-lg font-bold ${LUX.emeraldValue}`}>{roadmapStats.new}</span>
+                     </div>
+                     <div className="flex justify-between items-center p-4 bg-[#0d0d10]/90 rounded-xl border border-[#c9a962]/20">
+                       <span className="text-sm text-slate-400">{copy.roadmapActive}</span>
+                       <span className={`text-lg font-bold ${LUX.goldText}`}>{roadmapStats.active}</span>
+                     </div>
+                     <div className="flex justify-between items-center p-4 bg-[#0d0d10]/90 rounded-xl border border-white/[0.06]">
+                       <span className="text-sm text-slate-400">{copy.roadmapOther}</span>
+                       <span className="text-lg font-bold text-slate-400">{roadmapStats.other}</span>
+                     </div>
+                   </div>
+                 )}
+               </div>
+
+               <div className={`${LUX.glassCard} p-6`}>
+                 <h3 className={`${LUX.headingGold} mb-3 flex items-center gap-2`}>
+                   <HandMetal className="w-5 h-5 text-amber-400" /> {copy.manualOverride}
+                 </h3>
+                 <p className={`text-xs mb-4 ${manualOverride ? "text-amber-300" : LUX.muted}`}>
+                   {manualOverride ? copy.manualOn : copy.manualOff}
+                 </p>
+                 <button
+                   type="button"
+                   onClick={toggleManualOverride}
+                   className={`w-full py-3 rounded-xl font-bold text-sm transition-all border flex justify-center items-center gap-2 ${
+                     manualOverride
+                       ? "bg-amber-600/90 hover:bg-amber-500 text-white border-amber-400/40 shadow-[0_0_24px_rgba(245,158,11,0.25)]"
+                       : `${LUX.btnGhost} w-full`
+                   }`}
+                 >
+                   <HandMetal className="w-4 h-4" />
+                   {manualOverride ? copy.disableManual : copy.enableManual}
+                 </button>
+               </div>
+             </>
+           )}
+
+           <div className="bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] p-6 rounded-3xl border border-[#c9a962]/15">
+              <h3 className="text-md font-bold text-slate-300 mb-5 flex items-center gap-2 border-b border-[#c9a962]/15 pb-3"><Server className="w-5 h-5 text-emerald-400" /> {copy.serverProtocols}</h3>
               <div className="space-y-3">
-                 <div className="flex justify-between items-center p-4 bg-slate-950 rounded-xl border border-slate-800">
+                 <div className="flex justify-between items-center p-4 bg-[#0d0d10]/90 rounded-xl border border-[#c9a962]/15">
                     <span className="text-sm text-slate-400">{copy.militaryEncryption}</span>
                     <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">AES-256</span>
                  </div>
-                 <div className="flex justify-between items-center p-4 bg-slate-950 rounded-xl border border-slate-800">
+                 <div className="flex justify-between items-center p-4 bg-[#0d0d10]/90 rounded-xl border border-[#c9a962]/15">
                     <span className="text-sm text-slate-400">{copy.mirrorSync}</span>
-                    <span className="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2 py-1 rounded">ACTIVE</span>
+                    <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">ACTIVE</span>
                  </div>
               </div>
            </div>
-           <button type="button" className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-bold text-sm transition-all border border-slate-700 shadow-lg flex justify-center items-center gap-2">
+           <button type="button" className="w-full py-4 bg-[#12121a]/70 hover:bg-[#12121a]/90 text-white rounded-2xl font-bold text-sm transition-all border border-white/[0.08] shadow-lg flex justify-center items-center gap-2">
               <Key className="w-4 h-4" /> {copy.auditLogs}
            </button>
         </div>

@@ -1,9 +1,13 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Video, ShieldCheck, PlayCircle, BrainCircuit, Lock, Clock, Image, Headphones } from 'lucide-react';
 import { useAirtableData } from '../hooks/useAirtableData';
+import { useAuth } from '../lib/auth';
+import { useStudents } from '../hooks/useStudents';
+import { triggerChildIslandSeal, CHILD_ISLAND_SEAL_THRESHOLD } from '../lib/childSessionBridge';
 import { AIRTABLE_TABLES } from '../lib/airtableTables';
 import { mapMedia } from '../lib/airtableMappers';
 import { AirtableEmpty, AirtableErrorBanner, AirtableLoading } from './AirtableStatus';
+import { LUX } from '../lib/luxTheme.js';
 
 const MEDIA_CATEGORIES = {
   en: ['Video Tutorials', 'Visual Aids', 'Audio Exercises'],
@@ -39,6 +43,33 @@ function categoryIcon(category, lang = 'ar') {
 }
 
 export default function AunakSafeMedia({ lang = 'ar' }) {
+  const { user } = useAuth();
+  const { students } = useStudents(lang);
+  const islandEngagementRef = useRef(0);
+  const islandSealRef = useRef(false);
+
+  const activeStudent = useMemo(() => {
+    const id = user?.childId ?? user?.activeStudentId;
+    if (!id) return students?.[0] ?? null;
+    return students.find((s) => s.id === id) ?? students?.[0] ?? null;
+  }, [user?.childId, user?.activeStudentId, students]);
+
+  const recordIslandEngagement = (interactionType = 'media_clip') => {
+    islandEngagementRef.current += 1;
+    const count = islandEngagementRef.current;
+    if (islandSealRef.current || count < CHILD_ISLAND_SEAL_THRESHOLD || !activeStudent?.name) return;
+    islandSealRef.current = true;
+    triggerChildIslandSeal({
+      studentId: activeStudent.id,
+      studentName: activeStudent.name,
+      interactionCount: count,
+      source: 'safe_media_islands',
+      interactionType,
+    }).catch(() => {
+      islandSealRef.current = false;
+    });
+  };
+
   const { records: mediaLibrary, loading, error, isEmpty } = useAirtableData(AIRTABLE_TABLES.safeMedia, {
     mapRecord: mapMedia,
     lang,
@@ -125,8 +156,8 @@ export default function AunakSafeMedia({ lang = 'ar' }) {
   const selected = filteredLibrary.find((m) => m.id === activeVideo) ?? normalizedLibrary.find((m) => m.id === activeVideo);
 
   return (
-    <div className="p-6 md:p-10 min-h-screen bg-[#050508] text-slate-200 font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <header className="mb-8 border-b border-slate-800 pb-6">
+    <div className="p-6 md:p-10 min-h-screen bg-[#0a0a0c] text-slate-200 font-sans" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+      <header className="mb-8 border-b border-[#c9a962]/15 pb-6">
         <h2 className="text-3xl md:text-4xl font-bold text-emerald-400 flex items-center gap-3">
           <Video className="w-10 h-10" /> {copy.title}
         </h2>
@@ -137,7 +168,7 @@ export default function AunakSafeMedia({ lang = 'ar' }) {
 
       <div className="grid lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
         <div className="lg:col-span-1 space-y-4">
-          <h3 className="text-lg font-bold text-slate-300 mb-2 border-b border-slate-800 pb-2">{copy.categories}</h3>
+          <h3 className="text-lg font-bold text-slate-300 mb-2 border-b border-[#c9a962]/15 pb-2">{copy.categories}</h3>
           <nav className="space-y-2">
             {categoryOptions.map((cat) => {
               const Icon = categoryIcon(cat, lang);
@@ -150,7 +181,7 @@ export default function AunakSafeMedia({ lang = 'ar' }) {
                   className={`w-full flex items-center justify-between p-3.5 rounded-xl border font-bold transition-all text-sm ${
                     activeCategory === cat
                       ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-300 shadow-lg'
-                      : 'bg-slate-900/50 border-slate-800 text-slate-400 hover:bg-slate-800'
+                      : 'bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] border-[#c9a962]/15 text-slate-400 hover:bg-[#12121a]/70'
                   }`}
                 >
                   <span className={`flex items-center gap-2 ${lang === 'ar' ? 'flex-row-reverse' : ''}`}>
@@ -165,15 +196,18 @@ export default function AunakSafeMedia({ lang = 'ar' }) {
         </div>
 
         <div className="lg:col-span-3 space-y-6">
-          <div className="bg-slate-900/60 p-4 rounded-3xl border border-slate-800 shadow-xl overflow-hidden relative">
+          <div className="bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] p-4 rounded-3xl border border-[#c9a962]/15 shadow-xl overflow-hidden relative">
             <div className="absolute top-6 right-6 z-10 flex gap-2">
               <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 rounded-lg text-xs font-mono font-bold flex items-center gap-1 backdrop-blur-md">
                 <ShieldCheck className="w-3 h-3" /> AES-256 SECURED
               </span>
             </div>
-            <div className="aspect-video bg-slate-950 rounded-2xl border border-slate-700 flex flex-col items-center justify-center relative overflow-hidden group">
+            <div className="aspect-video bg-[#0d0d10]/90 rounded-2xl border border-white/[0.08] flex flex-col items-center justify-center relative overflow-hidden group">
               <div className="absolute inset-0 bg-emerald-900/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <PlayCircle className="w-20 h-20 text-emerald-500/50 group-hover:text-emerald-400 transition-colors cursor-pointer z-10" />
+              <PlayCircle
+                className="w-20 h-20 text-emerald-500/50 group-hover:text-emerald-400 transition-colors cursor-pointer z-10"
+                onClick={() => recordIslandEngagement('media_play')}
+              />
               <p className="mt-4 text-slate-500 font-mono z-10">{selected?.title || copy.selectClip}</p>
             </div>
           </div>
@@ -188,7 +222,7 @@ export default function AunakSafeMedia({ lang = 'ar' }) {
           </div>
 
           <div>
-            <h3 className="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2 border-b border-slate-800 pb-2">
+            <h3 className="text-lg font-bold text-slate-300 mb-4 flex items-center gap-2 border-b border-[#c9a962]/15 pb-2">
               <Lock className="w-5 h-5 text-slate-500" /> {copy.archive}
               <span className="text-xs font-normal text-emerald-400/80 ml-auto">{activeCategory}</span>
             </h3>
@@ -204,11 +238,14 @@ export default function AunakSafeMedia({ lang = 'ar' }) {
                   <button
                     key={media.id}
                     type="button"
-                    onClick={() => setActiveVideo(media.id)}
+                    onClick={() => {
+                      setActiveVideo(media.id);
+                      recordIslandEngagement('media_select');
+                    }}
                     className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all ${
                       activeVideo === media.id
                         ? 'bg-emerald-500/10 border-emerald-500/50 shadow-lg'
-                        : 'bg-slate-900/50 border-slate-800 hover:bg-slate-800'
+                        : 'bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] border-[#c9a962]/15 hover:bg-[#12121a]/70'
                     }`}
                   >
                     <div className={lang === 'ar' ? 'text-right' : 'text-left'}>
