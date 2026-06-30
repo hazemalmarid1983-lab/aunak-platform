@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ExternalLink, Loader2, LogOut, Save, Target, Users } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { TAWASUL_COPY } from '../../lib/tawasulConfig';
+import { readTawasulApiError, tawasulFetchJson } from '../../lib/tawasulFetch';
 import PlatformLogo from '../PlatformLogo';
 import TawasulMirrorPanel from './TawasulMirrorPanel';
 
@@ -9,32 +10,6 @@ function childUrl(token) {
   if (typeof window === 'undefined' || !token) return '';
   const base = window.location.origin.replace(/\/$/, '');
   return `${base}/child?token=${encodeURIComponent(token)}`;
-}
-
-function readApiError(data, status) {
-  const err = data?.error ?? data?.message;
-  if (typeof err === 'string') return err;
-  if (err && typeof err === 'object') {
-    return err.message || err.error || err.hint || JSON.stringify(err);
-  }
-  return `REQUEST_${status}`;
-}
-
-async function patchTawasulStudent(recordId, programmedGoal) {
-  const res = await fetch('/api/tawasul/student-goal', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ recordId, programmed_goal: programmedGoal }),
-  });
-  const raw = await res.text();
-  let data = {};
-  try {
-    data = raw ? JSON.parse(raw) : {};
-  } catch {
-    throw new Error(raw?.includes('server error') ? 'SERVER_ERROR — redeploy pending' : raw.slice(0, 200));
-  }
-  if (!res.ok) throw new Error(readApiError(data, res.status));
-  return data;
 }
 
 /** Normalize caseload rows from /api/tawasul/caseload (mapped or raw Airtable fields). */
@@ -84,6 +59,16 @@ function studentChildToken(student) {
   );
 }
 
+async function saveStudentGoal(recordId, programmedGoal) {
+  const { res, data } = await tawasulFetchJson('/api/tawasul/student-goal', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ recordId, programmed_goal: String(programmedGoal ?? '').trim() }),
+  });
+  if (!res.ok) throw new Error(readTawasulApiError(data, res.status));
+  return data;
+}
+
 export default function TawasulHub({ lang = 'ar' }) {
   const { user, logout } = useAuth();
   const copy = TAWASUL_COPY[lang] ?? TAWASUL_COPY.ar;
@@ -92,28 +77,28 @@ export default function TawasulHub({ lang = 'ar' }) {
   const [selectedId, setSelectedId] = useState(null);
   const [goalDraft, setGoalDraft] = useState('');
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
+  const [saveError, setSaveError] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
-    setError('');
+    setLoadError('');
     try {
-      const res = await fetch('/api/tawasul/caseload', {
+      const { res, data } = await tawasulFetchJson('/api/tawasul/caseload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           specialistRecordId: user?.specialistRecordId,
           specialistToken: user?.specialistToken,
         }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(readApiError(data, res.status));
+      if (!res.ok) throw new Error(readTawasulApiError(data, res.status));
       const caseload = extractCaseloadList(data);
       setStudents(caseload);
       setSelectedId((prev) => prev ?? caseload[0]?.id ?? null);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : typeof e === 'string' ? e : readApiError(e, 'ERR');
-      setError(msg || 'Failed to load');
+      const msg = e instanceof Error ? e.message : readTawasulApiError(e, 'ERR');
+      setLoadError(msg || 'Failed to load caseload');
       setStudents([]);
     } finally {
       setLoading(false);
@@ -136,14 +121,14 @@ export default function TawasulHub({ lang = 'ar' }) {
   const saveGoal = async () => {
     if (!selected?.id || saving) return;
     setSaving(true);
-    setError('');
+    setSaveError('');
     try {
-      await patchTawasulStudent(selected.id, goalDraft.trim());
+      await saveStudentGoal(selected.id, goalDraft.trim());
       setStudents((prev) =>
         prev.map((s) => (s.id === selected.id ? { ...s, programmedGoal: goalDraft.trim() } : s))
       );
     } catch (e) {
-      setError(e instanceof Error ? e.message : readApiError(e, 'SAVE'));
+      setSaveError(e instanceof Error ? e.message : readTawasulApiError(e, 'SAVE'));
     } finally {
       setSaving(false);
     }
@@ -180,7 +165,7 @@ export default function TawasulHub({ lang = 'ar' }) {
               <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
             </div>
           ) : students.length === 0 ? (
-            <p className="text-xs text-slate-500 text-center py-6">{typeof error === 'string' ? error : '—'}</p>
+            <p className="text-xs text-rose-400 text-center py-6">{loadError || '—'}</p>
           ) : (
             <ul className="space-y-2">
               {students.map((s) => (
@@ -246,6 +231,7 @@ export default function TawasulHub({ lang = 'ar' }) {
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   {copy.saveGoal}
                 </button>
+                {saveError && <p className="text-xs text-rose-400">{saveError}</p>}
               </div>
 
               <TawasulMirrorPanel
@@ -259,8 +245,6 @@ export default function TawasulHub({ lang = 'ar' }) {
                   setGoalDraft(goal);
                 }}
               />
-
-              {error && <p className="text-xs text-rose-400">{error}</p>}
             </>
           )}
         </section>

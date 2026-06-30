@@ -1,43 +1,20 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Ghost, Loader2, Sparkles, Target, Volume2 } from 'lucide-react';
 import { MIRROR_COMMANDS } from '../../lib/tawasulMirror';
 import { STUDENT as SF } from '../../lib/airtableFields';
-
-function readApiError(data, status) {
-  const err = data?.error ?? data?.message;
-  if (typeof err === 'string') return err;
-  if (err && typeof err === 'object') {
-    return err.message || err.error || err.hint || JSON.stringify(err);
-  }
-  return `MIRROR_${status}`;
-}
-
-async function parseJsonResponse(res) {
-  const raw = await res.text();
-  try {
-    return { data: raw ? JSON.parse(raw) : {}, raw };
-  } catch {
-    return {
-      data: {},
-      raw,
-      parseError: raw.includes('server error') ? 'A server error has occurred' : raw.slice(0, 240),
-    };
-  }
-}
+import { readTawasulApiError, tawasulFetchJson } from '../../lib/tawasulFetch';
 
 async function sendMirror({ studentId, command, payload = '' }) {
-  const res = await fetch('/api/tawasul/mirror', {
+  const { res, data } = await tawasulFetchJson('/api/tawasul/mirror', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       studentId: String(studentId ?? ''),
       command: String(command ?? ''),
       payload: String(payload ?? ''),
     }),
   });
-  const { data, parseError } = await parseJsonResponse(res);
-  if (parseError) throw new Error(parseError);
-  if (!res.ok) throw new Error(readApiError(data, res.status));
+  if (!res.ok) throw new Error(readTawasulApiError(data, res.status));
   return data;
 }
 
@@ -45,9 +22,9 @@ async function sendEchoGoal({ studentId, goalText }) {
   const goalEcho = String(goalText ?? '').trim();
   if (!goalEcho) throw new Error('GOAL_TEXT_REQUIRED');
 
-  const res = await fetch('/api/tawasul/mirror', {
+  const { res, data } = await tawasulFetchJson('/api/tawasul/mirror', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       studentId: String(studentId ?? ''),
       command: MIRROR_COMMANDS.ECHO_GOAL,
@@ -55,9 +32,7 @@ async function sendEchoGoal({ studentId, goalText }) {
       goalEcho,
     }),
   });
-  const { data, parseError } = await parseJsonResponse(res);
-  if (parseError) throw new Error(parseError);
-  if (!res.ok) throw new Error(readApiError(data, res.status));
+  if (!res.ok) throw new Error(readTawasulApiError(data, res.status));
   return data;
 }
 
@@ -71,6 +46,10 @@ export default function TawasulMirrorPanel({ lang = 'ar', student, goalDraft, on
   const [loading, setLoading] = useState(IDLE_LOADING);
   const [error, setError] = useState('');
   const inFlightRef = useRef(null);
+
+  useEffect(() => {
+    setError('');
+  }, [student?.id]);
 
   const copy =
     lang === 'en'
@@ -102,7 +81,7 @@ export default function TawasulMirrorPanel({ lang = 'ar', student, goalDraft, on
       try {
         await task();
       } catch (e) {
-        setError(e instanceof Error ? e.message : readApiError(e, 'ERR'));
+        setError(e instanceof Error ? e.message : readTawasulApiError(e, 'ERR'));
       } finally {
         setCommandLoading(command, false);
         inFlightRef.current = null;

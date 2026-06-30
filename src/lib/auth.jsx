@@ -273,7 +273,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || user.tawasulMvp) {
+      setSubscriptionActive(user?.tawasulMvp ? true : null);
+      return undefined;
+    }
     let cancelled = false;
     checkSubscriptionActive()
       .then((active) => {
