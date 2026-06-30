@@ -1,12 +1,27 @@
 import { getField } from './airtable';
-import { STUDENT as SF } from './airtableFields';
+import { SPECIALIST as SP, STUDENT as SF } from './airtableFields';
 import { TAWASUL_MAX_CASES_PER_SPECIALIST } from './tawasulConfig';
+
+function toIdList(raw) {
+  if (raw == null || raw === '') return [];
+  const list = Array.isArray(raw) ? raw : [raw];
+  return list
+    .map((v) => (typeof v === 'string' ? v : v?.id))
+    .filter((id) => id && /^rec[a-zA-Z0-9]{10,}$/.test(String(id)));
+}
 
 function linkedSpecialistIds(student) {
   const f = student?.fields ?? {};
   const raw = student?.assignedSpecialistIds ?? getField(f, SF.assigned_specialist);
-  if (raw == null || raw === '') return [];
-  return Array.isArray(raw) ? raw : [raw];
+  return toIdList(raw);
+}
+
+/** Student record IDs linked on the Specialists.Students field (live Tawasul base). */
+export function linkedStudentIdsFromSpecialistRecord(specialistRecord) {
+  const f = specialistRecord?.fields ?? specialistRecord ?? {};
+  return toIdList(
+    f[SP.students] ?? f.Students ?? f.students ?? getField(f, SP.cases)
+  );
 }
 
 /** Permy-filter: specialist sees only students linked to their Airtable record ID. */
@@ -15,6 +30,15 @@ export function filterStudentsBySpecialist(students, specialistRecordId, { maxCa
   const list = Array.isArray(students) ? students : [];
   return list
     .filter((s) => linkedSpecialistIds(s).includes(specialistRecordId))
+    .slice(0, maxCases);
+}
+
+export function filterStudentsByLinkedIds(students, studentIds, { maxCases = TAWASUL_MAX_CASES_PER_SPECIALIST } = {}) {
+  const ids = toIdList(studentIds);
+  if (!ids.length) return [];
+  const idSet = new Set(ids);
+  return (Array.isArray(students) ? students : [])
+    .filter((s) => idSet.has(s.id))
     .slice(0, maxCases);
 }
 
@@ -31,8 +55,15 @@ export function filterStudentsBySpecialistToken(students, specialistToken, { max
     .slice(0, maxCases);
 }
 
-export function resolveSpecialistCaseload(students, session) {
-  const byLink = filterStudentsBySpecialist(students, session?.specialistRecordId);
-  if (byLink.length > 0) return byLink;
+export function resolveSpecialistCaseload(students, session, specialistRecord) {
+  const bySpecialistStudents = filterStudentsByLinkedIds(
+    students,
+    linkedStudentIdsFromSpecialistRecord(specialistRecord)
+  );
+  if (bySpecialistStudents.length > 0) return bySpecialistStudents;
+
+  const byAssigned = filterStudentsBySpecialist(students, session?.specialistRecordId);
+  if (byAssigned.length > 0) return byAssigned;
+
   return filterStudentsBySpecialistToken(students, session?.specialistToken);
 }

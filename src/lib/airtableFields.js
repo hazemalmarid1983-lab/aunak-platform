@@ -143,6 +143,8 @@ export const SPECIALIST = {
   cases: "active_cases",
   rating: "rating",
   specialist_tutor_token: TRIPLE_ACCESS.specialist,
+  /** Link → Students (Tawasul MVP caseload — populated on Specialists row) */
+  students: "Students",
 };
 
 /** Goal Attempts table */
