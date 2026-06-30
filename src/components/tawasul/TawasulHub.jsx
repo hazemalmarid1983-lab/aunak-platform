@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ExternalLink, Loader2, LogOut, Save, Target, Users } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
-import { fetchStudents, updateStudentRecord } from '../../lib/airtable';
+import { updateStudentRecord } from '../../lib/airtable';
 import { STUDENT as SF } from '../../lib/airtableFields';
-import { resolveSpecialistCaseload } from '../../lib/specialistIsolation';
 import { TAWASUL_COPY } from '../../lib/tawasulConfig';
 import PlatformLogo from '../PlatformLogo';
 import TawasulMirrorPanel from './TawasulMirrorPanel';
@@ -28,8 +27,17 @@ export default function TawasulHub({ lang = 'ar' }) {
     setLoading(true);
     setError('');
     try {
-      const rows = await fetchStudents();
-      const caseload = resolveSpecialistCaseload(rows, user);
+      const res = await fetch('/api/tawasul/caseload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          specialistRecordId: user?.specialistRecordId,
+          specialistToken: user?.specialistToken,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || `CASELOAD_${res.status}`);
+      const caseload = Array.isArray(data?.students) ? data.students : [];
       setStudents(caseload);
       setSelectedId((prev) => prev ?? caseload[0]?.id ?? null);
     } catch (e) {
@@ -38,7 +46,7 @@ export default function TawasulHub({ lang = 'ar' }) {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.specialistRecordId, user?.specialistToken]);
 
   useEffect(() => {
     load();

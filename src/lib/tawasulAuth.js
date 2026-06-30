@@ -50,6 +50,7 @@ async function verifyViaServer(inputToken) {
   });
   const data = await res.json().catch(() => ({}));
   if (res.ok && data?.session) return data.session;
+  if (res.ok && data?.kind === 'specialist' && data?.session) return data.session;
   if (res.status === 401 || res.status === 403) return null;
   throw new Error(data?.error || `VERIFY_${res.status}`);
 }
