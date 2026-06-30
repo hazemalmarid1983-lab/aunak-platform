@@ -79,8 +79,14 @@ const fields = [
   { name: 'specialist_tutor_token', type: 'singleLineText' },
 ];
 
-for (const field of fields) {
-  await ensureField(env.students, field);
+async function main() {
+  for (const field of fields) {
+    await ensureField(env.students, field);
+  }
+  console.log('\nDone. Mirror + assessment + triple tokens ready on Students.');
 }
 
-console.log('\nDone. Mirror + assessment + triple tokens ready on Students.');
+main().catch((err) => {
+  console.error(err instanceof Error ? err.message : err);
+  process.exitCode = 1;
+});

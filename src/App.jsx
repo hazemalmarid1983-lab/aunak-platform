@@ -14,7 +14,7 @@ import { landingForPlan, PLAN_CODES } from './lib/plans';
 import { studentHasFaceBiometric } from './lib/biometricMatch';
 import { Loader2 } from 'lucide-react';
 import PaymentReturn from './components/PaymentReturn';
-import { isTawasulMvp } from './lib/tawasulConfig';
+import { shouldShowTawasulShell } from './lib/tawasulConfig';
 import TawasulGate from './components/tawasul/TawasulGate';
 import TawasulHub from './components/tawasul/TawasulHub';
 
@@ -143,7 +143,7 @@ function TawasulPlatform() {
 }
 
 export default function App() {
-  const tawasul = isTawasulMvp();
+  const tawasul = shouldShowTawasulShell();
   const summerRoute = isSummerAcademyRoute();
   const childRoute = isChildPlayRoute();
   const parentRoute = isParentDashboardRoute();

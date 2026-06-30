@@ -176,7 +176,7 @@ Sealed rows in **Daily Sessions** (`Session Notes` contains island marker) are t
 
 | Role | URL |
 |------|-----|
-| Specialist | `https://<tawasul-preview>/` → token gate |
+| Specialist | `https://<tawasul-preview>/tawasul` → token gate (also `/` when `VITE_TAWASUL_MVP=true`) |
 | Child | `https://<tawasul-preview>/child?token=AUN-CHD-…` |
 
 Main production `https://aunak.vercel.app` remains on `main` unchanged.

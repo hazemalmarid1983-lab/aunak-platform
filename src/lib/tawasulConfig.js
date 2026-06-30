@@ -18,6 +18,18 @@ export function isTawasulMvp() {
   return base === TAWASUL_BASE_ID;
 }
 
+/** Runtime path — always available even when sovereign build flag is off. */
+export function isTawasulRoute() {
+  if (typeof window === 'undefined') return false;
+  const path = (window.location.pathname || '/').replace(/\/$/, '') || '/';
+  return path === '/tawasul' || path.startsWith('/tawasul/');
+}
+
+/** Specialist shell: build-time Tawasul MVP or explicit /tawasul URL. */
+export function shouldShowTawasulShell() {
+  return isTawasulMvp() || isTawasulRoute();
+}
+
 /** Max caseload per specialist in sovereign sandbox. */
 export const TAWASUL_MAX_CASES_PER_SPECIALIST = 5;
 
