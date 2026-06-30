@@ -188,6 +188,37 @@ export function playWarningPulse() {
   }
 }
 
+/** Star drop — crystalline ping when mirror or play awards a star (capped at 5). */
+export function playStarDrop() {
+  if (!canPlaySovereignAudio()) return;
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime + 0.02;
+  tone(ac, { freq: 880, endFreq: 1174.66, type: 'sine', start: t, dur: 0.35, gain: 0.08 });
+  tone(ac, { freq: 1760, type: 'triangle', start: t + 0.06, dur: 0.2, gain: 0.02 });
+}
+
+/** Calm pulse — soft descending breath cue (mirror CALM_PULSE). */
+export function playCalmPulse() {
+  if (!canPlaySovereignAudio()) return;
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime + 0.02;
+  tone(ac, { freq: 392, endFreq: 261.63, type: 'sine', start: t, dur: 1.8, gain: 0.06 });
+  tone(ac, { freq: 196, type: 'sine', start: t + 0.4, dur: 1.4, gain: 0.04 });
+}
+
+/** Goal echo — resonant triad when specialist mirrors programmed goal. */
+export function playGoalEcho() {
+  if (!canPlaySovereignAudio()) return;
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime + 0.02;
+  [523.25, 659.25, 783.99].forEach((freq, i) => {
+    tone(ac, { freq, type: 'sine', start: t + i * 0.12, dur: 0.7, gain: 0.06 });
+  });
+}
+
 /** Typewriter Effect — rapid intel-teletype ticks (gaze-neutrality alert). */
 export function playTypewriterEffect(ticks = 16) {
   if (!canPlaySovereignAudio()) return;

@@ -18,6 +18,9 @@ export default function FreeAssessmentFlow({
   customer,
   onComplete,
   onBack,
+  persistResult,
+  skipPromo = false,
+  copyOverrides = null,
 }) {
   const questions = getAssessmentQuestions(lang);
   const [step, setStep] = useState(0);
@@ -29,7 +32,8 @@ export default function FreeAssessmentFlow({
   const [error, setError] = useState('');
 
   const copy =
-    lang === 'en'
+    copyOverrides ??
+    (lang === 'en'
       ? {
           title: 'Quick skills scan',
           subtitle: '6 clear questions — real preliminary insight in ~3 minutes',
@@ -49,17 +53,17 @@ export default function FreeAssessmentFlow({
           next: 'التالي',
           seeResult: 'عرض نتيجتي',
           saving: 'جاري حفظ النتيجة...',
-        };
+        });
 
   const q = questions[step];
   const selected = answers[q?.id];
   const allAnswered = questions.every((item) => answers[item.id] != null);
 
   useEffect(() => {
-    if (phase !== 'result' || !result) return undefined;
+    if (phase !== 'result' || !result || skipPromo) return undefined;
     const t = setTimeout(() => setPromoOpen(true), 1800);
     return () => clearTimeout(t);
-  }, [phase, result]);
+  }, [phase, result, skipPromo]);
 
   const pick = (score) => {
     setAnswers((prev) => ({ ...prev, [q.id]: score }));
@@ -72,7 +76,9 @@ export default function FreeAssessmentFlow({
     setBusy(true);
     setError('');
     try {
-      if (recordId) {
+      if (persistResult) {
+        await persistResult(recordId, computed);
+      } else if (recordId) {
         await saveInitialAssessmentScore(recordId, {
           score: computed.scorePercent,
           payload: assessmentScorePayload(computed),
@@ -98,19 +104,30 @@ export default function FreeAssessmentFlow({
           lang={lang}
           result={result}
           studentName={studentName}
-          onShowPromo={() => setPromoOpen(true)}
+          onShowPromo={() => (skipPromo ? handlePromoContinue() : setPromoOpen(true))}
         />
         {error && <p className="text-center text-amber-400/90 text-xs mt-3">{error}</p>}
         <AssessmentPromoModal
           lang={lang}
-          open={promoOpen}
+          open={promoOpen && !skipPromo}
           studentId={recordId}
           customer={customer}
           flow="enrollment"
           onContinue={handlePromoContinue}
           onClose={handlePromoContinue}
         />
-        {!promoOpen && (
+        {skipPromo && (
+          <div className="text-center mt-6">
+            <button
+              type="button"
+              onClick={handlePromoContinue}
+              className="px-8 py-3 rounded-2xl font-black bg-gradient-to-l from-emerald-500 to-teal-500 text-[#0a0a0c]"
+            >
+              {lang === 'en' ? 'Continue to island' : 'العودة إلى الجزيرة'}
+            </button>
+          </div>
+        )}
+        {!promoOpen && !skipPromo && (
           <p className="text-center text-xs text-slate-500 mt-4 animate-pulse">
             {lang === 'en' ? 'Tap the button above to continue' : 'اضغط الزر أعلاه للمتابعة'}
           </p>

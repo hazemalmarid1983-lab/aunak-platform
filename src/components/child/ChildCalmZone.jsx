@@ -15,8 +15,8 @@ export default function ChildCalmZone({ lang = 'ar', sovereign = false }) {
 
   const copy =
     lang === 'en'
-      ? { title: 'Calm breath', hint: phase === 'in' ? 'Breathe in…' : 'Breathe out…' }
-      : { title: 'تنفس هادئ', hint: phase === 'in' ? 'شهيق…' : 'زفير…' };
+      ? { title: sovereign ? 'Neural calm pulse' : 'Calm breath', hint: phase === 'in' ? 'Breathe in…' : 'Breathe out…' }
+      : { title: sovereign ? 'نبض الهدوء العصبي' : 'تنفس هادئ', hint: phase === 'in' ? 'شهيق…' : 'زفير…' };
 
   return (
     <div className={theme.card}>

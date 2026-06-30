@@ -24,10 +24,14 @@ export default function ChildPlayZone({
   studentId,
   onCelebrate,
   sovereignIsland = false,
+  starCap = null,
+  globalStarCount = 0,
 }) {
   const theme = sovereignIsland ? TAWASUL_CHILD : CHILD;
   const bubbleColors = sovereignIsland ? TAWASUL_BUBBLE_COLORS : BUBBLE_COLORS;
   const greetings = CHILD_GREETINGS[lang] ?? CHILD_GREETINGS.ar;
+  const cap = starCap ?? Infinity;
+  const atCap = sovereignIsland && globalStarCount >= cap;
   const [greetingIdx, setGreetingIdx] = useState(0);
   const [bubbles, setBubbles] = useState(() => Array.from({ length: 6 }, () => randomBubble(bubbleColors)));
   const [popped, setPopped] = useState(0);
@@ -57,6 +61,12 @@ export default function ChildPlayZone({
       ? ['Pink', 'Blue', 'Orange', 'Green', 'Purple']
       : ['وردي', 'أزرق', 'برتقالي', 'أخضر', 'بنفسجي'];
 
+  const rewardPop = useCallback(() => {
+    if (atCap) return;
+    setGreetingIdx((i) => (i + 1) % greetings.length);
+    onCelebrate?.();
+  }, [atCap, greetings.length, onCelebrate]);
+
   const pop = useCallback(
     (id) => {
       setBubbles((prev) => prev.filter((b) => b.id !== id));
@@ -65,13 +75,12 @@ export default function ChildPlayZone({
         maybeSealSession(next);
         return next;
       });
-      setGreetingIdx((i) => (i + 1) % greetings.length);
-      onCelebrate?.();
+      rewardPop();
       if (bubbles.length <= 2) {
         setTimeout(() => setBubbles(Array.from({ length: 6 }, () => randomBubble(bubbleColors))), 400);
       }
     },
-    [bubbles.length, greetings.length, onCelebrate, maybeSealSession, bubbleColors]
+    [bubbles.length, maybeSealSession, bubbleColors, rewardPop]
   );
 
   useEffect(() => {
@@ -79,41 +88,49 @@ export default function ChildPlayZone({
     return () => clearInterval(t);
   }, [bubbleColors.length]);
 
+  const displayScore = sovereignIsland ? globalStarCount : popped;
+  const scoreLabel =
+    sovereignIsland && cap !== Infinity
+      ? lang === 'en'
+        ? `Stars ${displayScore}/${cap}`
+        : `نجوم ${displayScore}/${cap}`
+      : `${lang === 'en' ? 'Stars' : 'نجوم'}: ${displayScore} ⭐`;
+
   const copy =
     lang === 'en'
       ? {
-          bubbles: sovereignIsland ? 'Pop the sovereign stars!' : 'Pop the stars!',
+          bubbles: sovereignIsland ? 'Pop neural stars — sovereign cap 5' : 'Pop the stars!',
           colors: 'Tap the matching color!',
-          score: 'Stars',
-          switchBubbles: 'Bubbles',
-          switchColors: 'Colors',
+          switchBubbles: 'Neural',
+          switchColors: 'Spectrum',
+          capped: 'Five stars sealed — session complete!',
         }
       : {
-          bubbles: sovereignIsland ? 'فقّ نجوم الجزر!' : 'فقّ الفقاعات!',
+          bubbles: sovereignIsland ? 'فقّ النجوم العصبية — سقف 5' : 'فقّ الفقاعات!',
           colors: 'اضغط اللون المطلوب!',
-          score: 'نجوم',
-          switchBubbles: 'فقاعات',
-          switchColors: 'ألوان',
+          switchBubbles: 'عصبي',
+          switchColors: 'طيف',
+          capped: 'خُتمت الخمس نجوم — الجلسة مكتملة!',
         };
 
   const modeBtn = (on, activeClass, idleClass) =>
-    `flex-1 py-2 rounded-xl font-bold text-sm ${
-      on ? activeClass : idleClass
-    }`;
+    `flex-1 py-2 rounded-xl font-bold text-sm ${on ? activeClass : idleClass}`;
 
   return (
     <div className={theme.card}>
       <div className={theme.mascotWrap}>
-        <div className={theme.mascotFace}>🤖</div>
+        <div className={theme.mascotFace}>{sovereignIsland ? '⚡' : '🤖'}</div>
         <motion.p
           key={greetingIdx}
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className={theme.speech}
         >
-          {greetingIdx === 0 && studentName
-            ? `${lang === 'en' ? 'Hi' : 'مرحباً'} ${studentName}! ${greetings[0]}`
-            : greetings[greetingIdx]}
+          {atCap
+            ? copy.capped
+            : greetingIdx === 0 && studentName
+              ? `${lang === 'en' ? 'Hi' : 'مرحباً'} ${studentName}! ${greetings[0]}`
+              : greetings[greetingIdx]}
         </motion.p>
       </div>
 
@@ -124,7 +141,9 @@ export default function ChildPlayZone({
           className={modeBtn(
             mode === 'bubbles',
             sovereignIsland ? 'bg-[#c9a962] text-[#0a0a0c]' : 'bg-orange-400 text-white',
-            sovereignIsland ? 'bg-[#12121a]/60 text-emerald-300/80 border border-emerald-400/20' : 'bg-white/60 text-slate-600'
+            sovereignIsland
+              ? 'bg-[#12121a]/60 text-emerald-300/80 border border-emerald-400/20'
+              : 'bg-white/60 text-slate-600'
           )}
         >
           {copy.switchBubbles}
@@ -135,7 +154,9 @@ export default function ChildPlayZone({
           className={modeBtn(
             mode === 'colors',
             sovereignIsland ? 'bg-emerald-500 text-[#0a0a0c]' : 'bg-teal-400 text-white',
-            sovereignIsland ? 'bg-[#12121a]/60 text-[#e8c872]/80 border border-[#c9a962]/20' : 'bg-white/60 text-slate-600'
+            sovereignIsland
+              ? 'bg-[#12121a]/60 text-[#e8c872]/80 border border-[#c9a962]/20'
+              : 'bg-white/60 text-slate-600'
           )}
         >
           {copy.switchColors}
@@ -188,9 +209,8 @@ export default function ChildPlayZone({
                     maybeSealSession(next);
                     return next;
                   });
-                  setGreetingIdx((x) => (x + 1) % greetings.length);
                   setTargetColor((t) => (t + 1) % bubbleColors.length);
-                  onCelebrate?.();
+                  rewardPop();
                 }
               }}
               className={`h-24 rounded-3xl bg-gradient-to-br ${c} border-4 ${
@@ -212,7 +232,7 @@ export default function ChildPlayZone({
           sovereignIsland ? 'text-[#e8c872]' : 'text-amber-500'
         }`}
       >
-        {copy.score}: {popped} ⭐
+        {scoreLabel}
       </p>
     </div>
   );

@@ -2,7 +2,13 @@
  * Client trigger — child island engagement → session seal API.
  */
 
+/** Max stars on child island + seal trigger — sovereign neural cap. */
 export const CHILD_ISLAND_SEAL_THRESHOLD = 5;
+export const SOVEREIGN_CHILD_MAX_STARS = CHILD_ISLAND_SEAL_THRESHOLD;
+
+export function clampSovereignStars(count) {
+  return Math.min(Math.max(0, Number(count) || 0), SOVEREIGN_CHILD_MAX_STARS);
+}
 
 let sealInFlight = false;
 

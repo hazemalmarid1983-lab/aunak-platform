@@ -5,6 +5,24 @@ import { isTawasulMvp } from '../../lib/tawasulConfig';
 import { CHILD } from '../../lib/childTheme';
 import { TAWASUL_CHILD } from '../../lib/tawasulChildTheme';
 import { MIRROR_COMMANDS, mirrorFingerprint, parseMirrorState } from '../../lib/tawasulMirror';
+import {
+  clampSovereignStars,
+  SOVEREIGN_CHILD_MAX_STARS,
+} from '../../lib/childSessionBridge';
+import {
+  playCalmPulse,
+  playGoalEcho,
+  playStarDrop,
+  playSuccessChime,
+  playTypewriterEffect,
+  startProcessingHum,
+} from '../../lib/sovereignAudio';
+import {
+  enqueueAcademySpeech,
+  scriptEncouragement,
+  scriptWelcome,
+  unlockAcademyVoice,
+} from '../../lib/academyVoice';
 import { useTawasulIdleGaze } from '../../hooks/useTawasulIdleGaze';
 import ChildPlayZone from './ChildPlayZone';
 import ChildBottomNav from './ChildBottomNav';
@@ -12,6 +30,7 @@ import ChildHomePanel from './ChildHomePanel';
 import ChildCalmZone from './ChildCalmZone';
 import ChildStarsPanel from './ChildStarsPanel';
 import ChildAwniCompanion from './ChildAwniCompanion';
+import ChildAssessmentPanel from './ChildAssessmentPanel';
 import PlatformLogo from '../PlatformLogo';
 
 export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
@@ -27,6 +46,8 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
   const [gazeAlert, setGazeAlert] = useState('');
   const [companionIdx, setCompanionIdx] = useState(0);
   const mirrorSeenRef = useRef('');
+  const welcomeSpokenRef = useRef(false);
+  const humRef = useRef(null);
 
   const reloadStudent = useCallback(async () => {
     const token = parseChildRouteToken();
@@ -35,6 +56,20 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
     if (row) setStudent(row);
     return row;
   }, []);
+
+  const addStar = useCallback(() => {
+    setStarCount((n) => {
+      const next = clampSovereignStars(n + 1);
+      if (next > n) {
+        if (tawasul) playStarDrop();
+        else playSuccessChime();
+        setCelebrate(true);
+        setTimeout(() => setCelebrate(false), 600);
+      }
+      return next;
+    });
+    setCompanionIdx((i) => i + 1);
+  }, [tawasul]);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,6 +105,25 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
 
   useEffect(() => {
     if (!tawasul || !student) return undefined;
+    humRef.current = startProcessingHum();
+    const unlock = () => unlockAcademyVoice();
+    document.addEventListener('pointerdown', unlock, { once: true, passive: true });
+    return () => {
+      humRef.current?.stop?.();
+      document.removeEventListener('pointerdown', unlock);
+    };
+  }, [tawasul, student]);
+
+  useEffect(() => {
+    if (!tawasul || !student || welcomeSpokenRef.current) return;
+    welcomeSpokenRef.current = true;
+    const firstName = student.name?.split(' ')?.[0] ?? student.name ?? '';
+    unlockAcademyVoice();
+    enqueueAcademySpeech(scriptWelcome(firstName, lang), { lang, preferCloud: true });
+  }, [tawasul, student, lang]);
+
+  useEffect(() => {
+    if (!tawasul || !student) return undefined;
     const t = setInterval(() => {
       reloadStudent().then((row) => {
         if (!row?.fields) return;
@@ -77,25 +131,33 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
         const fp = mirrorFingerprint(mirror);
         if (!mirror.command || fp === mirrorSeenRef.current) return;
         mirrorSeenRef.current = fp;
+
         if (mirror.command === MIRROR_COMMANDS.DROP_STAR || mirror.command === MIRROR_COMMANDS.DROP_REWARD) {
-          setStarCount((n) => n + 1);
-          setCelebrate(true);
-          setTimeout(() => setCelebrate(false), 800);
+          addStar();
         }
         if (mirror.command === MIRROR_COMMANDS.ECHO_GOAL) {
           setTab('home');
+          playGoalEcho();
+          const goalText =
+            mirror.payload?.trim() ||
+            row.programmedGoal?.trim() ||
+            (lang === 'en' ? 'Your specialist set a new goal.' : 'هدف جديد من الأخصائي.');
+          unlockAcademyVoice();
+          enqueueAcademySpeech(goalText, { lang, preferCloud: true });
         }
         if (mirror.command === MIRROR_COMMANDS.CALM_PULSE) {
           setTab('calm');
+          playCalmPulse();
         }
       });
     }, 3500);
     return () => clearInterval(t);
-  }, [tawasul, student, reloadStudent]);
+  }, [tawasul, student, reloadStudent, addStar, lang]);
 
   useTawasulIdleGaze({
     active: tawasul && tab === 'play',
     onTrigger: () => {
+      playTypewriterEffect(18);
       setGazeAlert(
         lang === 'en'
           ? '>> Gaze drift — typewriter cue activated…'
@@ -108,21 +170,26 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
   const copy =
     lang === 'en'
       ? {
-          title: tawasul ? 'Sovereign Island' : 'Awni Play World',
-          subtitle: tawasul ? 'Gold · Emerald · Neural' : 'Play · Learn · Smile',
-          loading: 'Opening your world...',
+          title: tawasul ? 'Aunak Neural Empire' : 'Awni Play World',
+          subtitle: tawasul ? 'Gold · Emerald · Sovereign flow' : 'Play · Learn · Smile',
+          loading: 'Initializing neural island…',
         }
       : {
-          title: tawasul ? 'جزر السيادة' : 'عالم عوني',
-          subtitle: tawasul ? 'ذهب · زمرد · عصبي' : 'لعب · تعلّم · ابتسام',
-          loading: 'جاري فتح عالمك...',
+          title: tawasul ? 'عونك · الإمبراطورية العصبية' : 'عالم عوني',
+          subtitle: tawasul ? 'ذهب · زمرد · نهر سيادي' : 'لعب · تعلّم · ابتسام',
+          loading: 'تهيئة الجزيرة العصبية…',
         };
 
   const onStarEarned = () => {
-    setStarCount((n) => n + 1);
-    setCompanionIdx((i) => i + 1);
-    setCelebrate(true);
-    setTimeout(() => setCelebrate(false), 600);
+    addStar();
+    if (tawasul) {
+      unlockAcademyVoice();
+      enqueueAcademySpeech(scriptEncouragement(lang), { lang, preferCloud: false });
+    }
+  };
+
+  const handleAssessmentComplete = () => {
+    reloadStudent().then(() => setTab('home'));
   };
 
   if (loading) {
@@ -143,8 +210,8 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
       <div className={theme.root}>
         {tawasul ? <div className={TAWASUL_CHILD.sky} /> : <div className={CHILD.sky} />}
         <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-6 text-center">
-          <span className="text-6xl mb-4">🧸</span>
-          <p className="text-lg font-bold text-rose-600">{error}</p>
+          <span className="text-6xl mb-4">{tawasul ? '⚡' : '🧸'}</span>
+          <p className={`text-lg font-bold ${tawasul ? 'text-rose-400' : 'text-rose-600'}`}>{error}</p>
         </div>
       </div>
     );
@@ -181,6 +248,11 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
         <div className="text-center">
           <h1 className={theme.title}>{copy.title}</h1>
           <p className={`text-xs font-bold ${tawasul ? 'text-emerald-400/90' : 'text-pink-500'}`}>{copy.subtitle}</p>
+          {tawasul && (
+            <p className="text-[10px] font-mono text-[#c9a962]/70 mt-0.5">
+              {lang === 'en' ? `Stars ${starCount}/${SOVEREIGN_CHILD_MAX_STARS}` : `نجوم ${starCount}/${SOVEREIGN_CHILD_MAX_STARS}`}
+            </p>
+          )}
         </div>
         <button
           type="button"
@@ -216,10 +288,23 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
             studentId={student.id}
             onCelebrate={onStarEarned}
             sovereignIsland={tawasul}
+            starCap={tawasul ? SOVEREIGN_CHILD_MAX_STARS : null}
+            globalStarCount={starCount}
+          />
+        )}
+        {tab === 'assessment' && tawasul && (
+          <ChildAssessmentPanel
+            lang={lang}
+            studentName={firstName}
+            recordId={student.id}
+            onComplete={handleAssessmentComplete}
+            onGoalSynced={reloadStudent}
           />
         )}
         {tab === 'calm' && <ChildCalmZone lang={lang} sovereign={tawasul} />}
-        {tab === 'stars' && <ChildStarsPanel lang={lang} starCount={starCount} sovereign={tawasul} />}
+        {tab === 'stars' && (
+          <ChildStarsPanel lang={lang} starCount={starCount} sovereign={tawasul} maxStars={SOVEREIGN_CHILD_MAX_STARS} />
+        )}
       </main>
 
       <ChildBottomNav lang={lang} active={tab} onChange={setTab} sovereign={tawasul} />

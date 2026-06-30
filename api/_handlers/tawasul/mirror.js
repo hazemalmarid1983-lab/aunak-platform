@@ -5,7 +5,7 @@
 import { buildMirrorPatch } from '../../../src/lib/tawasulMirror.js';
 import { sanitizeAscii } from '../../../src/lib/paymentActivation.js';
 import { STUDENT as SF } from '../../../src/lib/airtableFields.js';
-import { airtableHeaders, tawasulServerConfig } from './config.js';
+import { airtableHeaders, tawasulVerifyConfig } from './config.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { apiKey, baseId, studentsTable } = tawasulServerConfig();
+  const { apiKey, baseId, studentsTable } = tawasulVerifyConfig();
   if (!apiKey) {
     res.status(500).json({ error: 'AIRTABLE_NOT_CONFIGURED' });
     return;

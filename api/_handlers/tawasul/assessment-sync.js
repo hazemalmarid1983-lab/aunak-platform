@@ -7,7 +7,7 @@ import {
   shouldAutoInjectGoal,
 } from '../../../src/lib/tawasulAssessmentEngine.js';
 import { sanitizeAscii } from '../../../src/lib/paymentActivation.js';
-import { airtableHeaders, tawasulServerConfig } from './config.js';
+import { airtableHeaders, tawasulVerifyConfig } from './config.js';
 
 async function patchStudent(apiKey, baseId, tableId, recordId, fields) {
   const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableId)}/${recordId}`;
@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { apiKey, baseId, studentsTable } = tawasulServerConfig();
+  const { apiKey, baseId, studentsTable } = tawasulVerifyConfig();
   if (!apiKey) {
     res.status(500).json({ error: 'AIRTABLE_NOT_CONFIGURED' });
     return;

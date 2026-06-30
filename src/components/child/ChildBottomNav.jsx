@@ -1,13 +1,16 @@
-import { Home, Gamepad2, Moon, Star } from 'lucide-react';
+import { Home, Gamepad2, Moon, Star, ClipboardList } from 'lucide-react';
 
-const TABS = [
+const BASE_TABS = [
   { id: 'home', icon: Home, ar: 'الرئيسية', en: 'Home' },
-  { id: 'play', icon: Gamepad2, ar: 'العب', en: 'Play' },
+  { id: 'play', icon: Gamepad2, ar: 'تفاعل', en: 'Engage' },
+  { id: 'assessment', icon: ClipboardList, ar: 'التقييم', en: 'Assessment', sovereignOnly: true },
   { id: 'calm', icon: Moon, ar: 'هدوء', en: 'Calm' },
   { id: 'stars', icon: Star, ar: 'نجومي', en: 'Stars' },
 ];
 
 export default function ChildBottomNav({ lang = 'ar', active, onChange, sovereign = false }) {
+  const tabs = BASE_TABS.filter((t) => !t.sovereignOnly || sovereign);
+
   return (
     <nav
       className={
@@ -18,7 +21,7 @@ export default function ChildBottomNav({ lang = 'ar', active, onChange, sovereig
       dir={lang === 'ar' ? 'rtl' : 'ltr'}
     >
       <div className="max-w-lg mx-auto flex gap-1">
-        {TABS.map(({ id, icon: Icon, ar, en }) => {
+        {tabs.map(({ id, icon: Icon, ar, en }) => {
           const on = active === id;
           return (
             <button

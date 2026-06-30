@@ -1,5 +1,5 @@
 /**
- * Tawasul MVP — isolated mini-platform (branch Tawasul_MVP / production lab base).
+ * Tawasul sovereign lab — neural empire sandbox (base app3vCT2j2JepNVZa).
  * Enable with VITE_TAWASUL_MVP=true or VITE_AIRTABLE_BASE_ID=app3vCT2j2JepNVZa at build time.
  */
 
@@ -18,16 +18,16 @@ export function isTawasulMvp() {
   return base === TAWASUL_BASE_ID;
 }
 
-/** Max caseload per specialist in MVP sandbox. */
+/** Max caseload per specialist in sovereign sandbox. */
 export const TAWASUL_MAX_CASES_PER_SPECIALIST = 5;
 
-/** Total student slots in MVP base. */
+/** Total student slots in sovereign lab base. */
 export const TAWASUL_MAX_STUDENTS = 10;
 
 export const TAWASUL_COPY = {
   ar: {
-    platform: 'منصة تواصل',
-    tagline: 'MVP — بيئة عزل برمي مستقلة',
+    platform: 'عونك · تواصل',
+    tagline: 'إمبراطورية عصبية — سيادة كاملة',
     specialistGate: 'دخول الأخصائي',
     tokenHint: 'أدخل رمز الأخصائي (specialist_tutor_token)',
     tokenInvalid: 'رمز غير صالح — تحقق من جدول الأخصائيين',
@@ -39,8 +39,8 @@ export const TAWASUL_COPY = {
     logout: 'خروج',
   },
   en: {
-    platform: 'Tawasul Platform',
-    tagline: 'MVP — isolated sandbox',
+    platform: 'Aunak · Tawasul',
+    tagline: 'Neural empire — full sovereignty',
     specialistGate: 'Specialist login',
     tokenHint: 'Enter specialist_tutor_token',
     tokenInvalid: 'Invalid token — check Specialists table',
