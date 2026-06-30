@@ -13,6 +13,62 @@ function childUrl(token) {
   return `${base}/child?token=${encodeURIComponent(token)}`;
 }
 
+function readApiError(data, status) {
+  const err = data?.error ?? data?.message;
+  if (typeof err === 'string') return err;
+  if (err && typeof err === 'object') {
+    return err.message || err.error || err.hint || JSON.stringify(err);
+  }
+  return `CASELOAD_${status}`;
+}
+
+/** Normalize caseload rows from /api/tawasul/caseload (mapped or raw Airtable fields). */
+function normalizeCaseloadStudent(row) {
+  if (!row || typeof row !== 'object') return null;
+  const fields = row.fields && typeof row.fields === 'object' ? row.fields : {};
+  const name =
+    (typeof row.name === 'string' ? row.name : null) ||
+    fields.Name ||
+    fields.student_name ||
+    fields.name ||
+    'طالب';
+  const childInteractiveToken =
+    row.childInteractiveToken ||
+    fields.child_interactive_token ||
+    null;
+  const programmedGoal =
+    row.programmedGoal ||
+    fields.programmed_goal ||
+    '';
+  return {
+    ...row,
+    id: row.id,
+    name: String(name).trim() || 'طالب',
+    childInteractiveToken: childInteractiveToken ? String(childInteractiveToken).trim() : null,
+    programmedGoal: String(programmedGoal),
+    fields,
+  };
+}
+
+function extractCaseloadList(data) {
+  const raw = data?.students ?? data?.records;
+  if (Array.isArray(raw)) return raw.map(normalizeCaseloadStudent).filter(Boolean);
+  if (raw && typeof raw === 'object' && raw.id) return [normalizeCaseloadStudent(raw)].filter(Boolean);
+  return [];
+}
+
+function studentLabel(student) {
+  return student?.name || student?.fields?.Name || student?.fields?.student_name || '—';
+}
+
+function studentChildToken(student) {
+  return (
+    student?.childInteractiveToken ||
+    student?.fields?.child_interactive_token ||
+    null
+  );
+}
+
 export default function TawasulHub({ lang = 'ar' }) {
   const { user, logout } = useAuth();
   const copy = TAWASUL_COPY[lang] ?? TAWASUL_COPY.ar;
@@ -36,12 +92,13 @@ export default function TawasulHub({ lang = 'ar' }) {
         }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || `CASELOAD_${res.status}`);
-      const caseload = Array.isArray(data?.students) ? data.students : [];
+      if (!res.ok) throw new Error(readApiError(data, res.status));
+      const caseload = extractCaseloadList(data);
       setStudents(caseload);
       setSelectedId((prev) => prev ?? caseload[0]?.id ?? null);
     } catch (e) {
-      setError(e?.message ?? 'Failed to load');
+      const msg = e instanceof Error ? e.message : typeof e === 'string' ? e : readApiError(e, 'ERR');
+      setError(msg || 'Failed to load');
       setStudents([]);
     } finally {
       setLoading(false);
@@ -108,7 +165,7 @@ export default function TawasulHub({ lang = 'ar' }) {
               <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
             </div>
           ) : students.length === 0 ? (
-            <p className="text-xs text-slate-500 text-center py-6">{error || '—'}</p>
+            <p className="text-xs text-slate-500 text-center py-6">{typeof error === 'string' ? error : '—'}</p>
           ) : (
             <ul className="space-y-2">
               {students.map((s) => (
@@ -122,7 +179,7 @@ export default function TawasulHub({ lang = 'ar' }) {
                         : 'bg-white/5 border border-transparent text-slate-300 hover:bg-white/10'
                     }`}
                   >
-                    {s.name}
+                    {studentLabel(s)}
                   </button>
                 </li>
               ))}
@@ -135,14 +192,14 @@ export default function TawasulHub({ lang = 'ar' }) {
             <p className="text-sm text-slate-500 text-center py-12">—</p>
           ) : (
             <>
-              <h2 className="text-xl font-black text-white">{selected.name}</h2>
+              <h2 className="text-xl font-black text-white">{studentLabel(selected)}</h2>
 
-              {selected.childInteractiveToken && (
+              {studentChildToken(selected) && (
                 <div className="rounded-xl bg-black/30 border border-white/10 p-3 space-y-2">
                   <p className="text-xs font-bold text-slate-400">{copy.childLink}</p>
-                  <code className="block text-xs text-emerald-400 break-all">{selected.childInteractiveToken}</code>
+                  <code className="block text-xs text-emerald-400 break-all">{studentChildToken(selected)}</code>
                   <a
-                    href={childUrl(selected.childInteractiveToken)}
+                    href={childUrl(studentChildToken(selected))}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-xs text-cyan-400 hover:underline"

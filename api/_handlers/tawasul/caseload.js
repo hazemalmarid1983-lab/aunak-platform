@@ -118,11 +118,24 @@ export default async function handler(req, res) {
       specialistToken: normalizeToken(specialistToken),
     });
 
+    const students = caseload.map((s) => {
+      const f = s.fields ?? {};
+      return {
+        id: s.id,
+        name: s.name || pickField(f, 'Name', 'student_name') || 'طالب',
+        childInteractiveToken:
+          s.childInteractiveToken || pickField(f, 'child_interactive_token') || null,
+        programmedGoal: s.programmedGoal || pickField(f, 'programmed_goal') || '',
+        assignedSpecialistIds: s.assignedSpecialistIds ?? f.assigned_specialist ?? [],
+        fields: f,
+      };
+    });
+
     res.status(200).json({
       ok: true,
       specialistRecordId,
-      count: caseload.length,
-      students: caseload,
+      count: students.length,
+      students,
     });
   } catch (err) {
     console.error('[tawasul/caseload]', err?.message);
