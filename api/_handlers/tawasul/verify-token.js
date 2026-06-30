@@ -1,10 +1,12 @@
 /**
  * POST /api/tawasul/verify-token
- * Server-side specialist login — runtime env (base + table + PAT), not client build IDs.
+ * Server-side token verify — runtime env (base + table + PAT), not client build IDs.
+ * AUN-SPC-* → Specialists.specialist_tutor_token
+ * AUN-CHD-* → Students.child_interactive_token
  */
 
 import { sanitizeAscii } from '../../../src/lib/paymentActivation.js';
-import { SPECIALIST as SP } from '../../../src/lib/airtableFields.js';
+import { SPECIALIST as SP, STUDENT as SF } from '../../../src/lib/airtableFields.js';
 import { airtableHeaders, tawasulVerifyConfig } from './config.js';
 
 function normalizeToken(raw) {
@@ -27,10 +29,10 @@ async function airtableGet(url, apiKey) {
   return text ? JSON.parse(text) : {};
 }
 
-async function findSpecialistRecord(apiKey, baseId, tableId, token) {
+async function findRecordByTokenField(apiKey, baseId, tableId, fieldName, token) {
   const key = normalizeToken(token);
   const esc = key.replace(/'/g, "\\'");
-  const formula = encodeURIComponent(`{specialist_tutor_token}='${esc}'`);
+  const formula = encodeURIComponent(`{${fieldName}}='${esc}'`);
   const filteredUrl = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableId)}?filterByFormula=${formula}&maxRecords=1`;
 
   try {
@@ -44,12 +46,12 @@ async function findSpecialistRecord(apiKey, baseId, tableId, token) {
   const data = await airtableGet(listUrl, apiKey);
   return (
     (data.records ?? []).find(
-      (r) => normalizeToken(pickField(r.fields, SP.specialist_tutor_token, 'specialist_tutor_token')) === key
+      (r) => normalizeToken(pickField(r.fields, fieldName)) === key
     ) ?? null
   );
 }
 
-function buildSession(record, token) {
+function buildSpecialistSession(record, token) {
   const f = record.fields ?? {};
   const status = String(pickField(f, SP.status, 'status') ?? 'active').toLowerCase();
   if (/inactive|disabled|معطل/.test(status)) return null;
@@ -67,43 +69,100 @@ function buildSession(record, token) {
   };
 }
 
+function buildChildPayload(record, token) {
+  const f = record.fields ?? {};
+  const status = String(pickField(f, SF.status, 'status') ?? 'active').toLowerCase();
+  if (/inactive|disabled|معطل/.test(status)) return null;
+
+  return {
+    id: record.id,
+    fields: f,
+    childInteractiveToken: normalizeToken(
+      pickField(f, SF.child_interactive_token, 'child_interactive_token') || token
+    ),
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
 
-  const token = sanitizeAscii(req.body?.token ?? req.body?.specialist_tutor_token);
-  if (!token || !/^AUN-SPC-/i.test(token)) {
+  const token = sanitizeAscii(
+    req.body?.token ?? req.body?.specialist_tutor_token ?? req.body?.child_interactive_token
+  );
+  if (!token) {
+    res.status(400).json({ error: 'TOKEN_REQUIRED' });
+    return;
+  }
+
+  const isSpecialist = /^AUN-SPC-/i.test(token);
+  const isChild = /^AUN-CHD-/i.test(token);
+  if (!isSpecialist && !isChild) {
     res.status(400).json({ error: 'INVALID_TOKEN_FORMAT' });
     return;
   }
 
-  const { apiKey, baseId, specialistsTable } = tawasulVerifyConfig();
+  const { apiKey, baseId, specialistsTable, studentsTable } = tawasulVerifyConfig();
   if (!apiKey) {
     res.status(500).json({ error: 'AIRTABLE_NOT_CONFIGURED' });
     return;
   }
 
   try {
-    const record = await findSpecialistRecord(apiKey, baseId, specialistsTable, token);
+    if (isSpecialist) {
+      const record = await findRecordByTokenField(
+        apiKey,
+        baseId,
+        specialistsTable,
+        SP.specialist_tutor_token,
+        token
+      );
+      if (!record) {
+        res.status(401).json({
+          error: 'TOKEN_NOT_FOUND',
+          hint: 'Check Specialists.specialist_tutor_token',
+          baseId,
+          table: specialistsTable,
+        });
+        return;
+      }
+
+      const session = buildSpecialistSession(record, token);
+      if (!session) {
+        res.status(403).json({ error: 'SPECIALIST_INACTIVE' });
+        return;
+      }
+
+      res.status(200).json({ ok: true, kind: 'specialist', session });
+      return;
+    }
+
+    const record = await findRecordByTokenField(
+      apiKey,
+      baseId,
+      studentsTable,
+      SF.child_interactive_token,
+      token
+    );
     if (!record) {
       res.status(401).json({
         error: 'TOKEN_NOT_FOUND',
-        hint: 'Check Specialists table on configured base',
+        hint: 'Check Students.child_interactive_token',
         baseId,
-        specialistsTable,
+        table: studentsTable,
       });
       return;
     }
 
-    const session = buildSession(record, token);
-    if (!session) {
-      res.status(403).json({ error: 'SPECIALIST_INACTIVE' });
+    const student = buildChildPayload(record, token);
+    if (!student) {
+      res.status(403).json({ error: 'STUDENT_INACTIVE' });
       return;
     }
 
-    res.status(200).json({ ok: true, session });
+    res.status(200).json({ ok: true, kind: 'child', record: student });
   } catch (err) {
     console.error('[tawasul/verify-token]', err?.message);
     res.status(502).json({ error: err?.message ?? 'VERIFY_FAILED' });

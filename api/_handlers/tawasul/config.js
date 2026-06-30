@@ -15,14 +15,18 @@ export function resolveServerBaseId() {
 export function tawasulVerifyConfig() {
   const apiKey = process.env.AIRTABLE_API_KEY || process.env.VITE_AIRTABLE_PAT;
   const envBase = resolveServerBaseId();
-  const envTable =
+  const envSpecialistsTable =
     sanitizeAscii(process.env.VITE_AIRTABLE_SPECIALISTS_TABLE_ID) ||
     sanitizeAscii(process.env.AIRTABLE_SPECIALISTS_TABLE_ID);
+  const envStudentsTable =
+    sanitizeAscii(process.env.VITE_AIRTABLE_STUDENTS_TABLE_ID) ||
+    sanitizeAscii(process.env.AIRTABLE_STUDENTS_TABLE_ID);
   return {
     apiKey,
-    // AUN-SPC-* tokens only exist in the Tawasul sandbox — never the sovereign base.
+    // Tawasul sandbox tokens — never the sovereign production base.
     baseId: envBase === TAWASUL_BASE_ID ? envBase : TAWASUL_BASE_ID,
-    specialistsTable: envTable || TAWASUL_SPECIALISTS_TABLE,
+    specialistsTable: envSpecialistsTable || TAWASUL_SPECIALISTS_TABLE,
+    studentsTable: envStudentsTable || TAWASUL_STUDENTS_TABLE,
   };
 }
 
