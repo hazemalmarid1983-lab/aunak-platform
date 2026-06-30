@@ -1,59 +1,38 @@
 /**
- * Tawasul sandbox Students table — literal Airtable column names (case + spaces).
+ * Tawasul sandbox Students table — snake_case protocol (aligned with airtableFields.js).
  * Base app3vCT2j2JepNVZa · table tbliBfCKXNyVtWJiO
- *
- * Sovereign production uses snake_case in airtableFields.js; Tawasul MVP uses spaced names.
  */
+
+import { STUDENT as SF } from './airtableFields.js';
 
 export const TAWASUL_STUDENTS_TABLE_ID = 'tbliBfCKXNyVtWJiO';
 
-/** Exact field names as shown in Airtable UI (case-sensitive). */
+/** Canonical column names — single source: airtableFields STUDENT + mirror fields. */
 export const TAWASUL_STUDENT = {
   name: 'Name',
-  childInteractiveToken: 'child_interactive_token',
-  programmedGoal: 'programmed goal',
-  mirrorCommand: 'mirror command',
-  mirrorPayload: 'mirror payload',
-  initialAssessmentScore: 'Initial assessment score',
-  comprehensiveAssessmentStatus: 'comprehensive assessment status',
-  assignedSpecialist: 'assigned specialist',
+  childInteractiveToken: SF.child_interactive_token,
+  programmedGoal: SF.programmed_goal,
+  mirrorCommand: SF.mirror_command,
+  mirrorPayload: SF.mirror_payload,
+  initialAssessmentScore: SF.initial_assessment_score,
+  comprehensiveAssessmentStatus: SF.comprehensive_assessment_status,
+  assignedSpecialist: SF.assigned_specialist,
 };
 
-/** Canonical mirror command (code) → Airtable select value (spaces). */
-export const MIRROR_COMMAND_TO_AIRTABLE = {
-  echo_goal: 'echo goal',
-  drop_star: 'drop star',
-  drop_reward: 'drop reward',
-  calm_pulse: 'calm pulse',
-  clear: 'clear',
-};
+export { SF as TAWASUL_STUDENT_FIELDS };
 
-/** Airtable select / legacy → canonical mirror command. */
+/** Normalize mirror select values to snake_case (echo_goal, calm_pulse, …). */
 export function normalizeMirrorCommand(raw) {
-  const key = String(raw ?? '')
+  return String(raw ?? '')
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, ' ');
-  const map = {
-    'echo goal': 'echo_goal',
-    echo_goal: 'echo_goal',
-    'drop star': 'drop_star',
-    drop_star: 'drop_star',
-    'drop reward': 'drop_reward',
-    drop_reward: 'drop_reward',
-    'calm pulse': 'calm_pulse',
-    calm_pulse: 'calm_pulse',
-    clear: 'clear',
-  };
-  return map[key] ?? String(raw ?? '').trim().replace(/\s+/g, '_').toLowerCase();
+    .replace(/\s+/g, '_');
 }
 
 export function mirrorCommandToAirtable(command) {
-  const canon = normalizeMirrorCommand(command);
-  return MIRROR_COMMAND_TO_AIRTABLE[canon] ?? String(command ?? '').trim().replace(/_/g, ' ');
+  return normalizeMirrorCommand(command);
 }
 
-/** Read first non-empty value from Airtable row (spaced + snake aliases). */
 export function pickTawasulField(fields, ...keys) {
   if (!fields || typeof fields !== 'object') return null;
   for (const key of keys) {
@@ -64,75 +43,46 @@ export function pickTawasulField(fields, ...keys) {
 }
 
 export function readTawasulProgrammedGoal(fields) {
-  return pickTawasulField(fields, TAWASUL_STUDENT.programmedGoal, 'programmed_goal', 'Programmed_Goal');
+  return pickTawasulField(fields, SF.programmed_goal);
 }
 
 export function readTawasulMirrorCommand(fields) {
-  const raw = pickTawasulField(
-    fields,
-    TAWASUL_STUDENT.mirrorCommand,
-    'mirror_command',
-    'mirror command'
-  );
+  const raw = pickTawasulField(fields, SF.mirror_command);
   return raw ? normalizeMirrorCommand(raw) : '';
 }
 
 export function readTawasulMirrorPayload(fields) {
-  return pickTawasulField(fields, TAWASUL_STUDENT.mirrorPayload, 'mirror_payload', 'mirror payload') ?? '';
+  return pickTawasulField(fields, SF.mirror_payload) ?? '';
 }
 
 export function readTawasulAssessmentScore(fields) {
-  return pickTawasulField(
-    fields,
-    TAWASUL_STUDENT.initialAssessmentScore,
-    'initial_assessment_score',
-    'Initial_Assessment_Score',
-    'Initial Assessment Score'
-  );
+  return pickTawasulField(fields, SF.initial_assessment_score);
 }
 
 export function readTawasulComprehensiveStatus(fields) {
   return pickTawasulField(
     fields,
-    TAWASUL_STUDENT.comprehensiveAssessmentStatus,
-    'comprehensive_assessment_status',
-    'Comprehensive_Assessment_Status',
-    'comprehensive assessment status'
+    SF.comprehensive_assessment_status,
+    'comprehensive_assessment'
   );
 }
 
-/** Map API/snake patch keys → literal Airtable Students columns. */
+/** Pass snake_case patch through; normalize mirror_command values only. */
 export function patchToTawasulAirtableFields(patch = {}) {
-  const alias = {
-    programmed_goal: TAWASUL_STUDENT.programmedGoal,
-    mirror_command: TAWASUL_STUDENT.mirrorCommand,
-    mirror_payload: TAWASUL_STUDENT.mirrorPayload,
-    initial_assessment_score: TAWASUL_STUDENT.initialAssessmentScore,
-    comprehensive_assessment_status: TAWASUL_STUDENT.comprehensiveAssessmentStatus,
-    Name: TAWASUL_STUDENT.name,
-    name: TAWASUL_STUDENT.name,
-  };
-
-  const out = {};
-  for (const [key, value] of Object.entries(patch)) {
-    if (value === undefined) continue;
-    const target = alias[key] ?? key;
-    if (target === TAWASUL_STUDENT.mirrorCommand) {
-      out[target] = mirrorCommandToAirtable(value);
-    } else {
-      out[target] = value;
-    }
+  const out = { ...patch };
+  if (out.mirror_command != null) {
+    out[SF.mirror_command] = mirrorCommandToAirtable(out.mirror_command);
   }
   return out;
 }
 
 export function buildTawasulMirrorPatch(command, payload = '', goalEcho) {
   const fields = {
-    [TAWASUL_STUDENT.mirrorCommand]: mirrorCommandToAirtable(command),
-    [TAWASUL_STUDENT.mirrorPayload]: String(payload ?? ''),
+    [SF.mirror_command]: mirrorCommandToAirtable(command),
+    [SF.mirror_payload]: String(payload ?? ''),
   };
   if (goalEcho != null && String(goalEcho).trim()) {
-    fields[TAWASUL_STUDENT.programmedGoal] = String(goalEcho).trim();
+    fields[SF.programmed_goal] = String(goalEcho).trim();
   }
   return fields;
 }

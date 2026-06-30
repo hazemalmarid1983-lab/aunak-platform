@@ -1,13 +1,10 @@
 /**
  * Ghost Mirror — Airtable-backed live commands (specialist → child).
- * Tawasul Students: `mirror command`, `mirror payload` (spaces) · sovereign: snake_case.
+ * Students: mirror_command, mirror_payload, programmed_goal (snake_case).
  */
 
-import {
-  normalizeMirrorCommand,
-  readTawasulMirrorCommand,
-  readTawasulMirrorPayload,
-} from './tawasulStudentFields.js';
+import { STUDENT as SF } from './airtableFields.js';
+import { normalizeMirrorCommand, readTawasulMirrorCommand, readTawasulMirrorPayload } from './tawasulStudentFields.js';
 
 export const MIRROR_COMMANDS = {
   ECHO_GOAL: 'echo_goal',
@@ -17,25 +14,20 @@ export const MIRROR_COMMANDS = {
   CLEAR: 'clear',
 };
 
-const MIRROR_FIELDS = {
-  command: 'mirror_command',
-  payload: 'mirror_payload',
-};
-
 export function parseMirrorState(fields = {}) {
-  const cmd = readTawasulMirrorCommand(fields) || normalizeMirrorCommand(
-    fields[MIRROR_FIELDS.command] ?? fields.mirror_command ?? fields['mirror command'] ?? ''
-  );
-  const payload = readTawasulMirrorPayload(fields) || String(
-    fields[MIRROR_FIELDS.payload] ?? fields.mirror_payload ?? fields['mirror payload'] ?? ''
-  ).trim();
+  const cmd =
+    readTawasulMirrorCommand(fields) ||
+    normalizeMirrorCommand(fields[SF.mirror_command] ?? fields.mirror_command ?? '');
+  const payload =
+    readTawasulMirrorPayload(fields) ||
+    String(fields[SF.mirror_payload] ?? fields.mirror_payload ?? '').trim();
   return { command: cmd, payload, ts: Date.now() };
 }
 
 export function buildMirrorPatch(command, payload = '') {
   return {
-    [MIRROR_FIELDS.command]: command,
-    [MIRROR_FIELDS.payload]: payload,
+    [SF.mirror_command]: normalizeMirrorCommand(command),
+    [SF.mirror_payload]: String(payload ?? ''),
   };
 }
 

@@ -6,7 +6,8 @@
 import { sanitizeAscii } from '../../../src/lib/paymentActivation.js';
 import { SPECIALIST as SP } from '../../../src/lib/airtableFields.js';
 import { TAWASUL_MAX_CASES_PER_SPECIALIST } from '../../../src/lib/tawasulConfig.js';
-import { readTawasulProgrammedGoal, TAWASUL_STUDENT } from '../../../src/lib/tawasulStudentFields.js';
+import { readTawasulProgrammedGoal } from '../../../src/lib/tawasulStudentFields.js';
+import { STUDENT as SF } from '../../../src/lib/airtableFields.js';
 import { airtableHeaders, tawasulVerifyConfig } from './config.js';
 
 const MAX_CASES = TAWASUL_MAX_CASES_PER_SPECIALIST ?? 5;
@@ -49,11 +50,10 @@ function mapStudentLite(record) {
   const f = record?.fields ?? {};
   return {
     id: record?.id ?? null,
-    name: pickField(f, TAWASUL_STUDENT.name, 'Name', 'student_name', 'name') || 'طالب',
-    childInteractiveToken:
-      pickField(f, TAWASUL_STUDENT.childInteractiveToken, 'child_interactive_token') || null,
+    name: pickField(f, 'Name', SF.name, 'student_name', 'name') || 'طالب',
+    childInteractiveToken: pickField(f, SF.child_interactive_token) || null,
     programmedGoal: readTawasulProgrammedGoal(f) || '',
-    assignedSpecialistIds: toIdList(f?.assigned_specialist ?? f?.[TAWASUL_STUDENT.assignedSpecialist]),
+    assignedSpecialistIds: toIdList(f?.[SF.assigned_specialist]),
     fields: f,
   };
 }

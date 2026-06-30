@@ -67,6 +67,9 @@ export const STUDENT = {
   specialist_tutor_token: TRIPLE_ACCESS.specialist,
   /** Link → Specialists (Tawasul MVP per-specialist caseload isolation) */
   assigned_specialist: "assigned_specialist",
+  /** Ghost Mirror — specialist → child live commands */
+  mirror_command: "mirror_command",
+  mirror_payload: "mirror_payload",
 };
 
 /** Required Single-select options for Access Control table */
@@ -100,6 +103,8 @@ export const STUDENT_SELECT_CHECKLIST = [
   "biometric_status: approved",
   "plan_code: free, tutor, medical, institution, assessment_only",
   "comprehensive_assessment_status: not_started, in_progress, completed",
+  "mirror_command: echo_goal, drop_star, drop_reward, calm_pulse, clear",
+  "mirror_payload: text",
   "initial_assessment_score: number (free quick scan 0–100)",
   "parent_access_token / child_interactive_token / specialist_tutor_token: AUN-{PRT|CHD|SPC}-{32hex}",
   "diagnosis: autism_spectrum, adhd, learning_difficulty, language_delay, under_assessment",
