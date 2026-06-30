@@ -72,6 +72,8 @@ function GatedPlatform() {
     };
   }, [user?.childId, user?.subscriptionRaw, user?.subscriptionActivated]);
 
+  if (user?.tawasulMvp) return <TawasulHub lang="ar" />;
+
   if (!user) return <AunakGate />;
 
   if (needsActivationGate(user)) {

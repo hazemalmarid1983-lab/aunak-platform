@@ -5,6 +5,8 @@ import AunakBiometrics from "./AunakBiometrics";
 import { toggleAppStealth } from "../lib/studentPrivacy";
 import AunakEnrollment from "./AunakEnrollment";
 import { useAuth, verifyAccessToken } from "../lib/auth";
+import { verifyTawasulSpecialistToken } from "../lib/tawasulAuth";
+import { isTawasulMvp, isTawasulSpecialistToken } from "../lib/tawasulConfig";
 import { isEnrollmentDeepLink, buildEnrollmentUrl, setEnrollmentUrl } from "../lib/enrollmentLink";
 import { LUX } from "../lib/luxTheme.js";
 
@@ -59,6 +61,23 @@ export default function AunakGate({ lang = "ar" }) {
     setTokenState("verifying");
     setTokenError("");
     try {
+      if (isTawasulMvp() || isTawasulSpecialistToken(token)) {
+        const tawasulSession = await verifyTawasulSpecialistToken(token);
+        if (tawasulSession) {
+          login(tawasulSession);
+          return;
+        }
+        if (isTawasulSpecialistToken(token)) {
+          setTokenState("error");
+          setTokenError(
+            lang === "ar"
+              ? "رمز غير صالح — تحقق من جدول الأخصائيين (AUN-SPC-…)"
+              : "Invalid token — check Specialists table (AUN-SPC-…)"
+          );
+          return;
+        }
+      }
+
       const session = await verifyAccessToken(token);
       if (session) login(session);
       else {

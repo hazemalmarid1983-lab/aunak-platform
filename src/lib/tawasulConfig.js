@@ -1,12 +1,21 @@
 /**
- * Tawasul MVP — isolated mini-platform (branch Tawasul_MVP).
- * Enable with VITE_TAWASUL_MVP=true on Vercel Preview for this branch only.
+ * Tawasul MVP — isolated mini-platform (branch Tawasul_MVP / production lab base).
+ * Enable with VITE_TAWASUL_MVP=true or VITE_AIRTABLE_BASE_ID=app3vCT2j2JepNVZa at build time.
  */
 
 export const TAWASUL_BRANCH = 'Tawasul_MVP';
 
+/** Live Tawasul sandbox base (separate from sovereign production appaGfKj4vYhMw0cb). */
+export const TAWASUL_BASE_ID = 'app3vCT2j2JepNVZa';
+
+export function isTawasulSpecialistToken(token) {
+  return /^AUN-SPC-/i.test(String(token ?? '').trim());
+}
+
 export function isTawasulMvp() {
-  return import.meta.env.VITE_TAWASUL_MVP === 'true';
+  if (import.meta.env.VITE_TAWASUL_MVP === 'true') return true;
+  const base = String(import.meta.env.VITE_AIRTABLE_BASE_ID ?? '').trim();
+  return base === TAWASUL_BASE_ID;
 }
 
 /** Max caseload per specialist in MVP sandbox. */
