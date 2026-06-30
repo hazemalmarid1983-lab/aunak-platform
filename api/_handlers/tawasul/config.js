@@ -4,6 +4,14 @@ export const TAWASUL_BASE_ID = 'app3vCT2j2JepNVZa';
 const TAWASUL_SPECIALISTS_TABLE = 'tblhVAdIeUmqDQTmi';
 const TAWASUL_STUDENTS_TABLE = 'tbliBfCKXNyVtWJiO';
 
+function resolveTawasulTable(envId, fallback) {
+  const id = sanitizeAscii(envId);
+  if (id === fallback) return id;
+  if (!id) return fallback;
+  // Ignore sovereign table IDs baked into env when verifying Tawasul sandbox tokens.
+  return fallback;
+}
+
 export function resolveServerBaseId() {
   const raw =
     process.env.AIRTABLE_BASE_ID ||
@@ -25,8 +33,8 @@ export function tawasulVerifyConfig() {
     apiKey,
     // Tawasul sandbox tokens — never the sovereign production base.
     baseId: envBase === TAWASUL_BASE_ID ? envBase : TAWASUL_BASE_ID,
-    specialistsTable: envSpecialistsTable || TAWASUL_SPECIALISTS_TABLE,
-    studentsTable: envStudentsTable || TAWASUL_STUDENTS_TABLE,
+    specialistsTable: resolveTawasulTable(envSpecialistsTable, TAWASUL_SPECIALISTS_TABLE),
+    studentsTable: resolveTawasulTable(envStudentsTable, TAWASUL_STUDENTS_TABLE),
   };
 }
 
