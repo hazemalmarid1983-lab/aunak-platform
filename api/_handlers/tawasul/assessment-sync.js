@@ -1,14 +1,12 @@
 /**
  * POST /api/tawasul/assessment-sync
- * AppSheet / automation → Tawasul base app3vCT2j2JepNVZa
- * Zero Entry: on comprehensive assessment completed → auto-inject programmed_goal
  */
 
 import {
   generateProgrammedGoalFromAssessment,
   shouldAutoInjectGoal,
-} from '../../src/lib/tawasulAssessmentEngine.js';
-import { airtableConfigFromEnv, sanitizeAscii } from '../../src/lib/paymentActivation.js';
+} from '../../../src/lib/tawasulAssessmentEngine.js';
+import { airtableConfigFromEnv, sanitizeAscii } from '../../../src/lib/paymentActivation.js';
 
 function studentsTableId() {
   return (

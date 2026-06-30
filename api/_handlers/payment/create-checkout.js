@@ -1,21 +1,17 @@
 /**
  * POST /api/payment/create-checkout
- * Tap hosted checkout OR mock checkout when MOCK mode (Preview, no TAP key).
  */
 
-import { normalizePlanCode, PLAN_CODES } from '../../src/lib/plans.js';
-import { planAmountForTap, DEFAULT_CHECKOUT_PLAN } from '../../src/lib/paymentPlans.js';
+import { normalizePlanCode, PLAN_CODES } from '../../../src/lib/plans.js';
+import { planAmountForTap, DEFAULT_CHECKOUT_PLAN } from '../../../src/lib/paymentPlans.js';
 import {
   createTapCharge,
   isTapConfigured,
   sanitizeAscii,
   tapCheckoutUrl,
-} from '../../src/lib/tapPayments.js';
-import { fetchStudentRecord } from '../../src/lib/paymentActivation.js';
-import {
-  isMockPaymentsEnabled,
-  buildMockChargeId,
-} from '../../src/lib/mockPayments.js';
+} from '../../../src/lib/tapPayments.js';
+import { fetchStudentRecord } from '../../../src/lib/paymentActivation.js';
+import { isMockPaymentsEnabled, buildMockChargeId } from '../../../src/lib/mockPayments.js';
 
 const ALLOWED_PLANS = new Set([
   PLAN_CODES.TUTOR,
@@ -63,15 +59,9 @@ export default async function handler(req, res) {
     sanitizeAscii(req.body?.redirectUrl) ||
     `${origin}/payment/return?flow=${encodeURIComponent(flow)}&studentId=${encodeURIComponent(studentId)}&plan=${encodeURIComponent(plan)}`;
 
-  /* ── Mock checkout (Preview / dev, no Tap key) ── */
   if (isMockPaymentsEnabled()) {
     const chargeId = buildMockChargeId();
-    const params = new URLSearchParams({
-      chargeId,
-      studentId,
-      plan,
-      flow,
-    });
+    const params = new URLSearchParams({ chargeId, studentId, plan, flow });
     const checkoutUrl = `${origin}/api/payment/mock-complete?${params.toString()}`;
 
     res.status(200).json({

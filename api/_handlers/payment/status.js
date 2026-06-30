@@ -2,9 +2,9 @@
  * GET /api/payment/status — readiness probe (Tap + Mock + Airtable).
  */
 
-import { isTapConfigured } from '../../src/lib/tapPayments.js';
-import { isMockPaymentsEnabled } from '../../src/lib/mockPayments.js';
-import { airtableConfigFromEnv } from '../../src/lib/paymentActivation.js';
+import { isTapConfigured } from '../../../src/lib/tapPayments.js';
+import { isMockPaymentsEnabled } from '../../../src/lib/mockPayments.js';
+import { airtableConfigFromEnv } from '../../../src/lib/paymentActivation.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {

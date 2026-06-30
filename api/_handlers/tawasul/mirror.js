@@ -1,17 +1,13 @@
 /**
  * POST /api/tawasul/mirror
- * Ghost Mirror — specialist manual override → child screen (Airtable mirror_command).
  */
 
-import { buildMirrorPatch } from '../../src/lib/tawasulMirror.js';
-import { airtableConfigFromEnv, sanitizeAscii } from '../../src/lib/paymentActivation.js';
-import { STUDENT as SF } from '../../src/lib/airtableFields.js';
+import { buildMirrorPatch } from '../../../src/lib/tawasulMirror.js';
+import { airtableConfigFromEnv, sanitizeAscii } from '../../../src/lib/paymentActivation.js';
+import { STUDENT as SF } from '../../../src/lib/airtableFields.js';
 
 function studentsTableId() {
-  return (
-    sanitizeAscii(process.env.VITE_AIRTABLE_STUDENTS_TABLE_ID) ||
-    'tbliBfCKXNyVtWJiO'
-  );
+  return sanitizeAscii(process.env.VITE_AIRTABLE_STUDENTS_TABLE_ID) || 'tbliBfCKXNyVtWJiO';
 }
 
 export default async function handler(req, res) {

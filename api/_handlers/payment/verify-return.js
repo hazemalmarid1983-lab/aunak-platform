@@ -1,5 +1,5 @@
 /**
- * GET /api/payment/verify-return — Tap fetch OR mock charge verify.
+ * GET /api/payment/verify-return
  */
 
 import {
@@ -7,11 +7,11 @@ import {
   isTapChargeCaptured,
   isTapConfigured,
   sanitizeAscii,
-} from '../../src/lib/tapPayments.js';
-import { isMockPaymentsEnabled, isMockChargeId, buildMockCharge } from '../../src/lib/mockPayments.js';
-import { processCapturedPaymentCharge } from '../../src/lib/paymentWebhookProcessor.js';
-import { normalizePlanCode, PLAN_CODES } from '../../src/lib/plans.js';
-import { planAmountForTap } from '../../src/lib/paymentPlans.js';
+} from '../../../src/lib/tapPayments.js';
+import { isMockPaymentsEnabled, isMockChargeId, buildMockCharge } from '../../../src/lib/mockPayments.js';
+import { processCapturedPaymentCharge } from '../../../src/lib/paymentWebhookProcessor.js';
+import { normalizePlanCode, PLAN_CODES } from '../../../src/lib/plans.js';
+import { planAmountForTap } from '../../../src/lib/paymentPlans.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {

@@ -1,10 +1,10 @@
 /**
- * POST /api/payment/webhook — Tap IPN + Mock charge (Preview).
+ * POST /api/payment/webhook
  */
 
-import { verifyTapWebhookHash, sanitizeAscii } from '../../src/lib/tapPayments.js';
-import { isMockPaymentsEnabled, isMockChargeId, verifyMockWebhookRequest } from '../../src/lib/mockPayments.js';
-import { processCapturedPaymentCharge } from '../../src/lib/paymentWebhookProcessor.js';
+import { verifyTapWebhookHash, sanitizeAscii } from '../../../src/lib/tapPayments.js';
+import { isMockPaymentsEnabled, isMockChargeId, verifyMockWebhookRequest } from '../../../src/lib/mockPayments.js';
+import { processCapturedPaymentCharge } from '../../../src/lib/paymentWebhookProcessor.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
