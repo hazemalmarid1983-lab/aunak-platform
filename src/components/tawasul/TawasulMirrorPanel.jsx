@@ -12,17 +12,31 @@ function readApiError(data, status) {
   return `MIRROR_${status}`;
 }
 
+async function parseJsonResponse(res) {
+  const raw = await res.text();
+  try {
+    return { data: raw ? JSON.parse(raw) : {}, raw };
+  } catch {
+    return {
+      data: {},
+      raw,
+      parseError: raw.includes('server error') ? 'A server error has occurred' : raw.slice(0, 240),
+    };
+  }
+}
+
 async function sendMirror({ studentId, command, payload = '' }) {
   const res = await fetch('/api/tawasul/mirror', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
-      studentId,
-      command,
+      studentId: String(studentId ?? ''),
+      command: String(command ?? ''),
       payload: String(payload ?? ''),
     }),
   });
-  const data = await res.json().catch(() => ({}));
+  const { data, parseError } = await parseJsonResponse(res);
+  if (parseError) throw new Error(parseError);
   if (!res.ok) throw new Error(readApiError(data, res.status));
   return data;
 }
@@ -35,13 +49,14 @@ async function sendEchoGoal({ studentId, goalText }) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({
-      studentId,
+      studentId: String(studentId ?? ''),
       command: MIRROR_COMMANDS.ECHO_GOAL,
       payload: 'live',
       goalEcho,
     }),
   });
-  const data = await res.json().catch(() => ({}));
+  const { data, parseError } = await parseJsonResponse(res);
+  if (parseError) throw new Error(parseError);
   if (!res.ok) throw new Error(readApiError(data, res.status));
   return data;
 }
@@ -109,7 +124,7 @@ export default function TawasulMirrorPanel({ lang = 'ar', student, goalDraft, on
       await sendMirror({
         studentId: student.id,
         command: MIRROR_COMMANDS.DROP_STAR,
-        payload: String(Date.now()),
+        payload: 'star',
       });
     });
   };

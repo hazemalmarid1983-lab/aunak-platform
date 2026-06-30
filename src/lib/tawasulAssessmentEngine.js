@@ -2,7 +2,7 @@
  * Tawasul — Zero Entry: auto-generate programmed_goal from assessment data.
  */
 
-import { buildAssessmentProfileFromScore, parseStoredAssessmentScore } from './initialAssessmentEngine';
+import { buildAssessmentProfileFromScore, parseStoredAssessmentScore } from './initialAssessmentEngine.js';
 
 const GOAL_TEMPLATES = {
   ar: {

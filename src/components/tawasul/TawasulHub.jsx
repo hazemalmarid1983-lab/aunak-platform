@@ -20,13 +20,19 @@ function readApiError(data, status) {
   return `REQUEST_${status}`;
 }
 
-async function patchTawasulStudent(recordId, fields) {
-  const res = await fetch('/api/tawasul/assessment-sync', {
+async function patchTawasulStudent(recordId, programmedGoal) {
+  const res = await fetch('/api/tawasul/student-goal', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ recordId, fields }),
+    body: JSON.stringify({ recordId, programmed_goal: programmedGoal }),
   });
-  const data = await res.json().catch(() => ({}));
+  const raw = await res.text();
+  let data = {};
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    throw new Error(raw?.includes('server error') ? 'SERVER_ERROR — redeploy pending' : raw.slice(0, 200));
+  }
   if (!res.ok) throw new Error(readApiError(data, res.status));
   return data;
 }
@@ -132,7 +138,7 @@ export default function TawasulHub({ lang = 'ar' }) {
     setSaving(true);
     setError('');
     try {
-      await patchTawasulStudent(selected.id, { programmed_goal: goalDraft.trim() });
+      await patchTawasulStudent(selected.id, goalDraft.trim());
       setStudents((prev) =>
         prev.map((s) => (s.id === selected.id ? { ...s, programmedGoal: goalDraft.trim() } : s))
       );

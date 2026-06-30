@@ -1,21 +1,11 @@
 /**
- * POST /api/tawasul/assessment-sync
+ * POST /api/tawasul/assessment-sync — self-contained (no broken ESM import chain).
  */
 
-import {
-  generateProgrammedGoalFromAssessment,
-  shouldAutoInjectGoal,
-} from '../../../src/lib/tawasulAssessmentEngine.js';
-import {
-  patchToTawasulAirtableFields,
-  readTawasulAssessmentScore,
-  readTawasulComprehensiveStatus,
-  readTawasulProgrammedGoal,
-  TAWASUL_STUDENT,
-} from '../../../src/lib/tawasulStudentFields.js';
-import { sanitizeAscii } from '../../../src/lib/paymentActivation.js';
+import { STUDENT as SF } from '../../../src/lib/airtableFields.js';
 import { airtableHeaders, tawasulVerifyConfig } from './config.js';
 import { formatAirtableApiError } from './airtableError.js';
+import { sanitizeRecordId } from './sanitize.js';
 
 async function patchStudent(apiKey, baseId, tableId, recordId, fields) {
   const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableId)}/${recordId}`;
@@ -29,14 +19,40 @@ async function patchStudent(apiKey, baseId, tableId, recordId, fields) {
   return JSON.parse(text);
 }
 
-async function findStudentByName(apiKey, baseId, tableId, name) {
-  const n = String(name).replace(/'/g, "\\'");
-  const formula = encodeURIComponent(`{Name}='${n}'`);
-  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableId)}?filterByFormula=${formula}&maxRecords=1`;
-  const res = await fetch(url, { headers: airtableHeaders(apiKey) });
-  if (!res.ok) return null;
-  const data = await res.json();
-  return data.records?.[0] ?? null;
+function pickField(fields, ...keys) {
+  if (!fields || typeof fields !== 'object') return null;
+  for (const key of keys) {
+    const v = fields[key];
+    if (v != null && String(v).trim() !== '') return v;
+  }
+  return null;
+}
+
+function parseScore(raw) {
+  if (raw == null || raw === '') return null;
+  const n = Number(String(raw).replace(/[^\d.]/g, ''));
+  return Number.isFinite(n) ? n : null;
+}
+
+function goalFromScore(name, score, lang = 'ar') {
+  const n = parseScore(score);
+  if (n == null) return null;
+  const band = n >= 70 ? 'balanced' : n >= 45 ? 'moderate' : 'elevated';
+  const templates = {
+    ar: {
+      balanced: (who) => `🎯 ${who}: هدف اليوم — تعزيز التواصل البصري عبر لعبة الجزر (3 جولات هادئة).`,
+      moderate: (who) => `🎯 ${who}: هدف إجرائي — تنظيم الانتباه · 5 تفاعلات في عالم الجزر + مكافأة نجمة.`,
+      elevated: (who) => `🎯 ${who}: هدف عاجل — تهدئة ثم جذب انتباه · ابدأ بتبويب «هدوء» ثم «تفاعل» (5 نجوم).`,
+    },
+    en: {
+      balanced: (who) => `🎯 ${who}: Daily goal — strengthen eye contact via island play (3 calm rounds).`,
+      moderate: (who) => `🎯 ${who}: Programmed goal — attention regulation · 5 island interactions + star reward.`,
+      elevated: (who) => `🎯 ${who}: Urgent goal — calm then engage · start Calm tab then Engage (5 stars).`,
+    },
+  };
+  const who = String(name ?? 'الطفل').trim() || 'الطفل';
+  const tpl = templates[lang]?.[band] ?? templates.ar[band];
+  return tpl(who);
 }
 
 export default async function handler(req, res) {
@@ -51,51 +67,60 @@ export default async function handler(req, res) {
     return;
   }
 
-  const recordId = sanitizeAscii(req.body?.recordId);
-  const studentName = sanitizeAscii(req.body?.studentName ?? req.body?.student_name ?? req.body?.Name);
-  const fieldsIn = req.body?.fields ?? req.body ?? {};
+  const recordId = sanitizeRecordId(req.body?.recordId);
+  const fieldsIn = req.body?.fields && typeof req.body.fields === 'object' ? req.body.fields : {};
+
+  if (!recordId) {
+    res.status(400).json({ error: 'RECORD_ID_REQUIRED' });
+    return;
+  }
 
   try {
-    let record = recordId ? { id: recordId, fields: fieldsIn } : null;
-    if (!record && studentName) record = await findStudentByName(apiKey, baseId, studentsTable, studentName);
-    if (!record?.id) {
-      res.status(400).json({ error: 'STUDENT_NOT_FOUND' });
-      return;
+    const getUrl = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(studentsTable)}/${recordId}`;
+    const getRes = await fetch(getUrl, { headers: airtableHeaders(apiKey) });
+    const getText = await getRes.text();
+    if (!getRes.ok) throw new Error(formatAirtableApiError(getRes.status, getText));
+    const record = JSON.parse(getText);
+
+    const merged = { ...(record.fields ?? {}), ...fieldsIn };
+    const name = pickField(merged, 'Name', 'student_name') ?? 'الطفل';
+
+    const patch = {};
+    if (fieldsIn.initial_assessment_score != null) {
+      patch[SF.initial_assessment_score] = parseScore(fieldsIn.initial_assessment_score);
+    }
+    if (fieldsIn.comprehensive_assessment_status != null) {
+      patch[SF.comprehensive_assessment_status] = String(fieldsIn.comprehensive_assessment_status).trim();
     }
 
-    const merged = { ...record.fields, ...fieldsIn };
-    const name = merged.Name ?? merged.student_name ?? studentName ?? 'الطفل';
-    const patch = patchToTawasulAirtableFields(fieldsIn);
+    const score = parseScore(fieldsIn.initial_assessment_score ?? merged[SF.initial_assessment_score]);
+    const status = String(
+      fieldsIn.comprehensive_assessment_status ??
+        merged[SF.comprehensive_assessment_status] ??
+        merged.comprehensive_assessment ??
+        ''
+    ).toLowerCase();
+    const existingGoal = pickField(merged, SF.programmed_goal);
+    const completed = /completed|complete|done|مكتمل/.test(status);
 
-    const mergedForGoal = {
-      ...merged,
-      initial_assessment_score: readTawasulAssessmentScore(merged),
-      comprehensive_assessment_status: readTawasulComprehensiveStatus(merged),
-      programmed_goal: readTawasulProgrammedGoal(merged),
-    };
-
-    if (shouldAutoInjectGoal(mergedForGoal)) {
-      const goal = generateProgrammedGoalFromAssessment({
-        studentName: name,
-        scoreRaw: readTawasulAssessmentScore(merged),
-        comprehensiveStatus: readTawasulComprehensiveStatus(merged) ?? 'completed',
-        lang: 'ar',
-      });
-      if (goal) {
-        patch[TAWASUL_STUDENT.programmedGoal] = goal;
-        patch[TAWASUL_STUDENT.comprehensiveAssessmentStatus] = 'completed';
+    if (score != null && completed && (!existingGoal || String(existingGoal).trim().length < 8)) {
+      const autoGoal = goalFromScore(name, score, 'ar');
+      if (autoGoal) {
+        patch[SF.programmed_goal] = autoGoal;
+        patch[SF.comprehensive_assessment_status] = 'completed';
       }
     }
 
-    const updated = await patchStudent(apiKey, baseId, studentsTable, record.id, patch);
+    const updated = await patchStudent(apiKey, baseId, studentsTable, recordId, patch);
     res.status(200).json({
       ok: true,
       recordId: updated.id,
-      table: studentsTable,
-      programmed_goal: readTawasulProgrammedGoal(updated.fields ?? {}) ?? null,
-      autoGoal: Boolean(patch[TAWASUL_STUDENT.programmedGoal]),
+      programmed_goal: updated.fields?.[SF.programmed_goal] ?? null,
+      autoGoal: Boolean(patch[SF.programmed_goal]),
     });
   } catch (err) {
-    res.status(500).json({ error: err?.message ?? 'ASSESSMENT_SYNC_FAILED' });
+    const message = err?.message ?? 'ASSESSMENT_SYNC_FAILED';
+    console.error('[tawasul/assessment-sync]', message);
+    res.status(500).json({ error: message });
   }
 }
