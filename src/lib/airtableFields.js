@@ -65,6 +65,8 @@ export const STUDENT = {
   parent_access_token: TRIPLE_ACCESS.parent,
   child_interactive_token: TRIPLE_ACCESS.child,
   specialist_tutor_token: TRIPLE_ACCESS.specialist,
+  /** Link → Specialists (Tawasul MVP per-specialist caseload isolation) */
+  assigned_specialist: "assigned_specialist",
 };
 
 /** Required Single-select options for Access Control table */
@@ -140,6 +142,7 @@ export const SPECIALIST = {
   status: "status",
   cases: "active_cases",
   rating: "rating",
+  specialist_tutor_token: TRIPLE_ACCESS.specialist,
 };
 
 /** Goal Attempts table */

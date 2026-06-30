@@ -70,13 +70,13 @@ function sealedFormula(studentName, startDate, endDate) {
     CLAIM_STATUS_SEALED +
     "', {" +
     DS.session_date +
-    ">='" +
+    "}>='" +
     startDate +
     "', {" +
     DS.session_date +
-    "<='" +
+    "}<='" +
     endDate +
-    "')"
+    "'})"
   );
 }
 

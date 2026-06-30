@@ -1,23 +1,35 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Star } from 'lucide-react';
 import { findStudentByChildToken, parseChildRouteToken } from '../../lib/childAccess';
+import { isTawasulMvp } from '../../lib/tawasulConfig';
 import { CHILD } from '../../lib/childTheme';
 import ChildPlayZone from './ChildPlayZone';
+import ChildBottomNav from './ChildBottomNav';
+import ChildHomePanel from './ChildHomePanel';
+import ChildCalmZone from './ChildCalmZone';
+import ChildStarsPanel from './ChildStarsPanel';
 import PlatformLogo from '../PlatformLogo';
 
 export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
+  const tawasul = isTawasulMvp();
   const [lang, setLang] = useState(langProp);
   const [loading, setLoading] = useState(true);
   const [student, setStudent] = useState(null);
   const [error, setError] = useState('');
   const [celebrate, setCelebrate] = useState(false);
+  const [tab, setTab] = useState('home');
+  const [starCount, setStarCount] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const token = parseChildRouteToken();
       if (!token) {
-        setError(lang === 'en' ? 'Missing child token in URL (?token=AUN-CHD-...)' : 'رمز الطفل مفقود في الرابط (?token=AUN-CHD-...)');
+        setError(
+          lang === 'en'
+            ? 'Missing child token in URL (?token=AUN-CHD-...)'
+            : 'رمز الطفل مفقود في الرابط (?token=AUN-CHD-...)'
+        );
         setLoading(false);
         return;
       }
@@ -43,15 +55,21 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
   const copy =
     lang === 'en'
       ? {
-          title: 'Awni Play World',
-          subtitle: 'Play · Learn · Smile',
+          title: tawasul ? 'Tawasul Island' : 'Awni Play World',
+          subtitle: tawasul ? 'Connect · Play · Grow' : 'Play · Learn · Smile',
           loading: 'Opening your world...',
         }
       : {
-          title: 'عالم عوني',
-          subtitle: 'لعب · تعلّم · ابتسام',
+          title: tawasul ? 'جزر تواصل' : 'عالم عوني',
+          subtitle: tawasul ? 'تواصل · لعب · نمو' : 'لعب · تعلّم · ابتسام',
           loading: 'جاري فتح عالمك...',
         };
+
+  const onStarEarned = () => {
+    setStarCount((n) => n + 1);
+    setCelebrate(true);
+    setTimeout(() => setCelebrate(false), 600);
+  };
 
   if (loading) {
     return (
@@ -76,6 +94,8 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
       </div>
     );
   }
+
+  const firstName = student.name?.split(' ')?.[0] ?? student.name;
 
   return (
     <div className={CHILD.root} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
@@ -103,16 +123,22 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
       </header>
 
       <main className={CHILD.main}>
-        <ChildPlayZone
-          lang={lang}
-          studentName={student.name?.split(' ')?.[0] ?? student.name}
-          studentId={student.id}
-          onCelebrate={() => {
-            setCelebrate(true);
-            setTimeout(() => setCelebrate(false), 600);
-          }}
-        />
+        {tab === 'home' && (
+          <ChildHomePanel lang={lang} studentName={firstName} programmedGoal={student.programmedGoal} />
+        )}
+        {tab === 'play' && (
+          <ChildPlayZone
+            lang={lang}
+            studentName={firstName}
+            studentId={student.id}
+            onCelebrate={onStarEarned}
+          />
+        )}
+        {tab === 'calm' && <ChildCalmZone lang={lang} />}
+        {tab === 'stars' && <ChildStarsPanel lang={lang} starCount={starCount} />}
       </main>
+
+      <ChildBottomNav lang={lang} active={tab} onChange={setTab} />
     </div>
   );
 }

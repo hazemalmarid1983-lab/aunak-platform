@@ -14,6 +14,9 @@ import { landingForPlan, PLAN_CODES } from './lib/plans';
 import { studentHasFaceBiometric } from './lib/biometricMatch';
 import { Loader2 } from 'lucide-react';
 import PaymentReturn from './components/PaymentReturn';
+import { isTawasulMvp } from './lib/tawasulConfig';
+import TawasulGate from './components/tawasul/TawasulGate';
+import TawasulHub from './components/tawasul/TawasulHub';
 
 function isSummerAcademyRoute() {
   const path = (typeof window !== 'undefined' ? window.location.pathname : '').replace(/\/$/, '') || '/';
@@ -131,7 +134,14 @@ function GatedPlatform() {
   return <AunakEcosystemHub />;
 }
 
+function TawasulPlatform() {
+  const { user } = useAuth();
+  if (!user) return <TawasulGate lang="ar" />;
+  return <TawasulHub lang="ar" />;
+}
+
 export default function App() {
+  const tawasul = isTawasulMvp();
   const summerRoute = isSummerAcademyRoute();
   const childRoute = isChildPlayRoute();
   const parentRoute = isParentDashboardRoute();
@@ -142,10 +152,12 @@ export default function App() {
       <AuthProvider>
         {paymentReturnRoute ? (
           <PaymentReturn lang="ar" />
-        ) : parentRoute ? (
-          <ParentShell />
         ) : childRoute ? (
           <ChildInteractiveShell />
+        ) : tawasul ? (
+          <TawasulPlatform />
+        ) : parentRoute ? (
+          <ParentShell />
         ) : summerRoute ? (
           <SummerAcademyShell />
         ) : (

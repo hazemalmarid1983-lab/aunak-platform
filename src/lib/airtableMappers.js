@@ -165,6 +165,11 @@ export function mapStudent(record, lang = "ar") {
     parentAccessToken: pick(f, SF.parent_access_token) || null,
     childInteractiveToken: pick(f, SF.child_interactive_token) || null,
     specialistTutorToken: pick(f, SF.specialist_tutor_token) || null,
+    assignedSpecialistIds: (() => {
+      const raw = pick(f, SF.assigned_specialist);
+      if (raw == null || raw === "") return [];
+      return Array.isArray(raw) ? raw : [raw];
+    })(),
     fields: f,
   };
 }

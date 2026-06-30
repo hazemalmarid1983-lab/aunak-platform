@@ -27,7 +27,7 @@ export const AIRTABLE_TABLES = {
   students: resolveTableId("VITE_AIRTABLE_STUDENTS_TABLE_ID", DEFAULT_STUDENTS_TABLE_ID),
   dailySessions: resolveDailySessionsTableId(),
   scientificItems: "tblnCbBSmwDWwO5SJ",
-  specialists: "tblnmcLd5M3U6sErl",
+  specialists: resolveTableId("VITE_AIRTABLE_SPECIALISTS_TABLE_ID", "tblnmcLd5M3U6sErl"),
   abcData: "tblJ580ptTVkv07hD",
   safeMedia: "tbljdOSE8CozrzBZN",
   melodyLab: "tblMddsXqCz91hfoU",
