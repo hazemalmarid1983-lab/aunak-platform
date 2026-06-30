@@ -8,6 +8,7 @@ import {
 } from '../../../src/lib/tawasulAssessmentEngine.js';
 import { sanitizeAscii } from '../../../src/lib/paymentActivation.js';
 import { airtableHeaders, tawasulVerifyConfig } from './config.js';
+import { formatAirtableApiError } from './airtableError.js';
 
 async function patchStudent(apiKey, baseId, tableId, recordId, fields) {
   const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableId)}/${recordId}`;
@@ -17,7 +18,7 @@ async function patchStudent(apiKey, baseId, tableId, recordId, fields) {
     body: JSON.stringify({ fields, typecast: true }),
   });
   const text = await res.text();
-  if (!res.ok) throw new Error(text.slice(0, 400));
+  if (!res.ok) throw new Error(formatAirtableApiError(res.status, text));
   return JSON.parse(text);
 }
 

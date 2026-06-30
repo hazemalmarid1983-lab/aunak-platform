@@ -6,6 +6,7 @@ import { buildMirrorPatch } from '../../../src/lib/tawasulMirror.js';
 import { sanitizeAscii } from '../../../src/lib/paymentActivation.js';
 import { STUDENT as SF } from '../../../src/lib/airtableFields.js';
 import { airtableHeaders, tawasulVerifyConfig } from './config.js';
+import { formatAirtableApiError } from './airtableError.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -43,9 +44,11 @@ export default async function handler(req, res) {
       body: JSON.stringify({ fields, typecast: true }),
     });
     const text = await patchRes.text();
-    if (!patchRes.ok) throw new Error(text.slice(0, 400));
+    if (!patchRes.ok) throw new Error(formatAirtableApiError(patchRes.status, text));
     res.status(200).json({ ok: true, command, payload });
   } catch (err) {
-    res.status(500).json({ error: err?.message ?? 'MIRROR_FAILED' });
+    const message = err?.message ?? 'MIRROR_FAILED';
+    const status = String(message).includes('403') ? 403 : 500;
+    res.status(status).json({ error: message });
   }
 }

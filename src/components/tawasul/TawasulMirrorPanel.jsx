@@ -3,6 +3,15 @@ import { Ghost, Loader2, Sparkles, Target, Volume2 } from 'lucide-react';
 import { MIRROR_COMMANDS } from '../../lib/tawasulMirror';
 import { STUDENT as SF } from '../../lib/airtableFields';
 
+function readApiError(data, status) {
+  const err = data?.error ?? data?.message;
+  if (typeof err === 'string') return err;
+  if (err && typeof err === 'object') {
+    return err.message || err.error || err.hint || JSON.stringify(err);
+  }
+  return `MIRROR_${status}`;
+}
+
 async function sendMirror({ studentId, command, payload = '', goalEcho }) {
   const res = await fetch('/api/tawasul/mirror', {
     method: 'POST',
@@ -10,7 +19,7 @@ async function sendMirror({ studentId, command, payload = '', goalEcho }) {
     body: JSON.stringify({ studentId, command, payload, goalEcho }),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data?.error || 'MIRROR_FAILED');
+  if (!res.ok) throw new Error(readApiError(data, res.status));
   return data;
 }
 
@@ -43,7 +52,7 @@ export default function TawasulMirrorPanel({ lang = 'ar', student, goalDraft, on
       await sendMirror({ studentId: student.id, command, payload, goalEcho });
       if (goalEcho) onGoalSynced?.(goalEcho);
     } catch (e) {
-      setError(e?.message ?? 'Failed');
+      setError(e instanceof Error ? e.message : readApiError(e, 'ERR'));
     } finally {
       setBusy('');
     }

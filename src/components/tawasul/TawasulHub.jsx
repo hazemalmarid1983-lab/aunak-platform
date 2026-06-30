@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ExternalLink, Loader2, LogOut, Save, Target, Users } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
-import { updateStudentRecord } from '../../lib/airtable';
 import { STUDENT as SF } from '../../lib/airtableFields';
 import { TAWASUL_COPY } from '../../lib/tawasulConfig';
 import PlatformLogo from '../PlatformLogo';
@@ -19,7 +18,18 @@ function readApiError(data, status) {
   if (err && typeof err === 'object') {
     return err.message || err.error || err.hint || JSON.stringify(err);
   }
-  return `CASELOAD_${status}`;
+  return `REQUEST_${status}`;
+}
+
+async function patchTawasulStudent(recordId, fields) {
+  const res = await fetch('/api/tawasul/assessment-sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ recordId, fields }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(readApiError(data, res.status));
+  return data;
 }
 
 /** Normalize caseload rows from /api/tawasul/caseload (mapped or raw Airtable fields). */
@@ -123,12 +133,12 @@ export default function TawasulHub({ lang = 'ar' }) {
     setSaving(true);
     setError('');
     try {
-      await updateStudentRecord(selected.id, { [SF.programmed_goal]: goalDraft.trim() });
+      await patchTawasulStudent(selected.id, { [SF.programmed_goal]: goalDraft.trim() });
       setStudents((prev) =>
         prev.map((s) => (s.id === selected.id ? { ...s, programmedGoal: goalDraft.trim() } : s))
       );
     } catch (e) {
-      setError(e?.message ?? 'Save failed');
+      setError(e instanceof Error ? e.message : readApiError(e, 'SAVE'));
     } finally {
       setSaving(false);
     }
