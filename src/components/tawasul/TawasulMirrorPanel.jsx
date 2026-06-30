@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Ghost, Loader2, Sparkles, Target, Volume2 } from 'lucide-react';
 import { MIRROR_COMMANDS } from '../../lib/tawasulMirror';
 import { STUDENT as SF } from '../../lib/airtableFields';
@@ -12,20 +12,50 @@ function readApiError(data, status) {
   return `MIRROR_${status}`;
 }
 
-async function sendMirror({ studentId, command, payload = '', goalEcho }) {
+async function sendMirror({ studentId, command, payload = '' }) {
   const res = await fetch('/api/tawasul/mirror', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify({ studentId, command, payload, goalEcho }),
+    body: JSON.stringify({
+      studentId,
+      command,
+      payload: String(payload ?? ''),
+    }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(readApiError(data, res.status));
   return data;
 }
 
+async function sendEchoGoal({ studentId, goalText }) {
+  const goalEcho = String(goalText ?? '').trim();
+  if (!goalEcho) throw new Error('GOAL_TEXT_REQUIRED');
+
+  const res = await fetch('/api/tawasul/mirror', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({
+      studentId,
+      command: MIRROR_COMMANDS.ECHO_GOAL,
+      payload: 'live',
+      goalEcho,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(readApiError(data, res.status));
+  return data;
+}
+
+const IDLE_LOADING = {
+  [MIRROR_COMMANDS.ECHO_GOAL]: false,
+  [MIRROR_COMMANDS.DROP_STAR]: false,
+  [MIRROR_COMMANDS.CALM_PULSE]: false,
+};
+
 export default function TawasulMirrorPanel({ lang = 'ar', student, goalDraft, onGoalSynced }) {
-  const [busy, setBusy] = useState('');
+  const [loading, setLoading] = useState(IDLE_LOADING);
   const [error, setError] = useState('');
+  const inFlightRef = useRef(null);
 
   const copy =
     lang === 'en'
@@ -34,29 +64,72 @@ export default function TawasulMirrorPanel({ lang = 'ar', student, goalDraft, on
           echo: 'Echo goal on child screen',
           star: 'Drop star reward',
           calm: 'Calm pulse',
-          speaking: 'Sending…',
         }
       : {
           title: 'المرآة الشبحية',
           echo: 'تكرار الهدف على شاشة الطفل',
           star: 'إسقاط مكافأة نجمة',
           calm: 'نبضة هدوء',
-          speaking: 'جاري الإرسال…',
         };
 
-  const run = async (command, payload = '', goalEcho) => {
-    if (!student?.id || busy) return;
-    setBusy(command);
-    setError('');
-    try {
-      await sendMirror({ studentId: student.id, command, payload, goalEcho });
-      if (goalEcho) onGoalSynced?.(goalEcho);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : readApiError(e, 'ERR'));
-    } finally {
-      setBusy('');
-    }
+  const setCommandLoading = useCallback((command, on) => {
+    setLoading((prev) => ({ ...prev, [command]: on }));
+  }, []);
+
+  const runCommand = useCallback(
+    async (command, task) => {
+      if (!student?.id || inFlightRef.current) return;
+
+      inFlightRef.current = command;
+      setCommandLoading(command, true);
+      setError('');
+
+      try {
+        await task();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : readApiError(e, 'ERR'));
+      } finally {
+        setCommandLoading(command, false);
+        inFlightRef.current = null;
+      }
+    },
+    [setCommandLoading, student?.id]
+  );
+
+  const onEchoGoal = () => {
+    const goalText = String(goalDraft ?? student?.programmedGoal ?? '').trim();
+    runCommand(MIRROR_COMMANDS.ECHO_GOAL, async () => {
+      await sendEchoGoal({ studentId: student.id, goalText });
+      onGoalSynced?.(goalText);
+    });
   };
+
+  const onDropStar = () => {
+    runCommand(MIRROR_COMMANDS.DROP_STAR, async () => {
+      await sendMirror({
+        studentId: student.id,
+        command: MIRROR_COMMANDS.DROP_STAR,
+        payload: String(Date.now()),
+      });
+    });
+  };
+
+  const onCalmPulse = () => {
+    runCommand(MIRROR_COMMANDS.CALM_PULSE, async () => {
+      await sendMirror({
+        studentId: student.id,
+        command: MIRROR_COMMANDS.CALM_PULSE,
+        payload: '1',
+      });
+    });
+  };
+
+  const anyLoading = Object.values(loading).some(Boolean);
+
+  const mergeBtn = (isLoading, activeCls, idleCls) =>
+    `flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-40 ${
+      isLoading ? activeCls : idleCls
+    }`;
 
   return (
     <div className="rounded-xl border border-[#c9a962]/25 bg-[#0d0d10]/60 p-4 space-y-3">
@@ -67,29 +140,56 @@ export default function TawasulMirrorPanel({ lang = 'ar', student, goalDraft, on
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <button
           type="button"
-          disabled={!!busy}
-          onClick={() => run(MIRROR_COMMANDS.ECHO_GOAL, 'live', goalDraft || student?.programmedGoal)}
-          className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-[#c9a962]/10 border border-[#c9a962]/30 text-xs font-bold text-[#e8c872] disabled:opacity-50"
+          disabled={loading[MIRROR_COMMANDS.ECHO_GOAL] || (anyLoading && !loading[MIRROR_COMMANDS.ECHO_GOAL])}
+          onClick={onEchoGoal}
+          aria-busy={loading[MIRROR_COMMANDS.ECHO_GOAL]}
+          className={mergeBtn(
+            loading[MIRROR_COMMANDS.ECHO_GOAL],
+            'bg-[#c9a962]/25 border-2 border-[#c9a962]/60 text-[#e8c872] ring-2 ring-[#c9a962]/20',
+            'bg-[#c9a962]/10 border border-[#c9a962]/30 text-[#e8c872] hover:bg-[#c9a962]/15'
+          )}
         >
-          {busy === MIRROR_COMMANDS.ECHO_GOAL ? <Loader2 className="w-3 h-3 animate-spin" /> : <Volume2 className="w-3 h-3" />}
+          {loading[MIRROR_COMMANDS.ECHO_GOAL] ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <Volume2 className="w-3 h-3" />
+          )}
           {copy.echo}
         </button>
         <button
           type="button"
-          disabled={!!busy}
-          onClick={() => run(MIRROR_COMMANDS.DROP_STAR, `${Date.now()}`)}
-          className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-400/30 text-xs font-bold text-emerald-300 disabled:opacity-50"
+          disabled={loading[MIRROR_COMMANDS.DROP_STAR] || (anyLoading && !loading[MIRROR_COMMANDS.DROP_STAR])}
+          onClick={onDropStar}
+          aria-busy={loading[MIRROR_COMMANDS.DROP_STAR]}
+          className={mergeBtn(
+            loading[MIRROR_COMMANDS.DROP_STAR],
+            'bg-emerald-500/25 border-2 border-emerald-400/60 text-emerald-200 ring-2 ring-emerald-400/20',
+            'bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 hover:bg-emerald-500/15'
+          )}
         >
-          {busy === MIRROR_COMMANDS.DROP_STAR ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+          {loading[MIRROR_COMMANDS.DROP_STAR] ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <Sparkles className="w-3 h-3" />
+          )}
           {copy.star}
         </button>
         <button
           type="button"
-          disabled={!!busy}
-          onClick={() => run(MIRROR_COMMANDS.CALM_PULSE, '1')}
-          className="flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-cyan-500/10 border border-cyan-400/30 text-xs font-bold text-cyan-200 disabled:opacity-50"
+          disabled={loading[MIRROR_COMMANDS.CALM_PULSE] || (anyLoading && !loading[MIRROR_COMMANDS.CALM_PULSE])}
+          onClick={onCalmPulse}
+          aria-busy={loading[MIRROR_COMMANDS.CALM_PULSE]}
+          className={mergeBtn(
+            loading[MIRROR_COMMANDS.CALM_PULSE],
+            'bg-cyan-500/25 border-2 border-cyan-400/60 text-cyan-100 ring-2 ring-cyan-400/20',
+            'bg-cyan-500/10 border border-cyan-400/30 text-cyan-200 hover:bg-cyan-500/15'
+          )}
         >
-          {busy === MIRROR_COMMANDS.CALM_PULSE ? <Loader2 className="w-3 h-3 animate-spin" /> : <Target className="w-3 h-3" />}
+          {loading[MIRROR_COMMANDS.CALM_PULSE] ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <Target className="w-3 h-3" />
+          )}
           {copy.calm}
         </button>
       </div>
