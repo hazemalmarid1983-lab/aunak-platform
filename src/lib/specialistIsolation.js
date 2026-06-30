@@ -18,10 +18,10 @@ function linkedSpecialistIds(student) {
 
 /** Student record IDs linked on the Specialists.Students field (live Tawasul base). */
 export function linkedStudentIdsFromSpecialistRecord(specialistRecord) {
-  const f = specialistRecord?.fields ?? specialistRecord ?? {};
-  return toIdList(
-    f[SP.students] ?? f.Students ?? f.students ?? getField(f, SP.cases)
-  );
+  const f = specialistRecord?.fields;
+  if (!f || typeof f !== 'object') return [];
+  const raw = f?.Students ?? f?.students ?? f?.[SP.students] ?? f?.assigned_specialist ?? null;
+  return toIdList(raw);
 }
 
 /** Permy-filter: specialist sees only students linked to their Airtable record ID. */
