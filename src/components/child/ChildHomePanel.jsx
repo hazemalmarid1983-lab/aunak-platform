@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { Target } from 'lucide-react';
 import { CHILD } from '../../lib/childTheme';
 
-export default function ChildHomePanel({ lang = 'ar', studentName, programmedGoal }) {
+export default function ChildHomePanel({ lang = 'ar', studentName, programmedGoal, sovereign = false }) {
   const copy =
     lang === 'en'
       ? {
@@ -19,6 +19,20 @@ export default function ChildHomePanel({ lang = 'ar', studentName, programmedGoa
         };
 
   const firstName = studentName?.split?.(' ')?.[0] ?? studentName ?? '';
+
+  if (sovereign) {
+    return (
+      <div>
+        <div className="flex items-center gap-2 mb-3 text-[#e8c872]">
+          <Target className="w-5 h-5" />
+          <h2 className="font-black text-lg">{copy.todayGoal}</h2>
+        </div>
+        <p className="text-base font-bold text-emerald-100/90 leading-relaxed whitespace-pre-wrap">
+          {programmedGoal?.trim() ? programmedGoal.trim() : copy.noGoal}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className={CHILD.card}>

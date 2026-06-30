@@ -45,9 +45,21 @@ npm run dev
 
 ---
 
-## 2. Airtable base (free, separate from `appaGfKj4vYhMw0cb`)
+## 2. Airtable base (live — `app3vCT2j2JepNVZa`)
 
-Create a **new** base with three tables only.
+| Table | ID |
+|-------|-----|
+| Specialists | `tblhVAdIeUmqDQTmi` |
+| Students | `tbliBfCKXNyVtWJiO` |
+| Daily Sessions | `tbl8su5soBPDeGb6Z` |
+
+**Note:** UI field `Name` maps to `student_name` / `specialist_name` in code via fallback.
+
+Extend sovereignty columns (mirror + assessment):
+
+```bash
+node scripts/tawasul-extend-schema.mjs
+```
 
 ### tblSpecialists
 
@@ -72,23 +84,39 @@ Create a **new** base with three tables only.
 | `child_interactive_token` | Single line text | `AUN-CHD-…` |
 | `specialist_tutor_token` | Single line text | copy of owning specialist token |
 | `programmed_goal` | Long text | shown on child **Home** tab |
+| `mirror_command` | Single line text | Ghost Mirror: `echo_goal`, `drop_star`, `calm_pulse` |
+| `mirror_payload` | Single line text | mirror nonce / payload |
 | `initial_assessment_score` | Number | AppSheet assessment |
 | `comprehensive_assessment_status` | Single select | `not_started`, `in_progress`, `completed` |
 
-### tblDailySessions (auto-sealed island claims)
+### tblDailySessions (Tawasul live schema)
 
 | Field | Type | Notes |
 |-------|------|-------|
-| `session_date` | Date | |
-| `specialist_name` | Single line text | from student link / default |
-| `student_name` | Single line text | |
-| `notes` | Long text | includes `AUN-4611 · Island World` |
-| `claim_status` | Single select | `Sealed` |
-| `sealed_at` | Date and time | |
-| `session_fee` | Number | accounting hook |
-| `immutable_hash` | Single line text | |
+| `Session Date` | Date | |
+| `Session Notes` | Long text | includes `AUN-4611 · Island World` marker |
+| `student` | Link → Students | |
+| `Daily Goal Achieved` | Checkbox | set on seal |
+| `Session Duration (min)` | Number | derived from interactions |
 
-Child play (`/child?token=…`) triggers `POST /api/session/child-seal` after 5 interactions → one sealed row per student per day (existing `childSessionSeal.js`).
+Child play (`/child?token=…`) triggers `POST /api/session/child-seal` after **5 interactions** → one sealed row per student per day (`tawasulSessionSeal.js` on Tawasul base).
+
+---
+
+## 8. Sovereignty engines (Tawasul full lab)
+
+| Engine | Route / file | Behavior |
+|--------|----------------|----------|
+| Zero Entry assessment | `POST /api/tawasul/assessment-sync` | AppSheet → auto `programmed_goal` from score |
+| Ghost Mirror | `POST /api/tawasul/mirror` + `TawasulMirrorPanel` | Specialist echoes goal, drops stars, calm pulse → child polls Airtable every 3.5s |
+| Idle gaze (5s) | `useTawasulIdleGaze` | Play tab idle → typewriter audio cue |
+| Hybrid Awni | `ChildAwniCompanion` | Speaks when calm; silent + calm body on meltdown risk |
+| Sovereign Island UI | `tawasulChildTheme.js` | Matte black · gold · emerald neon child shell |
+| Session seal | `api/session/child-seal.js` | Routes to Tawasul schema when `VITE_TAWASUL_MVP=true` |
+
+**Excluded (by design):** biometric login, sovereign access control, deep admin, payment activation gate.
+
+**AppSheet webhook:** point automation to `https://<preview>/api/tawasul/assessment-sync` with body `{ "recordId": "rec…", "fields": { "initial_assessment_score": 72, "comprehensive_assessment_status": "completed" } }`.
 
 ---
 
@@ -140,7 +168,7 @@ Bottom nav:
 
 ## 7. Accounting note (daily sessions)
 
-Sealed rows in `tblDailySessions` are the single source of truth for island engagement billing. Reconcile specialist payouts against **count of `claim_status = Sealed`** per `specialist_name` / date — not against manual session notes in Students.
+Sealed rows in **Daily Sessions** (`Session Notes` contains island marker) are the billing source of truth. Count rows per `student` link / `Session Date` — not manual notes in Students.
 
 ---
 

@@ -59,8 +59,8 @@ if (!env.pat || !env.baseId || !env.specialists || !env.students) {
 }
 
 const specialists = [
-  { specialist_name: 'حازم', status: 'active' },
-  { specialist_name: 'الأخصائي 2', status: 'active' },
+  { Name: 'حازم' },
+  { Name: 'الأخصائي 2' },
 ];
 
 console.log('Seeding Tawasul MVP base', env.baseId);
@@ -73,7 +73,7 @@ for (const row of specialists) {
     specialist_tutor_token,
   });
   specialistRecords.push({ ...rec, token: specialist_tutor_token });
-  console.log(`  Specialist: ${row.specialist_name} → ${specialist_tutor_token} (${rec.id})`);
+  console.log(`  Specialist: ${row.Name} → ${specialist_tutor_token} (${rec.id})`);
 }
 
 let studentIndex = 1;
@@ -82,15 +82,10 @@ for (const spec of specialistRecords) {
     const child_interactive_token = token('CHD');
     const name = `حالة تواصل ${studentIndex}`;
     const rec = await airtablePost(env.baseId, env.students, env.pat, {
-      student_name: name,
-      student_id: `TWS-${String(studentIndex).padStart(2, '0')}`,
-      age: 6 + (studentIndex % 8),
-      status: 'active',
+      Name: name,
       assigned_specialist: [spec.id],
       child_interactive_token,
-      specialist_tutor_token: spec.token,
-      programmed_goal: `هدف يومي للحالة ${studentIndex} — من ${spec.fields?.specialist_name ?? 'أخصائي'}`,
-      comprehensive_assessment_status: 'not_started',
+      programmed_goal: `هدف يومي للحالة ${studentIndex} — من ${spec.fields?.Name ?? spec.fields?.specialist_name ?? 'أخصائي'}`,
     });
     console.log(`  Student: ${name} → ${child_interactive_token} (${rec.id})`);
     studentIndex++;
@@ -98,4 +93,4 @@ for (const spec of specialistRecords) {
 }
 
 console.log('\nDone. Specialist login tokens:');
-specialistRecords.forEach((s) => console.log(`  ${s.fields?.specialist_name}: ${s.token}`));
+specialistRecords.forEach((s) => console.log(`  ${s.fields?.Name ?? s.fields?.specialist_name}: ${s.token}`));

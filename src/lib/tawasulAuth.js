@@ -30,7 +30,7 @@ export async function verifyTawasulSpecialistToken(inputToken) {
   const status = String(getField(f, SP.status) ?? 'active').toLowerCase();
   if (/inactive|disabled|معطل/.test(status)) return null;
 
-  const name = getField(f, SP.name) || 'أخصائي';
+  const name = getField(f, SP.name) || getField(f, 'Name') || 'أخصائي';
   const email = getField(f, SP.email) || '';
 
   return {

@@ -6,6 +6,7 @@ import { STUDENT as SF } from '../../lib/airtableFields';
 import { resolveSpecialistCaseload } from '../../lib/specialistIsolation';
 import { TAWASUL_COPY } from '../../lib/tawasulConfig';
 import PlatformLogo from '../PlatformLogo';
+import TawasulMirrorPanel from './TawasulMirrorPanel';
 
 function childUrl(token) {
   if (typeof window === 'undefined' || !token) return '';
@@ -166,6 +167,18 @@ export default function TawasulHub({ lang = 'ar' }) {
                   {copy.saveGoal}
                 </button>
               </div>
+
+              <TawasulMirrorPanel
+                lang={lang}
+                student={selected}
+                goalDraft={goalDraft}
+                onGoalSynced={(goal) => {
+                  setStudents((prev) =>
+                    prev.map((s) => (s.id === selected.id ? { ...s, programmedGoal: goal } : s))
+                  );
+                  setGoalDraft(goal);
+                }}
+              />
 
               {error && <p className="text-xs text-rose-400">{error}</p>}
             </>

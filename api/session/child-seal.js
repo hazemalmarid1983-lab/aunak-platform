@@ -4,10 +4,19 @@
  */
 
 import { sealSessionFromChildIsland, CHILD_ISLAND_SEAL_THRESHOLD } from '../../src/lib/childSessionSeal.js';
+import { sealTawasulIslandSession } from '../../src/lib/tawasulSessionSeal.js';
 
 function sanitizeAscii(value) {
   if (value == null) return '';
   return String(value).replace(/[^\x20-\x7E]/g, '').trim();
+}
+
+function isTawasulSealRoute() {
+  const base =
+    sanitizeAscii(process.env.AIRTABLE_BASE_ID) ||
+    sanitizeAscii(process.env.VITE_AIRTABLE_BASE_ID) ||
+    '';
+  return process.env.VITE_TAWASUL_MVP === 'true' || base === 'app3vCT2j2JepNVZa';
 }
 
 export default async function handler(req, res) {
@@ -37,7 +46,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const result = await sealSessionFromChildIsland({
+    const sealFn = isTawasulSealRoute() ? sealTawasulIslandSession : sealSessionFromChildIsland;
+    const result = await sealFn({
       studentId,
       studentName,
       interactionCount,

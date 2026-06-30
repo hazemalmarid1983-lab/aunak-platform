@@ -139,7 +139,7 @@ export function mapStudent(record, lang = "ar") {
   const preferredRaw = pick(f, SF.preferred_destination);
   return {
     id: record.id,
-    name: pick(f, SF.name) || firstTitle(f) || (lang === "en" ? "Unknown student" : "اسم غير معروف"),
+    name: pick(f, SF.name) || pick(f, 'Name') || firstTitle(f) || (lang === "en" ? "Unknown student" : "اسم غير معروف"),
     studentCode: pick(f, SF.id) || null,
     parentPhone: pick(f, SF.parent_phone) || null,
     parentCountryCode: pick(f, SF.parent_country_code) || null,

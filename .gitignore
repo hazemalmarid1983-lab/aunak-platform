@@ -28,3 +28,4 @@ dist-ssr
 # Local patch scripts & IDE debug artifacts
 _patch/
 .cursor/
+.env*
