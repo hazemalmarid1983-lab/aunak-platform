@@ -38,7 +38,9 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.AIRTABLE_API_KEY || process.env.VITE_AIRTABLE_PAT;
   const baseId = sanitizeAscii(
-    process.env.AIRTABLE_BASE_ID || process.env.VITE_AIRTABLE_BASE_ID || "appaGfKj4vYhMw0cb"
+    process.env.AIRTABLE_BASE_ID ||
+      process.env.VITE_AIRTABLE_BASE_ID ||
+      (process.env.VITE_TAWASUL_MVP === "true" ? "app3vCT2j2JepNVZa" : "appaGfKj4vYhMw0cb")
   ).split("/")[0];
 
   if (!apiKey) {

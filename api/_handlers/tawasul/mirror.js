@@ -3,12 +3,9 @@
  */
 
 import { buildMirrorPatch } from '../../../src/lib/tawasulMirror.js';
-import { airtableConfigFromEnv, sanitizeAscii } from '../../../src/lib/paymentActivation.js';
+import { sanitizeAscii } from '../../../src/lib/paymentActivation.js';
 import { STUDENT as SF } from '../../../src/lib/airtableFields.js';
-
-function studentsTableId() {
-  return sanitizeAscii(process.env.VITE_AIRTABLE_STUDENTS_TABLE_ID) || 'tbliBfCKXNyVtWJiO';
-}
+import { airtableHeaders, tawasulServerConfig } from './config.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -26,7 +23,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { apiKey, baseId } = airtableConfigFromEnv();
+  const { apiKey, baseId, studentsTable } = tawasulServerConfig();
   if (!apiKey) {
     res.status(500).json({ error: 'AIRTABLE_NOT_CONFIGURED' });
     return;
@@ -37,17 +34,12 @@ export default async function handler(req, res) {
     fields[SF.programmed_goal] = String(goalEcho).trim();
   }
 
-  const tableId = studentsTableId();
-  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableId)}/${studentId}`;
+  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(studentsTable)}/${studentId}`;
 
   try {
     const patchRes = await fetch(url, {
       method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
+      headers: airtableHeaders(apiKey, { write: true }),
       body: JSON.stringify({ fields, typecast: true }),
     });
     const text = await patchRes.text();

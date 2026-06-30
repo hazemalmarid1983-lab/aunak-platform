@@ -6,30 +6,14 @@ import {
   generateProgrammedGoalFromAssessment,
   shouldAutoInjectGoal,
 } from '../../../src/lib/tawasulAssessmentEngine.js';
-import { airtableConfigFromEnv, sanitizeAscii } from '../../../src/lib/paymentActivation.js';
+import { sanitizeAscii } from '../../../src/lib/paymentActivation.js';
+import { airtableHeaders, tawasulServerConfig } from './config.js';
 
-function studentsTableId() {
-  return (
-    sanitizeAscii(process.env.VITE_AIRTABLE_STUDENTS_TABLE_ID) ||
-    sanitizeAscii(process.env.AIRTABLE_STUDENTS_TABLE_ID) ||
-    'tbliBfCKXNyVtWJiO'
-  );
-}
-
-function headers(apiKey) {
-  return {
-    Authorization: `Bearer ${sanitizeAscii(apiKey)}`,
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-  };
-}
-
-async function patchStudent(apiKey, baseId, recordId, fields) {
-  const tableId = studentsTableId();
+async function patchStudent(apiKey, baseId, tableId, recordId, fields) {
   const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableId)}/${recordId}`;
   const res = await fetch(url, {
     method: 'PATCH',
-    headers: headers(apiKey),
+    headers: airtableHeaders(apiKey, { write: true }),
     body: JSON.stringify({ fields, typecast: true }),
   });
   const text = await res.text();
@@ -37,12 +21,11 @@ async function patchStudent(apiKey, baseId, recordId, fields) {
   return JSON.parse(text);
 }
 
-async function findStudentByName(apiKey, baseId, name) {
-  const tableId = studentsTableId();
+async function findStudentByName(apiKey, baseId, tableId, name) {
   const n = String(name).replace(/'/g, "\\'");
   const formula = encodeURIComponent(`{Name}='${n}'`);
   const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableId)}?filterByFormula=${formula}&maxRecords=1`;
-  const res = await fetch(url, { headers: headers(apiKey) });
+  const res = await fetch(url, { headers: airtableHeaders(apiKey) });
   if (!res.ok) return null;
   const data = await res.json();
   return data.records?.[0] ?? null;
@@ -54,7 +37,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { apiKey, baseId } = airtableConfigFromEnv();
+  const { apiKey, baseId, studentsTable } = tawasulServerConfig();
   if (!apiKey) {
     res.status(500).json({ error: 'AIRTABLE_NOT_CONFIGURED' });
     return;
@@ -66,7 +49,7 @@ export default async function handler(req, res) {
 
   try {
     let record = recordId ? { id: recordId, fields: fieldsIn } : null;
-    if (!record && studentName) record = await findStudentByName(apiKey, baseId, studentName);
+    if (!record && studentName) record = await findStudentByName(apiKey, baseId, studentsTable, studentName);
     if (!record?.id) {
       res.status(400).json({ error: 'STUDENT_NOT_FOUND' });
       return;
@@ -92,7 +75,7 @@ export default async function handler(req, res) {
       }
     }
 
-    const updated = await patchStudent(apiKey, baseId, record.id, patch);
+    const updated = await patchStudent(apiKey, baseId, studentsTable, record.id, patch);
     res.status(200).json({
       ok: true,
       recordId: updated.id,
