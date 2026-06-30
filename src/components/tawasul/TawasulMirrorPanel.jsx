@@ -49,6 +49,8 @@ export default function TawasulMirrorPanel({ lang = 'ar', student, goalDraft, on
 
   useEffect(() => {
     setError('');
+    inFlightRef.current = null;
+    setLoading(IDLE_LOADING);
   }, [student?.id]);
 
   const copy =
@@ -66,56 +68,69 @@ export default function TawasulMirrorPanel({ lang = 'ar', student, goalDraft, on
           calm: 'نبضة هدوء',
         };
 
-  const setCommandLoading = useCallback((command, on) => {
-    setLoading((prev) => ({ ...prev, [command]: on }));
+  const clearCommandLoading = useCallback((command) => {
+    setLoading((prev) => ({ ...prev, [command]: false }));
   }, []);
 
+  const releaseCommand = useCallback((command) => {
+    inFlightRef.current = null;
+    clearCommandLoading(command);
+  }, [clearCommandLoading]);
+
   const runCommand = useCallback(
-    async (command, task) => {
+    async (command, apiCall, afterSuccess) => {
       if (!student?.id || inFlightRef.current) return;
 
       inFlightRef.current = command;
-      setCommandLoading(command, true);
+      setLoading((prev) => ({ ...prev, [command]: true }));
       setError('');
 
       try {
-        await task();
+        await apiCall();
+        clearCommandLoading(command);
+        afterSuccess?.();
       } catch (e) {
         setError(e instanceof Error ? e.message : readTawasulApiError(e, 'ERR'));
       } finally {
-        setCommandLoading(command, false);
-        inFlightRef.current = null;
+        releaseCommand(command);
       }
     },
-    [setCommandLoading, student?.id]
+    [clearCommandLoading, releaseCommand, student?.id]
   );
+
+  useEffect(() => {
+    return () => {
+      inFlightRef.current = null;
+    };
+  }, []);
 
   const onEchoGoal = () => {
     const goalText = String(goalDraft ?? student?.programmedGoal ?? '').trim();
-    runCommand(MIRROR_COMMANDS.ECHO_GOAL, async () => {
-      await sendEchoGoal({ studentId: student.id, goalText });
-      onGoalSynced?.(goalText);
-    });
+    runCommand(
+      MIRROR_COMMANDS.ECHO_GOAL,
+      () => sendEchoGoal({ studentId: student.id, goalText }),
+      () => onGoalSynced?.(goalText)
+    );
   };
 
   const onDropStar = () => {
-    runCommand(MIRROR_COMMANDS.DROP_STAR, async () => {
-      await sendMirror({
+    runCommand(MIRROR_COMMANDS.DROP_STAR, () =>
+      sendMirror({
         studentId: student.id,
         command: MIRROR_COMMANDS.DROP_STAR,
         payload: 'star',
-      });
-    });
+      })
+    );
   };
 
   const onCalmPulse = () => {
-    runCommand(MIRROR_COMMANDS.CALM_PULSE, async () => {
-      await sendMirror({
+    runCommand(MIRROR_COMMANDS.CALM_PULSE, () =>
+      sendMirror({
         studentId: student.id,
         command: MIRROR_COMMANDS.CALM_PULSE,
         payload: '1',
-      });
-    });
+      })
+    );
   };
 
   const anyLoading = Object.values(loading).some(Boolean);

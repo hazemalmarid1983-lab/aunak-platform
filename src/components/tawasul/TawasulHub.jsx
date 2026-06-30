@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ExternalLink, Loader2, LogOut, Save, Target, Users } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { TAWASUL_COPY } from '../../lib/tawasulConfig';
@@ -79,6 +79,12 @@ export default function TawasulHub({ lang = 'ar' }) {
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [saveError, setSaveError] = useState('');
+  const saveInFlightRef = useRef(false);
+
+  const stopSaving = useCallback(() => {
+    saveInFlightRef.current = false;
+    setSaving(false);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -118,21 +124,27 @@ export default function TawasulHub({ lang = 'ar' }) {
     if (selected) setGoalDraft(selected.programmedGoal ?? '');
   }, [selected?.id, selected?.programmedGoal]);
 
-  const saveGoal = async () => {
-    if (!selected?.id || saving) return;
+  const saveGoal = useCallback(async () => {
+    const recordId = selected?.id;
+    const goal = goalDraft.trim();
+    if (!recordId || saveInFlightRef.current) return;
+
+    saveInFlightRef.current = true;
     setSaving(true);
     setSaveError('');
+
     try {
-      await saveStudentGoal(selected.id, goalDraft.trim());
+      await saveStudentGoal(recordId, goal);
+      stopSaving();
       setStudents((prev) =>
-        prev.map((s) => (s.id === selected.id ? { ...s, programmedGoal: goalDraft.trim() } : s))
+        prev.map((s) => (s.id === recordId ? { ...s, programmedGoal: goal } : s))
       );
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : readTawasulApiError(e, 'SAVE'));
     } finally {
-      setSaving(false);
+      stopSaving();
     }
-  };
+  }, [goalDraft, selected?.id, stopSaving]);
 
   return (
     <div className="min-h-screen bg-[#0a0a0c] text-slate-100" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
