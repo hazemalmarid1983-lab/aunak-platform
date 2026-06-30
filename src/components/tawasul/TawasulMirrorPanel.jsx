@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Ghost, Loader2, Sparkles, Target, Volume2 } from 'lucide-react';
 import { MIRROR_COMMANDS } from '../../lib/tawasulMirror';
-import { STUDENT as SF } from '../../lib/airtableFields';
+import { TAWASUL_STUDENT } from '../../lib/tawasulStudentFields';
 
 function readApiError(data, status) {
   const err = data?.error ?? data?.message;
@@ -95,7 +95,7 @@ export default function TawasulMirrorPanel({ lang = 'ar', student, goalDraft, on
       </div>
       {error && <p className="text-xs text-rose-400">{error}</p>}
       <p className="text-[10px] text-slate-500 font-mono">
-        mirror → {SF.programmed_goal} + mirror_command
+        mirror → {TAWASUL_STUDENT.programmedGoal} + {TAWASUL_STUDENT.mirrorCommand}
       </p>
     </div>
   );

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ExternalLink, Loader2, LogOut, Save, Target, Users } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
-import { STUDENT as SF } from '../../lib/airtableFields';
 import { TAWASUL_COPY } from '../../lib/tawasulConfig';
 import PlatformLogo from '../PlatformLogo';
 import TawasulMirrorPanel from './TawasulMirrorPanel';
@@ -133,7 +132,7 @@ export default function TawasulHub({ lang = 'ar' }) {
     setSaving(true);
     setError('');
     try {
-      await patchTawasulStudent(selected.id, { [SF.programmed_goal]: goalDraft.trim() });
+      await patchTawasulStudent(selected.id, { programmed_goal: goalDraft.trim() });
       setStudents((prev) =>
         prev.map((s) => (s.id === selected.id ? { ...s, programmedGoal: goalDraft.trim() } : s))
       );

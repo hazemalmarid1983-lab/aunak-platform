@@ -1,7 +1,13 @@
 /**
  * Ghost Mirror — Airtable-backed live commands (specialist → child).
- * Fields on Students: mirror_command, mirror_payload (optional — typecast creates select options).
+ * Tawasul Students: `mirror command`, `mirror payload` (spaces) · sovereign: snake_case.
  */
+
+import {
+  normalizeMirrorCommand,
+  readTawasulMirrorCommand,
+  readTawasulMirrorPayload,
+} from './tawasulStudentFields.js';
 
 export const MIRROR_COMMANDS = {
   ECHO_GOAL: 'echo_goal',
@@ -17,8 +23,12 @@ const MIRROR_FIELDS = {
 };
 
 export function parseMirrorState(fields = {}) {
-  const cmd = String(fields[MIRROR_FIELDS.command] ?? fields.mirror_command ?? '').trim();
-  const payload = String(fields[MIRROR_FIELDS.payload] ?? fields.mirror_payload ?? '').trim();
+  const cmd = readTawasulMirrorCommand(fields) || normalizeMirrorCommand(
+    fields[MIRROR_FIELDS.command] ?? fields.mirror_command ?? fields['mirror command'] ?? ''
+  );
+  const payload = readTawasulMirrorPayload(fields) || String(
+    fields[MIRROR_FIELDS.payload] ?? fields.mirror_payload ?? fields['mirror payload'] ?? ''
+  ).trim();
   return { command: cmd, payload, ts: Date.now() };
 }
 

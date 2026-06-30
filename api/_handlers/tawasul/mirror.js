@@ -2,9 +2,8 @@
  * POST /api/tawasul/mirror
  */
 
-import { buildMirrorPatch } from '../../../src/lib/tawasulMirror.js';
+import { buildTawasulMirrorPatch } from '../../../src/lib/tawasulStudentFields.js';
 import { sanitizeAscii } from '../../../src/lib/paymentActivation.js';
-import { STUDENT as SF } from '../../../src/lib/airtableFields.js';
 import { airtableHeaders, tawasulVerifyConfig } from './config.js';
 import { formatAirtableApiError } from './airtableError.js';
 
@@ -30,11 +29,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const fields = { ...buildMirrorPatch(command, payload) };
-  if (goalEcho != null && String(goalEcho).trim()) {
-    fields[SF.programmed_goal] = String(goalEcho).trim();
-  }
-
+  const fields = buildTawasulMirrorPatch(command, payload, goalEcho);
   const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(studentsTable)}/${studentId}`;
 
   try {
@@ -45,7 +40,7 @@ export default async function handler(req, res) {
     });
     const text = await patchRes.text();
     if (!patchRes.ok) throw new Error(formatAirtableApiError(patchRes.status, text));
-    res.status(200).json({ ok: true, command, payload });
+    res.status(200).json({ ok: true, command, payload, table: studentsTable });
   } catch (err) {
     const message = err?.message ?? 'MIRROR_FAILED';
     const status = String(message).includes('403') ? 403 : 500;

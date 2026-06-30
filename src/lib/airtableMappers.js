@@ -153,7 +153,7 @@ export function mapStudent(record, lang = "ar") {
     harmonyScore: parseHarmonyScore(harmonyRaw),
     eyeMapData: parseEyeMapData(pick(f, SF.eye_movement_map)) ?? null,
     cameraAccessIds,
-    programmedGoal: pick(f, SF.programmed_goal) || null,
+    programmedGoal: pick(f, SF.programmed_goal) || pick(f, 'programmed goal') || null,
     improvementIndex: pickNumber(f, SF.improvement_index) ?? null,
     academicProgress: pickNumber(f, SF.academic_progress) ?? null,
     behaviorIntensity: pickNumber(f, SF.behavior_intensity) ?? null,

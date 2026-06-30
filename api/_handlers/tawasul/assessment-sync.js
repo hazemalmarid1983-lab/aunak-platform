@@ -6,6 +6,13 @@ import {
   generateProgrammedGoalFromAssessment,
   shouldAutoInjectGoal,
 } from '../../../src/lib/tawasulAssessmentEngine.js';
+import {
+  patchToTawasulAirtableFields,
+  readTawasulAssessmentScore,
+  readTawasulComprehensiveStatus,
+  readTawasulProgrammedGoal,
+  TAWASUL_STUDENT,
+} from '../../../src/lib/tawasulStudentFields.js';
 import { sanitizeAscii } from '../../../src/lib/paymentActivation.js';
 import { airtableHeaders, tawasulVerifyConfig } from './config.js';
 import { formatAirtableApiError } from './airtableError.js';
@@ -58,21 +65,25 @@ export default async function handler(req, res) {
 
     const merged = { ...record.fields, ...fieldsIn };
     const name = merged.Name ?? merged.student_name ?? studentName ?? 'الطفل';
-    const patch = { ...fieldsIn };
+    const patch = patchToTawasulAirtableFields(fieldsIn);
 
-    if (shouldAutoInjectGoal(merged)) {
+    const mergedForGoal = {
+      ...merged,
+      initial_assessment_score: readTawasulAssessmentScore(merged),
+      comprehensive_assessment_status: readTawasulComprehensiveStatus(merged),
+      programmed_goal: readTawasulProgrammedGoal(merged),
+    };
+
+    if (shouldAutoInjectGoal(mergedForGoal)) {
       const goal = generateProgrammedGoalFromAssessment({
         studentName: name,
-        scoreRaw: merged.initial_assessment_score ?? merged.Initial_Assessment_Score,
-        comprehensiveStatus:
-          merged.comprehensive_assessment_status ??
-          merged.Comprehensive_Assessment_Status ??
-          'completed',
+        scoreRaw: readTawasulAssessmentScore(merged),
+        comprehensiveStatus: readTawasulComprehensiveStatus(merged) ?? 'completed',
         lang: 'ar',
       });
       if (goal) {
-        patch.programmed_goal = goal;
-        patch.comprehensive_assessment_status = 'completed';
+        patch[TAWASUL_STUDENT.programmedGoal] = goal;
+        patch[TAWASUL_STUDENT.comprehensiveAssessmentStatus] = 'completed';
       }
     }
 
@@ -80,8 +91,9 @@ export default async function handler(req, res) {
     res.status(200).json({
       ok: true,
       recordId: updated.id,
-      programmed_goal: updated.fields?.programmed_goal ?? null,
-      autoGoal: Boolean(patch.programmed_goal),
+      table: studentsTable,
+      programmed_goal: readTawasulProgrammedGoal(updated.fields ?? {}) ?? null,
+      autoGoal: Boolean(patch[TAWASUL_STUDENT.programmedGoal]),
     });
   } catch (err) {
     res.status(500).json({ error: err?.message ?? 'ASSESSMENT_SYNC_FAILED' });
