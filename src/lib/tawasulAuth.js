@@ -18,7 +18,10 @@ function buildSessionFromRecord(record, inputToken) {
 
   return {
     role: ROLES.SPECIALIST,
-    plan: PLAN_CODES.TUTOR,
+    // Tawasul merges all sovereign packages — top tier + manual override unlock everything.
+    plan: PLAN_CODES.INSTITUTION,
+    manualOverride: true,
+    accessLevel: 'sovereign',
     name,
     email,
     specialistRecordId: record.id,

@@ -58,7 +58,10 @@ function buildSpecialistSession(record, token) {
 
   return {
     role: 'specialist',
-    plan: 'tutor',
+    // Tawasul merges all sovereign packages — top tier + manual override unlock everything.
+    plan: 'institution',
+    manualOverride: true,
+    accessLevel: 'sovereign',
     name: pickField(f, SP.name, 'Name', 'specialist_name') || 'أخصائي',
     email: pickField(f, SP.email, 'Email', 'professional_email') || '',
     specialistRecordId: record.id,

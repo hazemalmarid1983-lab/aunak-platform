@@ -72,7 +72,28 @@ function GatedPlatform() {
     };
   }, [user?.childId, user?.subscriptionRaw, user?.subscriptionActivated]);
 
-  if (user?.tawasulMvp) return <TawasulHub lang="ar" />;
+  if (user?.tawasulMvp) {
+    if (user?.sovereignFullView) {
+      return (
+        <>
+          <AunakEcosystemHub />
+          <button
+            type="button"
+            onClick={() => patchSession({ sovereignFullView: false })}
+            className="fixed bottom-4 inset-x-0 mx-auto z-[60] w-fit flex items-center gap-2 px-4 py-2 rounded-full bg-[#12121a]/90 border border-cyan-500/40 text-cyan-200 text-xs font-bold backdrop-blur-md shadow-[0_0_24px_rgba(34,211,238,0.25)] hover:bg-[#12121a]"
+          >
+            ↩ العودة إلى تواصل
+          </button>
+        </>
+      );
+    }
+    return (
+      <TawasulHub
+        lang="ar"
+        onOpenSovereign={() => patchSession({ sovereignFullView: true })}
+      />
+    );
+  }
 
   if (!user) return <AunakGate />;
 

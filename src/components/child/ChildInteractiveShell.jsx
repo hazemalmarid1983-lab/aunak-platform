@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Loader2, Star } from 'lucide-react';
 import { findStudentByChildToken, parseChildRouteToken } from '../../lib/childAccess';
-import { isTawasulMvp } from '../../lib/tawasulConfig';
+import { isTawasulExperience } from '../../lib/tawasulConfig';
 import { CHILD } from '../../lib/childTheme';
 import { TAWASUL_CHILD } from '../../lib/tawasulChildTheme';
 import { MIRROR_COMMANDS, mirrorFingerprint, parseMirrorState } from '../../lib/tawasulMirror';
@@ -34,7 +34,7 @@ import ChildAssessmentPanel from './ChildAssessmentPanel';
 import PlatformLogo from '../PlatformLogo';
 
 export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
-  const tawasul = isTawasulMvp();
+  const tawasul = isTawasulExperience();
   const theme = tawasul ? TAWASUL_CHILD : CHILD;
   const [lang, setLang] = useState(langProp);
   const [loading, setLoading] = useState(true);
@@ -124,34 +124,45 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
 
   useEffect(() => {
     if (!tawasul || !student) return undefined;
-    const t = setInterval(() => {
-      reloadStudent().then((row) => {
-        if (!row?.fields) return;
-        const mirror = parseMirrorState(row.fields);
-        const fp = mirrorFingerprint(mirror);
-        if (!mirror.command || fp === mirrorSeenRef.current) return;
-        mirrorSeenRef.current = fp;
+    let stopped = false;
+    const applyMirror = (row) => {
+      if (stopped || !row?.fields) return;
+      const mirror = parseMirrorState(row.fields);
+      const fp = mirrorFingerprint(mirror);
+      if (!mirror.command || fp === mirrorSeenRef.current) return;
+      mirrorSeenRef.current = fp;
 
-        if (mirror.command === MIRROR_COMMANDS.DROP_STAR || mirror.command === MIRROR_COMMANDS.DROP_REWARD) {
-          addStar();
-        }
-        if (mirror.command === MIRROR_COMMANDS.ECHO_GOAL) {
-          setTab('home');
-          playGoalEcho();
-          const goalText =
-            mirror.payload?.trim() ||
-            row.programmedGoal?.trim() ||
-            (lang === 'en' ? 'Your specialist set a new goal.' : 'هدف جديد من الأخصائي.');
-          unlockAcademyVoice();
-          enqueueAcademySpeech(goalText, { lang, preferCloud: true });
-        }
-        if (mirror.command === MIRROR_COMMANDS.CALM_PULSE) {
-          setTab('calm');
-          playCalmPulse();
-        }
-      });
+      if (mirror.command === MIRROR_COMMANDS.DROP_STAR || mirror.command === MIRROR_COMMANDS.DROP_REWARD) {
+        addStar();
+      }
+      if (mirror.command === MIRROR_COMMANDS.ECHO_GOAL) {
+        setTab('home');
+        playGoalEcho();
+        // payload is a sentinel ('live'); the real goal is echoed into programmed_goal.
+        const payloadGoal = mirror.payload?.trim();
+        const spokenGoal =
+          (payloadGoal && payloadGoal !== 'live' ? payloadGoal : '') ||
+          row.programmedGoal?.trim() ||
+          (lang === 'en' ? 'Your specialist set a new goal.' : 'هدف جديد من الأخصائي.');
+        unlockAcademyVoice();
+        enqueueAcademySpeech(spokenGoal, { lang, preferCloud: true });
+      }
+      if (mirror.command === MIRROR_COMMANDS.CALM_PULSE) {
+        setTab('calm');
+        playCalmPulse();
+      }
+    };
+    const t = setInterval(() => {
+      reloadStudent()
+        .then(applyMirror)
+        .catch((err) => {
+          if (import.meta.env?.DEV) console.warn('[child mirror] poll failed:', err?.message);
+        });
     }, 3500);
-    return () => clearInterval(t);
+    return () => {
+      stopped = true;
+      clearInterval(t);
+    };
   }, [tawasul, student, reloadStudent, addStar, lang]);
 
   useTawasulIdleGaze({

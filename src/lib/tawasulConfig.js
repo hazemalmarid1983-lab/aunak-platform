@@ -25,6 +25,22 @@ export function isTawasulRoute() {
   return path === '/tawasul' || path.startsWith('/tawasul/');
 }
 
+/** Child interactive route (/child?token=AUN-CHD-…) — the student interface surface. */
+export function isTawasulChildRoute() {
+  if (typeof window === 'undefined') return false;
+  const path = (window.location.pathname || '/').replace(/\/$/, '') || '/';
+  return path === '/child' || path.startsWith('/child/');
+}
+
+/**
+ * Full sovereign experience unlock — build flag, /tawasul route, or /child route.
+ * Runtime-driven so every Aunak sovereign feature (Ghost Mirror, sovereign island,
+ * audio, assessment) is open inside Tawasul even when the build-time flag is off.
+ */
+export function isTawasulExperience() {
+  return isTawasulMvp() || isTawasulRoute() || isTawasulChildRoute();
+}
+
 /** Specialist shell: build-time Tawasul MVP or explicit /tawasul URL. */
 export function shouldShowTawasulShell() {
   return isTawasulMvp() || isTawasulRoute();

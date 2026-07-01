@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ExternalLink, Loader2, LogOut, Save, Target, Users } from 'lucide-react';
+import { Crown, ExternalLink, Loader2, LogOut, Save, Target, Users } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 import { TAWASUL_COPY } from '../../lib/tawasulConfig';
 import { readTawasulApiError, tawasulFetchJson } from '../../lib/tawasulFetch';
@@ -69,7 +69,7 @@ async function saveStudentGoal(recordId, programmedGoal) {
   return data;
 }
 
-export default function TawasulHub({ lang = 'ar' }) {
+export default function TawasulHub({ lang = 'ar', onOpenSovereign }) {
   const { user, logout } = useAuth();
   const copy = TAWASUL_COPY[lang] ?? TAWASUL_COPY.ar;
   const [students, setStudents] = useState([]);
@@ -156,14 +156,27 @@ export default function TawasulHub({ lang = 'ar' }) {
             <p className="text-xs text-slate-500">{user?.name ?? copy.myCases}</p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={logout}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/10 text-xs text-slate-400 hover:text-white"
-        >
-          <LogOut className="w-4 h-4" />
-          {copy.logout}
-        </button>
+        <div className="flex items-center gap-2">
+          {onOpenSovereign && (
+            <button
+              type="button"
+              onClick={onOpenSovereign}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-400/40 bg-gradient-to-l from-amber-500/20 to-[#c9a962]/15 text-xs font-bold text-amber-200 hover:from-amber-500/30 hover:to-[#c9a962]/25 transition-colors shadow-[0_0_18px_rgba(201,169,98,0.15)]"
+              title={lang === 'en' ? 'Open the full sovereign platform' : 'الدخول إلى المنصة السيادية الكاملة'}
+            >
+              <Crown className="w-4 h-4" />
+              {lang === 'en' ? 'Full Sovereign Platform' : 'المنصة السيادية الكاملة'}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={logout}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-white/10 text-xs text-slate-400 hover:text-white"
+          >
+            <LogOut className="w-4 h-4" />
+            {copy.logout}
+          </button>
+        </div>
       </header>
 
       <main className="max-w-5xl mx-auto p-4 grid gap-4 md:grid-cols-[280px_1fr]">
