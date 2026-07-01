@@ -219,6 +219,93 @@ export function playGoalEcho() {
   });
 }
 
+/**
+ * Ta-da Fanfare — joyful celebratory burst for a specialist reward.
+ * Rising major arpeggio + shimmer sparkle so the child gets instant dopamine.
+ */
+export function playTaDaFanfare() {
+  if (!canPlaySovereignAudio()) return;
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime + 0.02;
+
+  // "Ta-" quick lift then "-da!" bright landing.
+  tone(ac, { freq: 523.25, endFreq: 659.25, type: 'triangle', start: t, dur: 0.18, gain: 0.09 });
+  const chord = [659.25, 830.61, 987.77, 1318.51]; // E5 · G#5 · B5 · E6 (E major)
+  chord.forEach((freq, i) => {
+    tone(ac, { freq, type: 'triangle', start: t + 0.2 + i * 0.015, dur: 0.9, gain: 0.07 });
+    tone(ac, { freq: freq * 2, type: 'sine', start: t + 0.2, dur: 0.5, gain: 0.012 });
+  });
+
+  // Shimmer sparkle tail.
+  for (let i = 0; i < 8; i += 1) {
+    tone(ac, {
+      freq: 1500 + Math.random() * 1800,
+      type: 'sine',
+      start: t + 0.35 + i * 0.055,
+      dur: 0.18,
+      gain: 0.02,
+    });
+  }
+}
+
+/**
+ * Calm Sensory Drone — warm sustained pad that soothes on calm_pulse.
+ * Returns a handle: call .stop() to fade out.
+ */
+export function startCalmDrone() {
+  if (!canPlaySovereignAudio()) return { stop() {} };
+  const ac = getCtx();
+  if (!ac) return { stop() {} };
+
+  const master = ac.createGain();
+  master.gain.value = 0;
+  const lp = ac.createBiquadFilter();
+  lp.type = 'lowpass';
+  lp.frequency.value = 900;
+  master.connect(lp).connect(ac.destination);
+
+  // Soft consonant chord (A2 · E3 · A3 · C#4) — gentle, non-alerting.
+  const freqs = [110, 164.81, 220, 277.18];
+  const oscs = freqs.map((f, i) => {
+    const osc = ac.createOscillator();
+    osc.type = i === 0 ? 'sine' : 'triangle';
+    osc.frequency.value = f;
+    const g = ac.createGain();
+    g.gain.value = i === 0 ? 0.5 : 0.22;
+    osc.connect(g).connect(master);
+    return osc;
+  });
+
+  // Slow shimmer LFO on the filter for a breathing, watery texture.
+  const lfo = ac.createOscillator();
+  lfo.frequency.value = 0.14;
+  const lfoGain = ac.createGain();
+  lfoGain.gain.value = 320;
+  lfo.connect(lfoGain).connect(lp.frequency);
+
+  const t = ac.currentTime;
+  master.gain.setValueAtTime(0.0001, t);
+  master.gain.exponentialRampToValueAtTime(0.05, t + 1.5);
+
+  oscs.forEach((o) => o.start(t));
+  lfo.start(t);
+
+  let stopped = false;
+  const stop = () => {
+    if (stopped) return;
+    stopped = true;
+    activeHums.delete(stop);
+    const now = ac.currentTime;
+    master.gain.cancelScheduledValues(now);
+    master.gain.setValueAtTime(master.gain.value || 0.05, now);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + 1.4);
+    [...oscs, lfo].forEach((n) => n.stop(now + 1.6));
+  };
+  activeHums.add(stop);
+  return { stop };
+}
+
 /** Typewriter Effect — rapid intel-teletype ticks (gaze-neutrality alert). */
 export function playTypewriterEffect(ticks = 16) {
   if (!canPlaySovereignAudio()) return;

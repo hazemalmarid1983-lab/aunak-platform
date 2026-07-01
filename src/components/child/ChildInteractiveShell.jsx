@@ -14,7 +14,9 @@ import {
   playGoalEcho,
   playStarDrop,
   playSuccessChime,
+  playTaDaFanfare,
   playTypewriterEffect,
+  startCalmDrone,
   startProcessingHum,
 } from '../../lib/sovereignAudio';
 import {
@@ -29,8 +31,10 @@ import ChildBottomNav from './ChildBottomNav';
 import ChildHomePanel from './ChildHomePanel';
 import ChildCalmZone from './ChildCalmZone';
 import ChildStarsPanel from './ChildStarsPanel';
-import ChildAwniCompanion from './ChildAwniCompanion';
 import ChildAssessmentPanel from './ChildAssessmentPanel';
+import ChildAvatar from './ChildAvatar';
+import ChildCelebration from './ChildCelebration';
+import ChildCalmOverlay from './ChildCalmOverlay';
 import PlatformLogo from '../PlatformLogo';
 
 export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
@@ -44,10 +48,14 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
   const [tab, setTab] = useState('home');
   const [starCount, setStarCount] = useState(0);
   const [gazeAlert, setGazeAlert] = useState('');
-  const [companionIdx, setCompanionIdx] = useState(0);
+  const [rewardBurst, setRewardBurst] = useState(false);
+  const [calmActive, setCalmActive] = useState(false);
   const mirrorSeenRef = useRef('');
   const welcomeSpokenRef = useRef(false);
   const humRef = useRef(null);
+  const rewardTimerRef = useRef(null);
+  const calmTimerRef = useRef(null);
+  const calmDroneRef = useRef(null);
 
   const reloadStudent = useCallback(async () => {
     const token = parseChildRouteToken();
@@ -68,8 +76,39 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
       }
       return next;
     });
-    setCompanionIdx((i) => i + 1);
   }, [tawasul]);
+
+  // Locked reward burst — only the specialist's success command unleashes it.
+  const fireReward = useCallback(() => {
+    setRewardBurst(true);
+    playTaDaFanfare();
+    if (rewardTimerRef.current) clearTimeout(rewardTimerRef.current);
+    rewardTimerRef.current = setTimeout(() => setRewardBurst(false), 4200);
+  }, []);
+
+  // Calming sensory pulse — fluid gradient takeover + soothing drone.
+  const enterCalm = useCallback(() => {
+    setTab('calm');
+    setCalmActive(true);
+    calmDroneRef.current?.stop?.();
+    calmDroneRef.current = startCalmDrone();
+    playCalmPulse();
+    if (calmTimerRef.current) clearTimeout(calmTimerRef.current);
+    calmTimerRef.current = setTimeout(() => {
+      setCalmActive(false);
+      calmDroneRef.current?.stop?.();
+      calmDroneRef.current = null;
+    }, 30000);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (rewardTimerRef.current) clearTimeout(rewardTimerRef.current);
+      if (calmTimerRef.current) clearTimeout(calmTimerRef.current);
+      calmDroneRef.current?.stop?.();
+    },
+    []
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -134,6 +173,7 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
 
       if (mirror.command === MIRROR_COMMANDS.DROP_STAR || mirror.command === MIRROR_COMMANDS.DROP_REWARD) {
         addStar();
+        fireReward();
       }
       if (mirror.command === MIRROR_COMMANDS.ECHO_GOAL) {
         setTab('home');
@@ -148,8 +188,7 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
         enqueueAcademySpeech(spokenGoal, { lang, preferCloud: true });
       }
       if (mirror.command === MIRROR_COMMANDS.CALM_PULSE) {
-        setTab('calm');
-        playCalmPulse();
+        enterCalm();
       }
     };
     const t = setInterval(() => {
@@ -163,7 +202,7 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
       stopped = true;
       clearInterval(t);
     };
-  }, [tawasul, student, reloadStudent, addStar, lang]);
+  }, [tawasul, student, reloadStudent, addStar, fireReward, enterCalm, lang]);
 
   useTawasulIdleGaze({
     active: tawasul && tab === 'play',
@@ -248,6 +287,8 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
           <Star className={`w-24 h-24 animate-ping opacity-80 ${tawasul ? 'text-[#e8c872]' : 'text-yellow-400'}`} />
         </div>
       )}
+      {tawasul && <ChildCalmOverlay show={calmActive} lang={lang} />}
+      {tawasul && <ChildCelebration show={rewardBurst} lang={lang} />}
       {gazeAlert && (
         <div className="fixed top-20 inset-x-4 z-40 mx-auto max-w-md rounded-xl border border-emerald-400/40 bg-[#0d0d10]/95 px-4 py-3 text-xs font-mono text-emerald-300 shadow-[0_0_24px_rgba(52,211,153,0.2)]">
           {gazeAlert}
@@ -279,17 +320,30 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
       <main className={theme.main}>
         {tab === 'home' && (
           <div className={tawasul ? TAWASUL_CHILD.card : CHILD.card}>
-            {tawasul && (
-              <div className="mb-4">
-                <ChildAwniCompanion lang={lang} active lineIndex={companionIdx} />
+            {tawasul ? (
+              <div className="flex flex-col items-center gap-6">
+                <ChildAvatar
+                  mood={calmActive ? 'calm' : rewardBurst ? 'celebrate' : 'happy'}
+                  onTap={() => {
+                    unlockAcademyVoice();
+                    enqueueAcademySpeech(scriptEncouragement(lang), { lang, preferCloud: false });
+                  }}
+                />
+                <ChildHomePanel
+                  lang={lang}
+                  studentName={firstName}
+                  programmedGoal={student.programmedGoal}
+                  sovereign={tawasul}
+                />
               </div>
+            ) : (
+              <ChildHomePanel
+                lang={lang}
+                studentName={firstName}
+                programmedGoal={student.programmedGoal}
+                sovereign={tawasul}
+              />
             )}
-            <ChildHomePanel
-              lang={lang}
-              studentName={firstName}
-              programmedGoal={student.programmedGoal}
-              sovereign={tawasul}
-            />
           </div>
         )}
         {tab === 'play' && (
