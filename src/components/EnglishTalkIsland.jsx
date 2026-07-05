@@ -95,6 +95,20 @@ export default function EnglishTalkIsland() {
     let cancelled = false;
     (async () => {
       const token = parseEnglishRouteToken();
+
+      // Demo mode (?demo=1 or token AUN-ENG-DEMO): try the island with no cloud
+      // setup — pure client speech/scoring, nothing written to Airtable.
+      const params =
+        typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const demo =
+        params?.get('demo') === '1' || /^AUN-ENG-DEMO/i.test(String(token ?? ''));
+      if (demo) {
+        const demoName = params?.get('name')?.trim();
+        setStudent({ id: null, name: demoName || 'Maryam', demo: true });
+        setLoading(false);
+        return;
+      }
+
       if (!token) {
         setError(t.badToken);
         setLoading(false);
@@ -290,6 +304,11 @@ export default function EnglishTalkIsland() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {student?.demo && (
+            <span className="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full bg-[#c9a962]/12 border border-[#c9a962]/30 text-[#e8c872] text-[10px] font-bold uppercase tracking-wider">
+              {rtl ? 'عرض تجريبي' : 'Demo'}
+            </span>
+          )}
           <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 text-xs font-mono">
             {t.stars} {stars}/{MAX_STARS}
           </span>
