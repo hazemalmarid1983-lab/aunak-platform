@@ -5,6 +5,7 @@ import AunakGate from './components/AunakGate';
 import AunakActivationGate from './components/AunakActivationGate';
 import AunakSummerAcademy from './components/AunakSummerAcademy';
 import ChildInteractiveShell from './components/child/ChildInteractiveShell';
+import EnglishTalkIsland from './components/EnglishTalkIsland';
 import ParentShell from './components/parent/ParentShell';
 import PostActivationBiometric from './components/PostActivationBiometric';
 import { AuthProvider, useAuth, isSubscriptionActive } from './lib/auth';
@@ -26,6 +27,11 @@ function isSummerAcademyRoute() {
 function isChildPlayRoute() {
   const path = (typeof window !== 'undefined' ? window.location.pathname : '').replace(/\/$/, '') || '/';
   return path === '/child' || path.startsWith('/child/');
+}
+
+function isEnglishIslandRoute() {
+  const path = (typeof window !== 'undefined' ? window.location.pathname : '').replace(/\/$/, '') || '/';
+  return path === '/english' || path.startsWith('/english/');
 }
 
 function isParentDashboardRoute() {
@@ -167,6 +173,7 @@ export default function App() {
   const tawasul = shouldShowTawasulShell();
   const summerRoute = isSummerAcademyRoute();
   const childRoute = isChildPlayRoute();
+  const englishRoute = isEnglishIslandRoute();
   const parentRoute = isParentDashboardRoute();
   const paymentReturnRoute = isPaymentReturnRoute();
 
@@ -175,6 +182,8 @@ export default function App() {
       <AuthProvider>
         {paymentReturnRoute ? (
           <PaymentReturn lang="ar" />
+        ) : englishRoute ? (
+          <EnglishTalkIsland />
         ) : childRoute ? (
           <ChildInteractiveShell />
         ) : tawasul ? (

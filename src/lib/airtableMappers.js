@@ -165,6 +165,9 @@ export function mapStudent(record, lang = "ar") {
     parentAccessToken: pick(f, SF.parent_access_token) || null,
     childInteractiveToken: pick(f, SF.child_interactive_token) || null,
     specialistTutorToken: pick(f, SF.specialist_tutor_token) || null,
+    studentEnglishToken: pick(f, SF.student_english_token) || null,
+    lastSpokenText: pick(f, SF.last_spoken_text) || null,
+    pronunciationAccuracy: pickNumber(f, SF.pronunciation_accuracy) ?? null,
     assignedSpecialistIds: (() => {
       const raw = pick(f, SF.assigned_specialist);
       if (raw == null || raw === "") return [];

@@ -21,6 +21,20 @@ export const TRIPLE_ACCESS = {
   specialist: 'specialist_tutor_token',
 };
 
+/**
+ * Wave 4 — English Talk Island (isolated pronunciation track, snake_case).
+ * Mirrors the Tawasul isolated architecture: one encrypted token unlocks the
+ * live speaking games interface, live speech is captured, accuracy is scored.
+ */
+export const ENGLISH_ISLAND = {
+  /** Encrypted sub-token — direct entry to the games interface (AUN-ENG-{32hex}) */
+  student_english_token: 'student_english_token',
+  /** Latest phrase the student spoke aloud (Long Text) */
+  last_spoken_text: 'last_spoken_text',
+  /** Pronunciation accuracy 0–100, refreshed live each attempt (Number) */
+  pronunciation_accuracy: 'pronunciation_accuracy',
+};
+
 /** Students table */
 export const STUDENT = {
   name: "student_name",
@@ -65,6 +79,10 @@ export const STUDENT = {
   parent_access_token: TRIPLE_ACCESS.parent,
   child_interactive_token: TRIPLE_ACCESS.child,
   specialist_tutor_token: TRIPLE_ACCESS.specialist,
+  /** Wave 4 — English Talk Island isolated track */
+  student_english_token: ENGLISH_ISLAND.student_english_token,
+  last_spoken_text: ENGLISH_ISLAND.last_spoken_text,
+  pronunciation_accuracy: ENGLISH_ISLAND.pronunciation_accuracy,
   /** Link → Specialists (Tawasul MVP per-specialist caseload isolation) */
   assigned_specialist: "assigned_specialist",
   /** Ghost Mirror — specialist → child live commands */
@@ -109,6 +127,9 @@ export const STUDENT_SELECT_CHECKLIST = [
   "parent_access_token / child_interactive_token / specialist_tutor_token: AUN-{PRT|CHD|SPC}-{32hex}",
   "diagnosis: autism_spectrum, adhd, learning_difficulty, language_delay, under_assessment",
   "parent_country_code: text (dial digits, e.g. 966)",
+  "student_english_token: text (AUN-ENG-{32hex}) — English Talk Island direct entry",
+  "last_spoken_text: long text (latest spoken phrase captured live)",
+  "pronunciation_accuracy: number (0–100 pronunciation accuracy, live)",
 ];
 
 /** Daily Sessions table */

@@ -3,6 +3,7 @@
  * Server-side token verify — runtime env (base + table + PAT), not client build IDs.
  * AUN-SPC-* → Specialists.specialist_tutor_token
  * AUN-CHD-* → Students.child_interactive_token
+ * AUN-ENG-* → Students.student_english_token (English Talk Island)
  */
 
 import { sanitizeAscii } from '../../../src/lib/paymentActivation.js';
@@ -86,6 +87,20 @@ function buildChildPayload(record, token) {
   };
 }
 
+function buildEnglishPayload(record, token) {
+  const f = record.fields ?? {};
+  const status = String(pickField(f, SF.status, 'status') ?? 'active').toLowerCase();
+  if (/inactive|disabled|معطل/.test(status)) return null;
+
+  return {
+    id: record.id,
+    fields: f,
+    studentEnglishToken: normalizeToken(
+      pickField(f, SF.student_english_token, 'student_english_token') || token
+    ),
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -102,7 +117,8 @@ export default async function handler(req, res) {
 
   const isSpecialist = /^AUN-SPC-/i.test(token);
   const isChild = /^AUN-CHD-/i.test(token);
-  if (!isSpecialist && !isChild) {
+  const isEnglish = /^AUN-ENG-/i.test(token);
+  if (!isSpecialist && !isChild && !isEnglish) {
     res.status(400).json({ error: 'INVALID_TOKEN_FORMAT' });
     return;
   }
@@ -139,6 +155,34 @@ export default async function handler(req, res) {
       }
 
       res.status(200).json({ ok: true, kind: 'specialist', session });
+      return;
+    }
+
+    if (isEnglish) {
+      const record = await findRecordByTokenField(
+        apiKey,
+        baseId,
+        studentsTable,
+        SF.student_english_token,
+        token
+      );
+      if (!record) {
+        res.status(401).json({
+          error: 'TOKEN_NOT_FOUND',
+          hint: 'Check Students.student_english_token',
+          baseId,
+          table: studentsTable,
+        });
+        return;
+      }
+
+      const englishStudent = buildEnglishPayload(record, token);
+      if (!englishStudent) {
+        res.status(403).json({ error: 'STUDENT_INACTIVE' });
+        return;
+      }
+
+      res.status(200).json({ ok: true, kind: 'english', record: englishStudent });
       return;
     }
 

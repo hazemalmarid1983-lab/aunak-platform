@@ -9,6 +9,8 @@ export const DEVICE_TOKEN_PREFIX = {
   parent: 'PRT',
   child: 'CHD',
   specialist: 'SPC',
+  /** Wave 4 — English Talk Island direct-entry token */
+  english: 'ENG',
 };
 
 export const COMPREHENSIVE_ASSESSMENT = {
@@ -32,6 +34,17 @@ export function generateDeviceToken(role) {
   const prefix = DEVICE_TOKEN_PREFIX[role];
   if (!prefix) throw new Error(`Unknown device role: ${role}`);
   return `AUN-${prefix}-${randomHex(16).toUpperCase()}`;
+}
+
+/** English Talk Island direct-entry token: AUN-ENG-{32hex}. */
+export function generateEnglishIslandToken() {
+  return generateDeviceToken('english');
+}
+
+/** Map an English token → Students column write. */
+export function englishTokenAirtableFields(token) {
+  if (!token) return {};
+  return { [SF.student_english_token]: token };
 }
 
 /** Parent + child + specialist/tutor tokens for a student record. */
