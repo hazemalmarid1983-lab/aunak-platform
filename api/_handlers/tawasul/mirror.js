@@ -72,7 +72,20 @@ export default async function handler(req, res) {
     });
     const text = await patchRes.text();
     if (!patchRes.ok) throw new Error(formatAirtableApiError(patchRes.status, text));
-    res.status(200).json({ ok: true, command, payload, table: studentsTable });
+
+    let realtime = { ok: false, skipped: true };
+    try {
+      const { publishMirrorEvent } = await import('../mirror/ablyPublish.js');
+      realtime = await publishMirrorEvent(studentId, {
+        command,
+        payload,
+        goalEcho: goalEcho || undefined,
+      });
+    } catch (ablyErr) {
+      console.warn('[tawasul/mirror] Ably publish failed (Airtable fallback active):', ablyErr?.message);
+    }
+
+    res.status(200).json({ ok: true, command, payload, table: studentsTable, realtime });
   } catch (err) {
     const message = err?.message ?? 'MIRROR_FAILED';
     console.error('[tawasul/mirror]', message);

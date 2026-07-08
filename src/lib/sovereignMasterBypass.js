@@ -11,6 +11,11 @@
 export const SOVEREIGN_MASTER_KEY_DEFAULT = 'AUNAK-MASTER-2026';
 const BYPASS_LS = 'aunak.sovereignMasterBypass.v1';
 
+/** Production builds never honor master bypass (P0 hardening). */
+export function isMasterBypassAllowedInEnvironment() {
+  return !import.meta.env.PROD;
+}
+
 function expectedMasterKey() {
   const fromEnv = import.meta.env.VITE_AUNAK_MASTER_KEY;
   const key = fromEnv != null && String(fromEnv).trim() !== '' ? fromEnv : SOVEREIGN_MASTER_KEY_DEFAULT;
@@ -26,6 +31,7 @@ export function validateMasterKey(key) {
 }
 
 export function activateMasterBypass(key) {
+  if (!isMasterBypassAllowedInEnvironment()) return false;
   if (!validateMasterKey(key)) return false;
   try {
     sessionStorage.setItem(BYPASS_LS, expectedMasterKey());
@@ -44,6 +50,7 @@ export function clearMasterBypass() {
 }
 
 export function isMasterBypassActive() {
+  if (!isMasterBypassAllowedInEnvironment()) return false;
   try {
     const stored = sessionStorage.getItem(BYPASS_LS);
     if (stored && stored === expectedMasterKey()) return true;
@@ -55,6 +62,7 @@ export function isMasterBypassActive() {
 
 /** Call once on app boot — reads ?master= from URL and activates if valid. */
 export function bootstrapMasterBypassFromUrl() {
+  if (!isMasterBypassAllowedInEnvironment()) return false;
   if (typeof window === 'undefined') return false;
   const params = new URLSearchParams(window.location.search);
   const raw = params.get('master') ?? params.get('sovereign_master');

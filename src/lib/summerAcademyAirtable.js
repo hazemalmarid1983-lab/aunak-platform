@@ -7,7 +7,7 @@ import { AIRTABLE_TABLES } from './airtableTables';
 import { SUMMER_ACADEMY as SA } from './airtableFields';
 
 const LS_KEY = 'aunak.summerAcademy.v1';
-const USE_PROXY = import.meta.env.VITE_USE_AIRTABLE_PROXY === 'true';
+const USE_PROXY = import.meta.env.PROD || import.meta.env.VITE_USE_AIRTABLE_PROXY === 'true';
 
 function summerTableId() {
   const id = AIRTABLE_TABLES.summerAcademy;
@@ -27,8 +27,6 @@ async function cloudWrite(fields) {
   if (!tableId) return null;
 
   const body = { fields: scrubFields(fields) };
-  const token = import.meta.env.VITE_AIRTABLE_API_KEY || import.meta.env.VITE_AIRTABLE_PAT;
-  const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
 
   if (USE_PROXY) {
     const res = await fetch(`/api/airtable?table=${encodeURIComponent(tableId)}`, {
@@ -40,6 +38,10 @@ async function cloudWrite(fields) {
     return res.json();
   }
 
+  if (import.meta.env.PROD) return null;
+
+  const token = import.meta.env.VITE_AIRTABLE_API_KEY || import.meta.env.VITE_AIRTABLE_PAT;
+  const baseId = import.meta.env.VITE_AIRTABLE_BASE_ID;
   if (!token || !baseId) return null;
   const res = await fetch(`https://api.airtable.com/v0/${baseId}/${tableId}`, {
     method: 'POST',

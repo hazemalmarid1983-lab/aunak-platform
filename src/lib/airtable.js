@@ -102,8 +102,12 @@ export function buildStudentEnrollmentFields({
 
 const DEFAULT_AIRTABLE_BASE_ID = "appaGfKj4vYhMw0cb";
 
-/** Paste your Airtable Personal Access Token here (pat...). */
+/** Paste your Airtable Personal Access Token here (pat...) — dev-only; never shipped in prod bundle. */
 const HARDCODED_API_KEY = "put_your_token_here";
+
+/** P0: production always routes through /api/airtable — PAT never reaches the browser. */
+export const USE_PROXY =
+  import.meta.env.PROD || import.meta.env.VITE_USE_AIRTABLE_PROXY === "true";
 
 function sanitizeAscii(value) {
   if (value == null) return "";
@@ -135,6 +139,7 @@ function resolveBaseId() {
 }
 
 function resolveApiKey() {
+  if (import.meta.env.PROD) return "";
   const fromEnv =
     import.meta.env.VITE_AIRTABLE_API_KEY ||
     import.meta.env.VITE_AIRTABLE_PAT;
@@ -142,16 +147,29 @@ function resolveApiKey() {
   return sanitizeApiKey(HARDCODED_API_KEY);
 }
 
-export const AIRTABLE_API_KEY = resolveApiKey();
+export const AIRTABLE_API_KEY = import.meta.env.PROD ? "" : resolveApiKey();
 export const AIRTABLE_BASE_ID = resolveBaseId();
 
 const BASE_URL = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}`;
 
-export const USE_PROXY = import.meta.env.VITE_USE_AIRTABLE_PROXY === "true";
-
 function hasDirectApiKey() {
+  if (import.meta.env.PROD) return false;
   const key = resolveApiKey();
   return Boolean(key && key !== "put_your_token_here");
+}
+
+const SESSION_KEY = "aunak.session.v1";
+
+function resolveProxyRoleHeader() {
+  if (typeof sessionStorage === "undefined") return "";
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return "";
+    const session = JSON.parse(raw);
+    return String(session?.role ?? "").trim();
+  } catch {
+    return "";
+  }
 }
 
 async function proxyFetch(tableId, { method = "GET", params = {}, recordId, body } = {}) {
@@ -164,6 +182,8 @@ async function proxyFetch(tableId, { method = "GET", params = {}, recordId, body
     method,
     headers: { Accept: sanitizeAscii("application/json") },
   };
+  const role = resolveProxyRoleHeader();
+  if (role) init.headers["X-Aunak-Role"] = sanitizeAscii(role);
   if (body != null && method !== "GET") {
     init.headers["Content-Type"] = sanitizeAscii("application/json");
     init.body = JSON.stringify(body);
@@ -229,7 +249,7 @@ function airtableRequestHeaders({ write = false } = {}) {
 
 
 export const airtable = {
-  apiKey: AIRTABLE_API_KEY,
+  apiKey: import.meta.env.PROD ? "" : AIRTABLE_API_KEY,
   baseId: AIRTABLE_BASE_ID,
   baseUrl: BASE_URL,
   studentsTableId: STUDENTS_TABLE,
@@ -292,15 +312,7 @@ function buildQueryString(params = {}) {
 
 async function airtableFetchTable(tableId, params = {}) {
   if (USE_PROXY) {
-    try {
-      return await proxyFetch(tableId, { method: "GET", params });
-    } catch (proxyErr) {
-      if (hasDirectApiKey()) {
-        console.warn("[airtable] proxy GET failed, falling back to direct:", proxyErr.message);
-        return directFetchTable(tableId, params);
-      }
-      throw proxyErr;
-    }
+    return proxyFetch(tableId, { method: "GET", params });
   }
   if (!hasDirectApiKey()) {
     throw new Error(
@@ -406,15 +418,7 @@ async function airtableWrite(tableId, method, body, recordId) {
       ? { ...body, typecast: true }
       : body;
   if (USE_PROXY) {
-    try {
-      return await proxyFetch(tableId, { method, body: payload, recordId });
-    } catch (proxyErr) {
-      if (hasDirectApiKey()) {
-        console.warn("[airtable] proxy write failed, falling back to direct:", proxyErr.message);
-        return directWrite(tableId, method, payload, recordId);
-      }
-      throw proxyErr;
-    }
+    return proxyFetch(tableId, { method, body: payload, recordId });
   }
   if (!hasDirectApiKey()) {
     throw new Error(
@@ -920,11 +924,7 @@ export async function syncLedgerToClaimCount(date, specialistEmail, specialistNa
   return { synced: true, count: sealedCount };
 }
 
-export function assertClaimNotSealed(fields) {
-  if (String(fields?.[DS.claimStatus] ?? "").trim() === CLAIM_STATUS_SEALED) {
-    throw new Error("CLAIM_SEALED_IMMUTABLE");
-  }
-}
+export { assertClaimNotSealed } from "./sealedClaims";
 
 /** Fetch access control record by specialist email (for PIN verification). */
 export async function fetchAccessControlByEmail(email) {

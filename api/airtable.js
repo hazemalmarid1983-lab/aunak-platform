@@ -1,7 +1,14 @@
 /**
  * Vercel serverless proxy for Airtable (keeps PAT off the client when VITE_USE_AIRTABLE_PROXY=true).
  * GET|POST|PATCH /api/airtable?table=tblXXX&recordId=recXXX (optional)
+ *
+ * B2G: ministry_auditor role → PII stripped via api/_handlers/b2g/anonymize.js
  */
+
+import {
+  filterAirtableResponseForB2G,
+  isB2GRole,
+} from './_handlers/b2g/anonymize.js';
 
 function sanitizeAscii(value) {
   if (value == null) return "";
@@ -23,6 +30,30 @@ function sanitizeHeaders(headers) {
   return out;
 }
 
+function resolveStudentsTableId() {
+  return (
+    sanitizeAscii(process.env.AIRTABLE_STUDENTS_TABLE_ID) ||
+    sanitizeAscii(process.env.VITE_AIRTABLE_STUDENTS_TABLE_ID) ||
+    'tblzYmBGmCxx2vdcr'
+  );
+}
+
+function applyB2GFilter(body, { role, tableId, method }) {
+  if (!isB2GRole(role) || method !== 'GET') return body;
+  const studentsTable = resolveStudentsTableId();
+  const isStudents =
+    tableId === studentsTable ||
+    /student/i.test(String(tableId));
+  if (!isStudents) return body;
+  try {
+    const parsed = typeof body === 'string' ? JSON.parse(body) : body;
+    const filtered = filterAirtableResponseForB2G(parsed, { studentsTableHint: true });
+    return JSON.stringify(filtered);
+  } catch {
+    return body;
+  }
+}
+
 export default async function handler(req, res) {
   const method = req.method?.toUpperCase?.() || "GET";
   if (!["GET", "POST", "PATCH"].includes(method)) {
@@ -36,6 +67,8 @@ export default async function handler(req, res) {
     return;
   }
 
+  const b2gRole = sanitizeAscii(req.headers?.['x-aunak-role'] ?? req.headers?.['X-Aunak-Role'] ?? '');
+
   const apiKey = process.env.AIRTABLE_API_KEY || process.env.VITE_AIRTABLE_PAT;
   const baseId = sanitizeAscii(
     process.env.AIRTABLE_BASE_ID ||
@@ -45,6 +78,11 @@ export default async function handler(req, res) {
 
   if (!apiKey) {
     res.status(500).json({ error: "AIRTABLE_API_KEY not configured on server" });
+    return;
+  }
+
+  if (isB2GRole(b2gRole) && method !== 'GET') {
+    res.status(403).json({ error: 'B2G_READ_ONLY', hint: 'Ministry auditors may not write student records' });
     return;
   }
 
@@ -72,7 +110,8 @@ export default async function handler(req, res) {
       init.body = typeof req.body === "string" ? req.body : JSON.stringify(req.body);
     }
     const response = await fetch(url, init);
-    const body = await response.text();
+    let body = await response.text();
+    body = applyB2GFilter(body, { role: b2gRole, tableId, method });
     res.status(response.status).setHeader("Content-Type", "application/json");
     res.send(body);
   } catch (err) {

@@ -14,6 +14,7 @@ export const ROLES = {
   ADMIN: "admin",
   SPECIALIST: "specialist",
   PARENT: "parent",
+  MINISTRY: "ministry_auditor",
 };
 
 export const SOVEREIGN_OWNER_EMAIL = 'hazem@aunak-center.com';
@@ -47,6 +48,7 @@ const ROLE_ACCESS = {
     'biometrics', 'community', 'research', 'reports',
   ],
   [ROLES.PARENT]: ['media', 'community', 'biometrics', 'resources', 'emotion', 'reports', 'summerAcademy'],
+  [ROLES.MINISTRY]: ['ministry', 'reports'],
 };
 
 export function canAccessSection(user, role, sectionId) {
@@ -69,6 +71,7 @@ const SESSION_KEY = "aunak.session.v1";
 const TOKEN_FIELDS = [AF.access_token];
 
 const ADMIN_LEVELS = ["admin", "مدير", "super", "sovereign", "owner"];
+const MINISTRY_LEVELS = ["ministry_auditor", "ministry", "b2g", "وزارة", "مفتش", "inspector"];
 
 function readSession() {
   try {
@@ -111,6 +114,7 @@ function resolvePlanFromFields(fields) {
 
 function resolveRoleFromRecord(fields) {
   const level = String(getField(fields, AF.access_level) ?? "").toLowerCase();
+  if (MINISTRY_LEVELS.some((k) => level.includes(k))) return ROLES.MINISTRY;
   if (ADMIN_LEVELS.some((k) => level.includes(k))) return ROLES.ADMIN;
 
   const permissions = String(getField(fields, AF.permissions) ?? "");

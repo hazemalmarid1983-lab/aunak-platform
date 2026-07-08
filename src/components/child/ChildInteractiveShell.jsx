@@ -5,6 +5,7 @@ import { isTawasulExperience } from '../../lib/tawasulConfig';
 import { CHILD } from '../../lib/childTheme';
 import { TAWASUL_CHILD } from '../../lib/tawasulChildTheme';
 import { MIRROR_COMMANDS, mirrorFingerprint, parseMirrorState } from '../../lib/tawasulMirror';
+import { subscribeMirrorChannel } from '../../lib/mirrorBus';
 import {
   clampSovereignStars,
   SOVEREIGN_CHILD_MAX_STARS,
@@ -164,11 +165,12 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
   useEffect(() => {
     if (!tawasul || !student) return undefined;
     let stopped = false;
-    const applyMirror = (row) => {
-      if (stopped || !row?.fields) return;
-      const mirror = parseMirrorState(row.fields);
+    let ablyStop = () => {};
+
+    const handleMirrorCommand = (mirror, row = {}) => {
+      if (stopped || !mirror?.command) return;
       const fp = mirrorFingerprint(mirror);
-      if (!mirror.command || fp === mirrorSeenRef.current) return;
+      if (fp === mirrorSeenRef.current) return;
       mirrorSeenRef.current = fp;
 
       if (mirror.command === MIRROR_COMMANDS.DROP_STAR || mirror.command === MIRROR_COMMANDS.DROP_REWARD) {
@@ -178,11 +180,11 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
       if (mirror.command === MIRROR_COMMANDS.ECHO_GOAL) {
         setTab('home');
         playGoalEcho();
-        // payload is a sentinel ('live'); the real goal is echoed into programmed_goal.
         const payloadGoal = mirror.payload?.trim();
         const spokenGoal =
           (payloadGoal && payloadGoal !== 'live' ? payloadGoal : '') ||
           row.programmedGoal?.trim() ||
+          student?.programmedGoal?.trim() ||
           (lang === 'en' ? 'Your specialist set a new goal.' : 'هدف جديد من الأخصائي.');
         unlockAcademyVoice();
         enqueueAcademySpeech(spokenGoal, { lang, preferCloud: true });
@@ -191,16 +193,45 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
         enterCalm();
       }
     };
-    const t = setInterval(() => {
-      reloadStudent()
-        .then(applyMirror)
-        .catch((err) => {
-          if (import.meta.env?.DEV) console.warn('[child mirror] poll failed:', err?.message);
-        });
-    }, 3500);
+
+    const applyMirrorFromRow = (row) => {
+      if (stopped || !row?.fields) return;
+      handleMirrorCommand(parseMirrorState(row.fields), row);
+    };
+
+    let ablyConnected = false;
+    subscribeMirrorChannel(student.id, (msg) => {
+      handleMirrorCommand(
+        { command: msg.command, payload: msg.payload ?? '' },
+        { programmedGoal: msg.goalEcho }
+      );
+    }).then((bus) => {
+      ablyConnected = bus.connected;
+      ablyStop = bus.stop;
+      if (!ablyConnected && !stopped) startFallbackPoll();
+    });
+
+    let pollTimer = null;
+    const FALLBACK_POLL_MS = 3500;
+    const startFallbackPoll = () => {
+      const tick = () => {
+        if (stopped || ablyConnected) return;
+        reloadStudent()
+          .then(applyMirrorFromRow)
+          .catch((err) => {
+            if (import.meta.env?.DEV) console.warn('[child mirror] poll fallback:', err?.message);
+          })
+          .finally(() => {
+            if (!stopped && !ablyConnected) pollTimer = setTimeout(tick, FALLBACK_POLL_MS);
+          });
+      };
+      tick();
+    };
+
     return () => {
       stopped = true;
-      clearInterval(t);
+      if (pollTimer) clearTimeout(pollTimer);
+      ablyStop();
     };
   }, [tawasul, student, reloadStudent, addStar, fireReward, enterCalm, lang]);
 
