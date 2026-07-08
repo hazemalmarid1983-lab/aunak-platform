@@ -3,6 +3,7 @@
  */
 
 import { isStealthMode, setStealthMode } from './sovereignAudio';
+import { getSessionRole, ROLES } from './auth';
 
 const FINANCIAL_FIELD_PATTERN =
   /كفاءة التشغيل|صافي|إيراد|الدفع|دفع|فاتورة|مالي|سعر|تكلفة|revenue|payment|invoice|price|cost|billing|paid|operating efficiency|net revenue/i;
@@ -47,6 +48,7 @@ export function isSectionHiddenInStealth(sectionId) {
 }
 
 export function shouldForceStudentNameMask(revealNames) {
+  if (getSessionRole() === ROLES.MINISTRY) return true;
   return isAppStealthActive() || !revealNames;
 }
 

@@ -7,7 +7,7 @@ import AunakSummerAcademy from './components/AunakSummerAcademy';
 import ChildInteractiveShell from './components/child/ChildInteractiveShell';
 import ParentShell from './components/parent/ParentShell';
 import PostActivationBiometric from './components/PostActivationBiometric';
-import { AuthProvider, useAuth, isSubscriptionActive } from './lib/auth';
+import { AuthProvider, useAuth, isSubscriptionActive, isMinistryAuditor } from './lib/auth';
 import { fetchStudents } from './lib/airtable';
 import { needsActivationGate, activationGateReason } from './lib/subscriptionEngine';
 import { landingForPlan, PLAN_CODES } from './lib/plans';
@@ -17,6 +17,7 @@ import PaymentReturn from './components/PaymentReturn';
 import { shouldShowTawasulShell } from './lib/tawasulConfig';
 import TawasulGate from './components/tawasul/TawasulGate';
 import TawasulHub from './components/tawasul/TawasulHub';
+import AunakMinistryDashboard from './components/AunakMinistryDashboard';
 
 function isSummerAcademyRoute() {
   const path = (typeof window !== 'undefined' ? window.location.pathname : '').replace(/\/$/, '') || '/';
@@ -38,6 +39,20 @@ function isPaymentReturnRoute() {
   return path === '/payment/return' || path.startsWith('/payment/return');
 }
 
+function isMinistryRoute() {
+  const path = (typeof window !== 'undefined' ? window.location.pathname : '').replace(/\/$/, '') || '/';
+  return path === '/ministry' || path.startsWith('/ministry/');
+}
+
+function MinistryShell() {
+  const { user, logout } = useAuth();
+  if (!user) return <AunakGate />;
+  if (!isMinistryAuditor(user)) {
+    return <AunakGate />;
+  }
+  return <AunakMinistryDashboard lang="ar" user={user} onLogout={logout} />;
+}
+
 function SummerAcademyShell() {
   const { user } = useAuth();
   if (!user) return <AunakGate />;
@@ -45,7 +60,7 @@ function SummerAcademyShell() {
 }
 
 function GatedPlatform() {
-  const { user, patchSession } = useAuth();
+  const { user, patchSession, logout } = useAuth();
   const [biometricGate, setBiometricGate] = useState(null);
 
   useEffect(() => {
@@ -96,6 +111,13 @@ function GatedPlatform() {
   }
 
   if (!user) return <AunakGate />;
+
+  if (isMinistryAuditor(user)) {
+    if (typeof window !== 'undefined' && !isMinistryRoute()) {
+      window.history.replaceState({}, '', '/ministry');
+    }
+    return <AunakMinistryDashboard lang="ar" user={user} onLogout={logout} />;
+  }
 
   if (needsActivationGate(user)) {
     return (
@@ -169,6 +191,7 @@ export default function App() {
   const childRoute = isChildPlayRoute();
   const parentRoute = isParentDashboardRoute();
   const paymentReturnRoute = isPaymentReturnRoute();
+  const ministryRoute = isMinistryRoute();
 
   return (
     <ErrorBoundary>
@@ -177,6 +200,8 @@ export default function App() {
           <PaymentReturn lang="ar" />
         ) : childRoute ? (
           <ChildInteractiveShell />
+        ) : ministryRoute ? (
+          <MinistryShell />
         ) : tawasul ? (
           <TawasulPlatform />
         ) : parentRoute ? (

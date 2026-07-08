@@ -4,7 +4,7 @@ import PlatformLogo, { GATE_LOGO_CLASS } from "./PlatformLogo";
 import AunakBiometrics from "./AunakBiometrics";
 import { toggleAppStealth } from "../lib/studentPrivacy";
 import AunakEnrollment from "./AunakEnrollment";
-import { useAuth, verifyAccessToken } from "../lib/auth";
+import { useAuth, verifyAccessToken, ROLES } from "../lib/auth";
 import { verifyTawasulSpecialistToken } from "../lib/tawasulAuth";
 import { isTawasulMvp, isTawasulSpecialistToken } from "../lib/tawasulConfig";
 import { isEnrollmentDeepLink, buildEnrollmentUrl, setEnrollmentUrl } from "../lib/enrollmentLink";
@@ -79,8 +79,12 @@ export default function AunakGate({ lang = "ar" }) {
       }
 
       const session = await verifyAccessToken(token);
-      if (session) login(session);
-      else {
+      if (session) {
+        login(session);
+        if (session.role === ROLES.MINISTRY && typeof window !== "undefined") {
+          window.history.replaceState({}, "", "/ministry");
+        }
+      } else {
         setTokenState("error");
         setTokenError(copy.tokenInvalid);
       }

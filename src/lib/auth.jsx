@@ -48,7 +48,7 @@ const ROLE_ACCESS = {
     'biometrics', 'community', 'research', 'reports',
   ],
   [ROLES.PARENT]: ['media', 'community', 'biometrics', 'resources', 'emotion', 'reports', 'summerAcademy'],
-  [ROLES.MINISTRY]: ['ministry', 'reports'],
+  [ROLES.MINISTRY]: ['ministry'],
 };
 
 export function canAccessSection(user, role, sectionId) {
@@ -64,6 +64,14 @@ export function canAccessSection(user, role, sectionId) {
   }
   const allowed = ROLE_ACCESS[role];
   return allowed == null || allowed.includes(sectionId);
+}
+
+export function isMinistryAuditor(userOrRole) {
+  const role =
+    typeof userOrRole === 'string'
+      ? userOrRole
+      : userOrRole?.role ?? getSessionRole();
+  return role === ROLES.MINISTRY || String(role ?? '').includes('ministry');
 }
 
 const SESSION_KEY = "aunak.session.v1";
@@ -149,13 +157,23 @@ export async function verifyAccessToken(inputToken) {
         role,
         plan,
         isSovereignOwner: isSovereignOwner({ email: email || '' }),
-        name: getField(f, AF.user_name) || (role === ROLES.ADMIN ? "المدير الأعلى" : "أخصائي"),
-        email: email || "",
-        permissions: getField(f, AF.permissions) || "",
+        name:
+          getField(f, AF.user_name) ||
+          (role === ROLES.MINISTRY
+            ? 'مفتش الوزارة'
+            : role === ROLES.ADMIN
+              ? 'المدير الأعلى'
+              : 'أخصائي'),
+        email: email || '',
+        permissions: getField(f, AF.permissions) || '',
         recordId: record.id,
         dynamicSessionId: newDynamicSessionId(),
-        landingSection: "registry",
+        landingSection: role === ROLES.MINISTRY ? 'ministry' : 'registry',
+        b2gAuditor: role === ROLES.MINISTRY,
       };
+      if (role === ROLES.MINISTRY) {
+        return base;
+      }
       const session =
         role === ROLES.SPECIALIST || role === ROLES.ADMIN
           ? buildSpecialistClinicalSession(base)

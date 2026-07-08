@@ -38,16 +38,31 @@ function resolveStudentsTableId() {
   );
 }
 
+function resolveDailySessionsTableId() {
+  return (
+    sanitizeAscii(process.env.AIRTABLE_DAILY_SESSIONS_TABLE_ID) ||
+    sanitizeAscii(process.env.VITE_AIRTABLE_DAILY_SESSIONS_TABLE_ID) ||
+    'tbl3mlewMLvqp6AXB'
+  );
+}
+
 function applyB2GFilter(body, { role, tableId, method }) {
   if (!isB2GRole(role) || method !== 'GET') return body;
   const studentsTable = resolveStudentsTableId();
+  const sessionsTable = resolveDailySessionsTableId();
   const isStudents =
     tableId === studentsTable ||
     /student/i.test(String(tableId));
-  if (!isStudents) return body;
+  const isSessions =
+    tableId === sessionsTable ||
+    /session/i.test(String(tableId));
+  if (!isStudents && !isSessions) return body;
   try {
     const parsed = typeof body === 'string' ? JSON.parse(body) : body;
-    const filtered = filterAirtableResponseForB2G(parsed, { studentsTableHint: true });
+    const filtered = filterAirtableResponseForB2G(parsed, {
+      studentsTableHint: isStudents,
+      sessionsTableHint: isSessions,
+    });
     return JSON.stringify(filtered);
   } catch {
     return body;
@@ -122,6 +137,10 @@ export default async function handler(req, res) {
     const response = await fetch(url, init);
     let body = await response.text();
     body = applyB2GFilter(body, { role: b2gRole, tableId, method });
+    if (isB2GRole(b2gRole)) {
+      res.setHeader('X-Aunak-B2G-Readonly', 'true');
+      res.setHeader('X-Aunak-Reveal-Names', 'denied');
+    }
     res.status(response.status).setHeader("Content-Type", "application/json");
     res.send(body);
   } catch (err) {
