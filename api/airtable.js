@@ -70,11 +70,21 @@ export default async function handler(req, res) {
   const b2gRole = sanitizeAscii(req.headers?.['x-aunak-role'] ?? req.headers?.['X-Aunak-Role'] ?? '');
 
   const apiKey = process.env.AIRTABLE_API_KEY || process.env.VITE_AIRTABLE_PAT;
-  const baseId = sanitizeAscii(
-    process.env.AIRTABLE_BASE_ID ||
-      process.env.VITE_AIRTABLE_BASE_ID ||
-      (process.env.VITE_TAWASUL_MVP === "true" ? "app3vCT2j2JepNVZa" : "appaGfKj4vYhMw0cb")
-  ).split("/")[0];
+  const sovereignBase = 'appaGfKj4vYhMw0cb';
+  const tawasulBase = 'app3vCT2j2JepNVZa';
+  const resolved =
+    sanitizeAscii(process.env.AIRTABLE_BASE_ID) ||
+    sanitizeAscii(process.env.VITE_AIRTABLE_BASE_ID) ||
+    '';
+  const baseId = (
+    resolved ||
+    (process.env.VITE_TAWASUL_MVP === 'true' ? tawasulBase : sovereignBase)
+  ).split('/')[0];
+  // Never route sovereign production to Tawasul sandbox when base is explicitly sovereign.
+  const baseIdFinal =
+    resolved === sovereignBase && process.env.VITE_TAWASUL_MVP === 'true'
+      ? sovereignBase
+      : baseId;
 
   if (!apiKey) {
     res.status(500).json({ error: "AIRTABLE_API_KEY not configured on server" });
@@ -96,7 +106,7 @@ export default async function handler(req, res) {
   const qs = params.toString();
   const recordSuffix =
     recordId && typeof recordId === "string" ? `/${encodeURIComponent(recordId)}` : "";
-  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableId)}${recordSuffix}${qs ? `?${qs}` : ""}`;
+  const url = `https://api.airtable.com/v0/${baseIdFinal}/${encodeURIComponent(tableId)}${recordSuffix}${qs ? `?${qs}` : ""}`;
 
   const headers = sanitizeHeaders({
     Authorization: `Bearer ${sanitizeAscii(apiKey)}`,

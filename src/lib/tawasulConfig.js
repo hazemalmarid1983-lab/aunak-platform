@@ -8,6 +8,15 @@ export const TAWASUL_BRANCH = 'Tawasul_MVP';
 /** Live Tawasul sandbox base (separate from sovereign production appaGfKj4vYhMw0cb). */
 export const TAWASUL_BASE_ID = 'app3vCT2j2JepNVZa';
 
+/** Sovereign production Airtable base — government / Core deployment. */
+export const SOVEREIGN_BASE_ID = 'appaGfKj4vYhMw0cb';
+
+/** True when build targets sovereign production (not Tawasul sandbox). */
+export function isSovereignProductionBuild() {
+  const base = String(import.meta.env.VITE_AIRTABLE_BASE_ID ?? '').trim();
+  return !base || base === SOVEREIGN_BASE_ID;
+}
+
 export function isTawasulSpecialistToken(token) {
   return /^AUN-SPC-/i.test(String(token ?? '').trim());
 }
@@ -41,9 +50,16 @@ export function isTawasulExperience() {
   return isTawasulMvp() || isTawasulRoute() || isTawasulChildRoute();
 }
 
-/** Specialist shell: build-time Tawasul MVP or explicit /tawasul URL. */
+/**
+ * Specialist Tawasul shell — never hijacks sovereign production root (/).
+ * - aunak.vercel.app/ → Aunak Gate (Core)
+ * - aunak.vercel.app/tawasul → Tawasul specialist gate
+ * - Tawasul-only preview (sandbox base) may still use / when VITE_TAWASUL_MVP=true
+ */
 export function shouldShowTawasulShell() {
-  return isTawasulMvp() || isTawasulRoute();
+  if (isTawasulRoute()) return true;
+  if (isTawasulMvp() && !isSovereignProductionBuild()) return true;
+  return false;
 }
 
 /** Max caseload per specialist in sovereign sandbox. */
