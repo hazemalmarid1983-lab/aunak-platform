@@ -4,6 +4,15 @@ import { useAirtableSection } from "../hooks/useAirtableData";
 import { useGoalEngine } from "../hooks/useGoalEngine";
 import { ENGINE_ID } from "../lib/goalEngine";
 import { LUX } from "../lib/luxTheme.js";
+import {
+  SovereignTable,
+  SovereignTableShell,
+  SovereignTd,
+  SovereignTh,
+  SovereignThead,
+  SovereignTr,
+  TruncateTooltip,
+} from "./ui/SovereignTable";
 
 export default function GoalEngine({
   lang = "ar",
@@ -199,28 +208,32 @@ export default function GoalEngine({
       </div>
 
       {showWeeklySummary && weeklySummary.length > 0 && (
-        <div className="p-4 rounded-xl bg-[#0d0d10]/90 border border-[#c9a962]/15">
-          <p className="text-xs font-bold text-[#e8c872] mb-3">{copy.weeklyReport}</p>
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="text-slate-500 text-start">
-                <th className="pb-2 font-normal">{copy.goal}</th>
-                <th className="pb-2 font-normal">{copy.attempts}</th>
-                <th className="pb-2 font-normal">{copy.average}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {weeklySummary.map((row) => (
-                <tr key={row.goalLabel} className="border-t border-white/[0.04]">
-                  <td className="py-1.5 text-slate-300 truncate max-w-[140px]">{row.goalLabel}</td>
-                  <td className="py-1.5 text-slate-400">{row.attemptCount}</td>
-                  <td className="py-1.5 text-emerald-400">
-                    {row.averageSuccess != null ? `${row.averageSuccess}%` : "—"}
-                  </td>
+        <div className="p-4 rounded-xl bg-neutral-950 border border-slate-800/60">
+          <p className="text-xs font-bold text-amber-500/80 uppercase tracking-[0.14em] mb-3">{copy.weeklyReport}</p>
+          <SovereignTableShell>
+            <SovereignTable className="text-xs">
+              <SovereignThead>
+                <tr>
+                  <SovereignTh>{copy.goal}</SovereignTh>
+                  <SovereignTh>{copy.attempts}</SovereignTh>
+                  <SovereignTh>{copy.average}</SovereignTh>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </SovereignThead>
+              <tbody>
+                {weeklySummary.map((row, i) => (
+                  <SovereignTr key={row.goalLabel} index={i}>
+                    <SovereignTd>
+                      <TruncateTooltip text={row.goalLabel} maxWidthClass="max-w-[140px]" />
+                    </SovereignTd>
+                    <SovereignTd muted>{row.attemptCount}</SovereignTd>
+                    <SovereignTd className="text-emerald-400">
+                      {row.averageSuccess != null ? `${row.averageSuccess}%` : "—"}
+                    </SovereignTd>
+                  </SovereignTr>
+                ))}
+              </tbody>
+            </SovereignTable>
+          </SovereignTableShell>
         </div>
       )}
     </div>

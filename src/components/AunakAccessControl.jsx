@@ -8,6 +8,7 @@ import { isStealthMode, setStealthMode } from '../lib/sovereignAudio';
 import { useAuth, isSovereignOwner } from '../lib/auth';
 import { AirtableEmpty, AirtableErrorBanner, AirtableLoading } from './AirtableStatus';
 import { LUX } from '../lib/luxTheme.js';
+import { StatusBadge, TruncateTooltip, ST } from './ui/SovereignTable';
 
 export default function AunakAccessControl({ lang = 'ar', defaultStealth = false }) {
   const { user, patchSession } = useAuth();
@@ -148,21 +149,34 @@ export default function AunakAccessControl({ lang = 'ar', defaultStealth = false
               ) : isEmpty ? (
                 <AirtableEmpty lang={lang} />
               ) : (
-              <div className="space-y-4">
-                 {users.map(user => (
-                    <div key={user.id} className="p-5 bg-[#0d0d10]/90 rounded-2xl border border-[#c9a962]/15 flex justify-between items-center hover:border-amber-500/30 transition-colors">
-                       <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-[#c9a962] to-[#d4af37]/10 border border-amber-500/30 flex items-center justify-center text-[#d4af37] font-bold text-xl">
+              <div className="space-y-3">
+                 {users.map((user, i) => (
+                    <div
+                      key={user.id}
+                      className={`${ST.listRow} ${i % 2 === 1 ? ST.listRowAlt : ''}`}
+                    >
+                       <div className="flex items-center gap-4 min-w-0">
+                          <div className="w-12 h-12 shrink-0 rounded-full bg-gradient-to-r from-[#c9a962] to-[#d4af37]/10 border border-amber-500/30 flex items-center justify-center text-[#d4af37] font-bold text-xl">
                              {(user.name || '?').charAt(0)}
                           </div>
-                          <div>
-                             <h4 className="text-md font-bold text-slate-200">{user.name}</h4>
-                             <p className="text-xs text-slate-500 mt-1 font-mono">{user.email} • {user.role}</p>
+                          <div className="min-w-0">
+                             <h4 className="text-md font-bold text-neutral-200 truncate">{user.name}</h4>
+                             <p className="text-xs text-neutral-400 mt-1 font-mono truncate">
+                               <TruncateTooltip text={`${user.email} • ${user.role}`} muted maxWidthClass="max-w-[18rem]" />
+                             </p>
                           </div>
                        </div>
-                       <div className="flex flex-col items-end gap-2">
-                          <span className="px-3 py-1 bg-[#12121a]/70 text-slate-300 rounded-lg text-xs font-bold">{user.access}</span>
-                          <span className="text-[10px] text-slate-500 font-mono">{copy.lastLogin(user.lastLogin)}</span>
+                       <div className="flex flex-col items-end gap-2 shrink-0 ms-4">
+                          <StatusBadge status={user.status || user.access} label={user.status || user.access} />
+                          <TruncateTooltip
+                            text={user.access}
+                            muted
+                            maxWidthClass="max-w-[10rem]"
+                            className="text-[10px] font-mono"
+                          />
+                          <span className="text-[10px] text-neutral-400 font-mono">
+                            {copy.lastLogin(user.lastLogin)}
+                          </span>
                        </div>
                     </div>
                  ))}
@@ -237,13 +251,13 @@ export default function AunakAccessControl({ lang = 'ar', defaultStealth = false
            <div className="bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] p-6 rounded-3xl border border-[#c9a962]/15">
               <h3 className="text-md font-bold text-slate-300 mb-5 flex items-center gap-2 border-b border-[#c9a962]/15 pb-3"><Server className="w-5 h-5 text-emerald-400" /> {copy.serverProtocols}</h3>
               <div className="space-y-3">
-                 <div className="flex justify-between items-center p-4 bg-[#0d0d10]/90 rounded-xl border border-[#c9a962]/15">
-                    <span className="text-sm text-slate-400">{copy.militaryEncryption}</span>
-                    <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">AES-256</span>
+                 <div className="flex justify-between items-center p-4 bg-neutral-950 rounded-xl border border-slate-800/60 transition-all duration-200 ease-in-out hover:border-amber-500/30">
+                    <span className="text-sm text-neutral-400">{copy.militaryEncryption}</span>
+                    <StatusBadge variant="active" label="AES-256" />
                  </div>
-                 <div className="flex justify-between items-center p-4 bg-[#0d0d10]/90 rounded-xl border border-[#c9a962]/15">
-                    <span className="text-sm text-slate-400">{copy.mirrorSync}</span>
-                    <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">ACTIVE</span>
+                 <div className="flex justify-between items-center p-4 bg-neutral-900/40 rounded-xl border border-slate-800/60 transition-all duration-200 ease-in-out hover:border-amber-500/30">
+                    <span className="text-sm text-neutral-400">{copy.mirrorSync}</span>
+                    <StatusBadge variant="active" label="ACTIVE" />
                  </div>
               </div>
            </div>

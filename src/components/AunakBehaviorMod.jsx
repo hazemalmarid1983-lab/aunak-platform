@@ -5,7 +5,7 @@ import { AIRTABLE_TABLES } from '../lib/airtableTables';
 import { mapAbcPlan } from '../lib/airtableMappers';
 import { AirtableEmpty, AirtableErrorBanner, AirtableLoading } from './AirtableStatus';
 import { TrendingDown, BrainCircuit, LineChart, FileSignature, Target } from 'lucide-react';
-import { LUX } from '../lib/luxTheme.js';
+import { StatusBadge, TruncateTooltip } from './ui/SovereignTable';
 
 export default function AunakBehaviorMod({ lang = 'ar' }) {
   const { students } = useStudents(lang);
@@ -101,12 +101,14 @@ export default function AunakBehaviorMod({ lang = 'ar' }) {
                 key={plan.id}
                 type="button"
                 onClick={() => setActivePlan(plan.id)}
-                className={`w-full ${lang === 'ar' ? 'text-right' : 'text-left'} p-4 rounded-xl border transition-all ${activePlan === plan.id ? 'bg-[#c9a962]/10 border-[#c9a962]/35/50 text-[#e8c872] shadow-lg' : 'bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] border-[#c9a962]/15 text-slate-400 hover:bg-[#12121a]/70'}`}
+                className={`w-full ${lang === 'ar' ? 'text-right' : 'text-left'} p-4 rounded-xl border transition-all duration-200 ease-in-out ${activePlan === plan.id ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 shadow-lg' : 'bg-neutral-950 border-slate-800/60 text-neutral-400 hover:bg-neutral-900/80 hover:border-amber-500/30'}`}
               >
-                <h4 className="font-bold text-sm mb-1">{plan.title}</h4>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-slate-500">{plan.status}</span>
-                  <span className="text-emerald-400" dir="ltr">{plan.intensity}</span>
+                <h4 className="font-bold text-sm mb-2 text-neutral-200">
+                  <TruncateTooltip text={plan.title} maxWidthClass="max-w-full" />
+                </h4>
+                <div className="flex justify-between items-center text-xs gap-2">
+                  <StatusBadge status={plan.status} />
+                  <span className="text-emerald-400 font-mono shrink-0" dir="ltr">{plan.intensity}</span>
                 </div>
               </button>
             ))
@@ -119,7 +121,7 @@ export default function AunakBehaviorMod({ lang = 'ar' }) {
               <div className="flex justify-between items-center mb-6 border-b border-[#c9a962]/15 pb-4">
                  <h3 className="text-2xl font-bold text-slate-300 flex items-center gap-2"><FileSignature className="w-6 h-6 text-orange-400" /> {copy.planDetails}</h3>
                  {active && (
-                 <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-mono font-bold animate-pulse">{active.status}</span>
+                 <StatusBadge status={active.status} className="animate-pulse" />
                  )}
               </div>
               

@@ -2,11 +2,12 @@ import { useEffect } from 'react';
 import { useStudents } from '../hooks/useStudents';
 import { parseHarmonyScore } from '../lib/airtable';
 import { EYE_MAP_CELL_COUNT, EYE_MAP_COLS } from '../lib/airtableMappers';
-import { Activity, RefreshCw, AlertCircle, UserCheck, Lock, Eye } from 'lucide-react';
+import { Activity, RefreshCw, UserCheck, Lock, Eye } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { isActiveB2B } from '../lib/plans';
 import { startProcessingHum } from '../lib/sovereignAudio';
 import { LUX } from '../lib/luxTheme.js';
+import { TableEmptyState, TruncateTooltip } from './ui/SovereignTable';
 
 function hasEyeMapData(student) {
   const map = student?.eyeMapData;
@@ -129,11 +130,7 @@ export default function AunakLiveDashboard({ lang = 'ar' }) {
           {copy.loading}
         </div>
       ) : list.length === 0 ? (
-        <div className="text-center py-20 text-rose-400 flex flex-col items-center gap-4 bg-rose-500/5 rounded-3xl border border-rose-500/20">
-          <AlertCircle className="w-16 h-16 animate-bounce" />
-          <p className="text-lg font-bold">{copy.noStudents}</p>
-          <p className="text-sm text-rose-300 max-w-md">{copy.noStudentsHint}</p>
-        </div>
+        <TableEmptyState lang={lang} message={copy.noStudents} />
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {list.map((student) => {
@@ -150,17 +147,22 @@ export default function AunakLiveDashboard({ lang = 'ar' }) {
             return (
               <div
                 key={student.id}
-                className="bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] p-6 rounded-3xl hover:border-emerald-400/50 transition-all relative overflow-hidden group"
+                className="bg-neutral-950/90 backdrop-blur-xl border border-slate-800/60 shadow-[0_0_48px_rgba(201,169,98,0.08)] p-6 rounded-3xl hover:border-amber-500/30 transition-all duration-200 ease-in-out relative overflow-hidden group"
               >
                 <div className="absolute top-0 right-0 w-2 h-full bg-emerald-500/20 group-hover:bg-emerald-500 transition-colors" />
-                <div className="flex items-center gap-4 mb-6 pb-4 border-b border-[#c9a962]/15">
-                  <div className="w-12 h-12 rounded-full bg-[#12121a]/70 flex items-center justify-center border border-white/[0.08]">
+                <div className="flex items-center gap-4 mb-6 pb-4 border-b border-amber-500/10">
+                  <div className="w-12 h-12 rounded-full bg-neutral-900/40 flex items-center justify-center border border-slate-800/60">
                     <UserCheck className="w-6 h-6 text-emerald-400" />
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold text-[#e8c872]">{student.name || copy.noName}</h3>
-                    <p className="text-xs text-slate-500 font-mono mt-1">
-                      {copy.code}: <span className="text-[#d4af37]">{student.studentCode || 'N/A'}</span>
+                  <div className="min-w-0">
+                    <h3 className="text-xl font-bold text-neutral-200 truncate">{student.name || copy.noName}</h3>
+                    <p className="text-xs text-neutral-400 font-mono mt-1">
+                      {copy.code}:{' '}
+                      <TruncateTooltip
+                        text={student.studentCode || 'N/A'}
+                        maxWidthClass="max-w-[10rem]"
+                        className="inline-block align-bottom text-amber-400/90"
+                      />
                     </p>
                   </div>
                 </div>

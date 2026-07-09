@@ -1,0 +1,325 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --lux-bg: #0a0a0c;
+    --lux-gold: #c9a962;
+    --lux-emerald: #34d399;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    min-height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--lux-bg);
+    background-image:
+      radial-gradient(ellipse 120% 80% at 50% -20%, rgba(201, 169, 98, 0.1), transparent 50%),
+      radial-gradient(ellipse 80% 60% at 100% 100%, rgba(52, 211, 153, 0.06), transparent 45%);
+    color: rgb(226 232 240);
+  }
+}
+
+@layer components {
+  .lux-page {
+    @apply min-h-full bg-[#0a0a0c] text-slate-300 font-sans;
+  }
+
+  .lux-glass {
+    @apply bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)];
+  }
+
+  .lux-title {
+    @apply text-2xl md:text-3xl font-bold bg-gradient-to-l from-[#e8c872] via-[#d4af37] to-[#c9a962] bg-clip-text text-transparent;
+  }
+
+  .lux-card {
+    @apply lux-glass rounded-3xl p-6 md:p-8 transition-all;
+  }
+
+  .lux-input {
+    @apply w-full px-4 py-3 rounded-xl bg-[#0d0d10]/90 border border-white/[0.08] text-slate-300 focus:border-emerald-400/45 focus:outline-none focus:ring-1 focus:ring-emerald-400/25;
+  }
+
+  .lux-btn-gold {
+    @apply px-6 py-3 rounded-xl bg-gradient-to-r from-[#c9a962] to-[#d4af37] font-bold text-[#0a0a0c] hover:shadow-[0_0_32px_rgba(201,169,98,0.28)] transition-all;
+  }
+
+  .lux-btn-emerald {
+    @apply px-6 py-3 rounded-xl bg-emerald-500 text-[#0a0a0c] font-bold hover:shadow-[0_0_32px_rgba(52,211,153,0.28)] transition-all;
+  }
+
+  .lux-heading-gold {
+    @apply text-lg font-bold bg-gradient-to-l from-[#e8c872] to-[#c9a962] bg-clip-text text-transparent;
+  }
+
+  .lux-emerald-value {
+    @apply text-emerald-300 font-mono;
+  }
+}
+/* Luxury nav & main scrollbars */
+.lux-nav-scroll::-webkit-scrollbar,
+.lux-main-scroll::-webkit-scrollbar { width: 6px; }
+.lux-nav-scroll::-webkit-scrollbar-track,
+.lux-main-scroll::-webkit-scrollbar-track { background: #0a0a0c; }
+.lux-nav-scroll::-webkit-scrollbar-thumb,
+.lux-main-scroll::-webkit-scrollbar-thumb { background: rgba(201,169,98,0.25); border-radius: 999px; }
+.lux-nav-scroll,
+.lux-main-scroll { scrollbar-color: rgba(201,169,98,0.25) #0a0a0c; scrollbar-width: thin; }
+
+/* Hub layering — nav below chrome, modals above content */
+.lux-modal-layer { z-index: 50; }
+.lux-overlay-layer { z-index: 45; }
+
+/* Gaze neutrality — instant ambient dim + emerald vignette */
+html.lux-gaze-dim,
+html.lux-gaze-dim body {
+  filter: brightness(0.72) saturate(0.85);
+  transition: filter 0.8s ease;
+}
+
+html.lux-gaze-dim::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(52, 211, 153, 0.12) 100%);
+}
+
+/* Aunak Reports — print-optimized export */
+@media print {
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
+
+  body,
+  html,
+  #root {
+    background: #fff !important;
+    color: #111 !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+
+  .no-print,
+  aside,
+  header.sovereign-top-bar,
+  [class*="sovereignTopBar"],
+  [class*="asideShell"],
+  nav {
+    display: none !important;
+  }
+
+  .aunak-report-print {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+    color: #111 !important;
+  }
+
+  .aunak-report-print * {
+    color: #111 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .aunak-report-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border: 1px solid #cbd5e1 !important;
+    background: #f8fafc !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .aunak-report-header {
+    border-bottom: 2px solid #2563eb !important;
+    margin-bottom: 1.5rem !important;
+  }
+}
+
+/* Summer Academy — live playful animations */
+@keyframes academy-orb-float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(3%, -4%) scale(1.05); }
+  66% { transform: translate(-2%, 3%) scale(0.98); }
+}
+
+@keyframes academy-glow-pulse {
+  0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.55; transform: translate(-50%, -50%) scale(1.08); }
+}
+
+@keyframes academy-celebrate-burst {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes academy-confetti-fall {
+  0% { transform: translateY(-10vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes academy-icon-wobble {
+  0%, 100% { transform: perspective(400px) rotateY(0deg) scale(1); }
+  25% { transform: perspective(400px) rotateY(12deg) scale(1.08); }
+  75% { transform: perspective(400px) rotateY(-8deg) scale(1.05); }
+}
+
+@keyframes academy-bg-shift {
+  0%, 100% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(8deg); }
+}
+
+.academy-orb-float { animation: academy-orb-float 8s ease-in-out infinite; }
+.academy-orb-float-delay { animation: academy-orb-float 10s ease-in-out infinite 2s; }
+.academy-glow-pulse { animation: academy-glow-pulse 3s ease-in-out infinite; }
+.academy-celebrate-burst { animation: academy-celebrate-burst 1.5s ease-out forwards; }
+.academy-bg-shift { animation: academy-bg-shift 12s ease-in-out infinite; }
+.academy-icon-wobble { animation: academy-icon-wobble 2s ease-in-out infinite; }
+
+.academy-confetti-piece {
+  position: absolute;
+  top: -5%;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  animation: academy-confetti-fall 1.4s ease-in forwards;
+}
+
+@keyframes child-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.child-play-root {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.academy-live-root { position: relative; min-height: 100vh; }
+.academy-mascot-shadow { filter: drop-shadow(0 12px 24px rgba(255, 100, 80, 0.25)); }
+
+/* ============================================================= */
+/* Tawasul child — sensory dopamine factory (avatar, reward, calm) */
+/* ============================================================= */
+
+/* Fluid calming gradient (calm_pulse) — slow drifting blue/violet waves */
+@keyframes tawasul-fluid {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.tawasul-calm-fluid {
+  background: linear-gradient(
+    120deg,
+    #0b1a3a 0%, #1e2a78 20%, #3b2f8f 40%,
+    #5b3fa6 55%, #2a4d9e 72%, #123a7a 88%, #0b1a3a 100%
+  );
+  background-size: 320% 320%;
+  animation: tawasul-fluid 14s ease-in-out infinite;
+}
+
+/* Soft breathing aurora blobs layered over the fluid gradient */
+@keyframes tawasul-aurora {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
+  50%      { transform: translate(4%, -3%) scale(1.15); opacity: 0.8; }
+}
+.tawasul-aurora { animation: tawasul-aurora 9s ease-in-out infinite; }
+.tawasul-aurora-delay { animation: tawasul-aurora 11s ease-in-out infinite 2.5s; }
+
+/* Calm breathing orb */
+@keyframes tawasul-breathe {
+  0%, 100% { transform: scale(0.85); box-shadow: 0 0 40px rgba(129, 140, 248, 0.35); }
+  50%      { transform: scale(1.18); box-shadow: 0 0 90px rgba(167, 139, 250, 0.6); }
+}
+.tawasul-breathe { animation: tawasul-breathe 5.5s ease-in-out infinite; }
+
+/* Avatar life — breathe, blink, float */
+@keyframes tawasul-avatar-breathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-6px) scale(1.03); }
+}
+@keyframes tawasul-blink {
+  0%, 92%, 100% { transform: scaleY(1); }
+  96%           { transform: scaleY(0.1); }
+}
+.tawasul-avatar-breathe { animation: tawasul-avatar-breathe 3.4s ease-in-out infinite; }
+.tawasul-blink { animation: tawasul-blink 4.2s ease-in-out infinite; transform-origin: center; }
+.tawasul-blink-delay { animation: tawasul-blink 4.2s ease-in-out infinite 0.08s; transform-origin: center; }
+
+/* Speaker pulse rings (goal TTS button) */
+@keyframes tawasul-ring {
+  0%   { transform: scale(0.9); opacity: 0.7; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+.tawasul-ring { animation: tawasul-ring 2s ease-out infinite; }
+.tawasul-ring-delay { animation: tawasul-ring 2s ease-out infinite 1s; }
+
+/* Speaker equalizer bars while speaking */
+@keyframes tawasul-eq {
+  0%, 100% { transform: scaleY(0.35); }
+  50%      { transform: scaleY(1); }
+}
+.tawasul-eq-bar { transform-origin: bottom; animation: tawasul-eq 0.7s ease-in-out infinite; }
+
+/* Reward — fireworks burst */
+@keyframes tawasul-firework {
+  0%   { transform: translate(0, 0) scale(0.2); opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: translate(var(--fx), var(--fy)) scale(1); opacity: 0; }
+}
+.tawasul-fw-spark {
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 999px;
+  animation: tawasul-firework 1.1s ease-out forwards;
+}
+
+/* Reward — balloons rising */
+@keyframes tawasul-balloon-rise {
+  0%   { transform: translateY(0) rotate(var(--rot)); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translateY(-115vh) rotate(calc(var(--rot) * -1)); opacity: 0; }
+}
+.tawasul-balloon {
+  position: absolute;
+  bottom: -14vh;
+  animation: tawasul-balloon-rise var(--dur, 3.4s) ease-in forwards;
+  will-change: transform;
+}
+
+/* Reward — confetti fall (sovereign colors) */
+@keyframes tawasul-confetti {
+  0%   { transform: translateY(-12vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(114vh) rotate(760deg); opacity: 0; }
+}
+.tawasul-confetti-piece {
+  position: absolute;
+  top: -6%;
+  width: 12px; height: 16px;
+  border-radius: 3px;
+  animation: tawasul-confetti 1.8s ease-in forwards;
+}
+
+/* Central Ta-da pop */
+@keyframes tawasul-tada {
+  0%   { transform: scale(0.2) rotate(-12deg); opacity: 0; }
+  30%  { transform: scale(1.25) rotate(6deg); opacity: 1; }
+  55%  { transform: scale(0.95) rotate(-3deg); }
+  75%  { transform: scale(1.08) rotate(0deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 0; }
+}
+.tawasul-tada { animation: tawasul-tada 2.6s ease-out forwards; }

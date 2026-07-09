@@ -73,6 +73,19 @@
 .lux-nav-scroll,
 .lux-main-scroll { scrollbar-color: rgba(201,169,98,0.25) #0a0a0c; scrollbar-width: thin; }
 
+/* Sovereign table scrollbars (thin amber thumb) */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 158, 11, 0.2) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar { height: 6px; width: 6px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb,
+.scrollbar-thumb-amber-500\/20::-webkit-scrollbar-thumb {
+  background: rgba(245, 158, 11, 0.2);
+  border-radius: 999px;
+}
+
 /* Hub layering — nav below chrome, modals above content */
 .lux-modal-layer { z-index: 50; }
 .lux-overlay-layer { z-index: 45; }

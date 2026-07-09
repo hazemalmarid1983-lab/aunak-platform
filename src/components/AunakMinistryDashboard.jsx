@@ -19,12 +19,19 @@ import {
   mapSessionToB2GView,
   mapStudentToB2GView,
 } from '../lib/b2gAnonymization';
-
-function riskTone(score) {
-  if (score >= 70) return 'text-rose-400 bg-rose-500/10 border-rose-400/30';
-  if (score >= 40) return 'text-amber-300 bg-amber-500/10 border-amber-400/30';
-  return 'text-emerald-300 bg-emerald-500/10 border-emerald-400/30';
-}
+import {
+  RiskBadge,
+  StatusBadge,
+  SovereignTable,
+  SovereignTableShell,
+  SovereignTd,
+  SovereignTh,
+  SovereignThead,
+  SovereignTr,
+  TableEmptyState,
+  TruncateTooltip,
+  ST,
+} from './ui/SovereignTable';
 
 export default function AunakMinistryDashboard({ lang = 'ar', user, onLogout }) {
   const [loading, setLoading] = useState(true);
@@ -53,7 +60,8 @@ export default function AunakMinistryDashboard({ lang = 'ar', user, onLogout }) 
           readOnly: 'وضع القراءة فقط — لا تعديل · لا محادثة · لا بيانات شخصية',
           sealed: 'مقفلة',
           open: 'مفتوحة',
-          noStudents: 'لا توجد سجلات طلاب متاحة للتدقيق.',
+          noStudents: 'لا توجد سجلات حية لعرضها حالياً',
+          noSessions: 'لا توجد سجلات حية لعرضها حالياً',
           auditor: 'مفتش الوزارة',
           logout: 'خروج',
         }
@@ -75,7 +83,8 @@ export default function AunakMinistryDashboard({ lang = 'ar', user, onLogout }) 
           readOnly: 'Read-only — no edits · no chat · no PII',
           sealed: 'Sealed',
           open: 'Open',
-          noStudents: 'No student records available for audit.',
+          noStudents: 'No live records available to display',
+          noSessions: 'No live records available to display',
           auditor: 'Ministry auditor',
           logout: 'Logout',
         };
@@ -212,29 +221,23 @@ export default function AunakMinistryDashboard({ lang = 'ar', user, onLogout }) 
                 <Loader2 className="w-4 h-4 animate-spin" />
                 {copy.loading}
               </p>
+            ) : !recentSessions.length ? (
+              <TableEmptyState lang={lang} message={copy.noSessions} />
             ) : (
               <ul className="space-y-2">
-                {recentSessions.map((s) => (
+                {recentSessions.map((s, i) => (
                   <li
                     key={s.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/[0.06] bg-[#0d0d10]/60 px-4 py-3 text-xs font-mono"
+                    className={`${ST.listRow} ${i % 2 === 1 ? ST.listRowAlt : ''} text-xs font-mono flex-wrap gap-3`}
                   >
-                    <span className="text-slate-400">{s.sessionDate}</span>
-                    <span
-                      className={
-                        s.sealed
-                          ? 'text-emerald-400 border border-emerald-400/30 px-2 py-0.5 rounded-full'
-                          : 'text-amber-300 border border-amber-400/30 px-2 py-0.5 rounded-full'
-                      }
-                    >
-                      {s.sealed ? copy.sealed : copy.open}
-                    </span>
-                    <span className="text-slate-500 truncate max-w-[12rem]">{s.notes || '—'}</span>
+                    <span className="text-neutral-400">{s.sessionDate}</span>
+                    <StatusBadge
+                      variant={s.sealed ? 'sealed' : 'open'}
+                      label={s.sealed ? copy.sealed : copy.open}
+                    />
+                    <TruncateTooltip text={s.notes || '—'} muted maxWidthClass="max-w-[14rem]" />
                   </li>
                 ))}
-                {!recentSessions.length && (
-                  <li className={`text-sm ${LUX.muted}`}>—</li>
-                )}
               </ul>
             )}
             {lastSync && (
@@ -255,48 +258,46 @@ export default function AunakMinistryDashboard({ lang = 'ar', user, onLogout }) 
                 {copy.loading}
               </p>
             ) : students.length ? (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm font-mono">
-                  <thead>
-                    <tr className="text-slate-500 text-xs border-b border-white/[0.06]">
-                      <th className="text-start py-2 pe-4">{copy.code}</th>
-                      <th className="text-start py-2 pe-4">{copy.focus}</th>
-                      <th className="text-start py-2 pe-4">{copy.harmony}</th>
-                      <th className="text-start py-2 pe-4">{copy.risk}</th>
-                      <th className="text-start py-2">{copy.status}</th>
+              <SovereignTableShell>
+                <SovereignTable className="font-mono">
+                  <SovereignThead>
+                    <tr>
+                      <SovereignTh>{copy.code}</SovereignTh>
+                      <SovereignTh>{copy.focus}</SovereignTh>
+                      <SovereignTh>{copy.harmony}</SovereignTh>
+                      <SovereignTh>{copy.risk}</SovereignTh>
+                      <SovereignTh>{copy.status}</SovereignTh>
                     </tr>
-                  </thead>
+                  </SovereignThead>
                   <tbody>
-                    {students.map((s) => (
-                      <tr key={s.id} className="border-b border-white/[0.04] hover:bg-white/[0.02]">
-                        <td className="py-3 pe-4 text-[#e8c872] font-bold">{s.b2gCode}</td>
-                        <td className="py-3 pe-4 text-emerald-300">
+                    {students.map((s, i) => (
+                      <SovereignTr key={s.id} index={i}>
+                        <SovereignTd className="text-amber-400/90 font-bold">
+                          <TruncateTooltip text={s.b2gCode} maxWidthClass="max-w-[10rem]" />
+                        </SovereignTd>
+                        <SovereignTd className="text-emerald-300">
                           {s.focusLevel != null ? s.focusLevel : '—'}
-                        </td>
-                        <td className="py-3 pe-4 text-emerald-300">
+                        </SovereignTd>
+                        <SovereignTd className="text-emerald-300">
                           {s.harmonyScore != null ? s.harmonyScore : '—'}
-                        </td>
-                        <td className="py-3 pe-4">
-                          <span
-                            className={`inline-block px-2 py-0.5 rounded-full border text-xs ${riskTone(s.riskScore)}`}
-                          >
-                            {s.riskScore}
-                          </span>
-                        </td>
-                        <td className="py-3 text-slate-400">
+                        </SovereignTd>
+                        <SovereignTd>
+                          <RiskBadge score={s.riskScore} />
+                        </SovereignTd>
+                        <SovereignTd muted>
                           {s.isLiveSession ? (
-                            <span className="text-emerald-400 animate-pulse">● live</span>
+                            <StatusBadge variant="live" label="● live" className="animate-pulse" />
                           ) : (
-                            String(s.status)
+                            <StatusBadge status={s.status} />
                           )}
-                        </td>
-                      </tr>
+                        </SovereignTd>
+                      </SovereignTr>
                     ))}
                   </tbody>
-                </table>
-              </div>
+                </SovereignTable>
+              </SovereignTableShell>
             ) : (
-              <p className={`text-sm ${LUX.muted}`}>{copy.noStudents}</p>
+              <TableEmptyState lang={lang} message={copy.noStudents} />
             )}
           </section>
         </main>

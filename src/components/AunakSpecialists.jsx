@@ -7,7 +7,7 @@ import { updateSpecialistRecord } from '../lib/airtable';
 import { useAuth, isSovereignOwner } from '../lib/auth';
 import { AirtableEmpty, AirtableErrorBanner, AirtableLoading } from './AirtableStatus';
 import { LUX } from '../lib/luxTheme.js';
-
+import { StatusBadge } from './ui/SovereignTable';
 import { SPECIALIST } from '../lib/airtableFields';
 
 const ADMIN_NOTES_FIELD = SPECIALIST.admin_notes;
@@ -133,10 +133,13 @@ export default function AunakSpecialists({ lang = 'ar' }) {
                   key={spec.id}
                   type="button"
                   onClick={() => setActiveSpecialist(spec.id)}
-                  className={`w-full ${lang === 'ar' ? 'text-right' : 'text-left'} p-4 rounded-xl border transition-all ${activeSpecialist === spec.id ? 'bg-teal-500/10 border-teal-500/50 text-teal-300 shadow-lg' : 'bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 text-slate-400 hover:bg-[#12121a]/90'}`}
+                  className={`w-full ${lang === 'ar' ? 'text-right' : 'text-left'} p-4 rounded-xl border transition-all duration-200 ease-in-out ${activeSpecialist === spec.id ? 'bg-teal-500/10 border-teal-500/40 text-teal-300 shadow-lg' : 'bg-neutral-950 border-slate-800/60 text-neutral-400 hover:bg-neutral-900/80 hover:border-amber-500/30'}`}
                 >
-                  <h4 className="font-bold text-sm mb-1">{spec.name}</h4>
-                  <p className="text-xs text-slate-500">{spec.specialty}</p>
+                  <h4 className="font-bold text-sm mb-1 text-neutral-200">{spec.name}</h4>
+                  <div className="flex justify-between items-center gap-2 mt-2">
+                    <p className="text-xs text-neutral-400 truncate">{spec.specialty}</p>
+                    <StatusBadge status={spec.status} />
+                  </div>
                 </button>
               ))}
             </nav>
@@ -150,9 +153,7 @@ export default function AunakSpecialists({ lang = 'ar' }) {
                 <Award className="w-6 h-6 text-teal-400" /> {copy.profile}
               </h3>
               {isVerified && (
-                <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-mono font-bold">
-                  {copy.verified}
-                </span>
+                <StatusBadge variant="active" label={copy.verified} />
               )}
             </div>
 

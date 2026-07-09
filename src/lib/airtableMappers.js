@@ -258,6 +258,7 @@ export function mapAccessUser(record, lang = "ar") {
     role: pick(f, ACCESS.access_level) || "—",
     email: pick(f, ACCESS.user_email) || "",
     access: pick(f, ACCESS.permissions) || pick(f, ACCESS.access_areas) || "—",
+    status: pick(f, ACCESS.status) || null,
     lastLogin: pick(f, ACCESS.last_login) || "—",
     fields: f,
   };

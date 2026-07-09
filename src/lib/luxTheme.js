@@ -140,6 +140,22 @@ export const LUX = {
   pillarMuted:
     "border-[#c9a962]/18 bg-[#12121a]/55 backdrop-blur-xl hover:border-[#c9a962]/35 shadow-[0_0_20px_rgba(201,169,98,0.04)]",
 
+  /* Sovereign data grids */
+  tableShell:
+    "overflow-x-auto w-full border border-slate-800/50 rounded-xl scrollbar-thin scrollbar-thumb-amber-500/20",
+  tableHeader:
+    "bg-slate-950/80 backdrop-blur-md text-[10px] uppercase font-bold tracking-[0.18em] text-amber-500/80",
+  tableCell: "py-4 px-6 text-neutral-200",
+  tableCellMuted: "py-4 px-6 text-neutral-400",
+  tableRow:
+    "border-b border-slate-800/60 transition-all duration-200 ease-in-out hover:bg-neutral-900/80 hover:border-amber-500/30",
+  badgeActive:
+    "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-semibold",
+  badgeDraft:
+    "bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 rounded-full text-xs",
+  badgeLocked:
+    "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-full text-xs",
+
   /* Aliases */
   cardGlass:
     "p-8 rounded-3xl bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 text-center transition-all shadow-[0_0_48px_rgba(201,169,98,0.1)]",

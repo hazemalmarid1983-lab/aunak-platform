@@ -17,7 +17,7 @@ import SettlementConfirmModal from "./SettlementConfirmModal";
 import { playWarningPulse } from "../lib/sovereignAudio";
 import { isAppStealthActive } from "../lib/studentPrivacy";
 import { encryptSessionPayload } from "../lib/sovereignCrypto";
-import { LUX } from '../lib/luxTheme.js';
+import { StatusBadge, TruncateTooltip } from './ui/SovereignTable';
 
 function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
@@ -294,15 +294,23 @@ export default function AunakSessionRegistry({ lang = "ar" }) {
           <div className="bg-[#12121a]/70 backdrop-blur-xl border border-[#c9a962]/15 shadow-[0_0_48px_rgba(201,169,98,0.1)] p-8 rounded-3xl border border-[#c9a962]/15 shadow-xl">
             <div className="flex justify-between items-center mb-6 border-b border-[#c9a962]/15 pb-4">
               <h3 className="text-xl font-bold text-slate-300">{copy.liveSession}</h3>
-              <span className={`px-3 py-1 rounded-lg text-xs font-mono font-bold ${liveSessionActive ? "bg-rose-500/10 text-rose-400 border border-rose-500/30 animate-pulse" : "bg-slate-800 text-slate-500 border border-slate-700"}`}>
-                {liveSessionActive ? copy.liveRec : "—"}
+              <span className={`transition-all duration-200 ease-in-out ${liveSessionActive ? "" : "opacity-70"}`}>
+                {liveSessionActive ? (
+                  <StatusBadge variant="live" label={copy.liveRec} className="animate-pulse bg-rose-500/10 text-rose-400 border-rose-500/20" />
+                ) : (
+                  <StatusBadge variant="muted" label="—" />
+                )}
               </span>
             </div>
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="p-4 bg-[#0d0d10]/90 rounded-xl border border-[#c9a962]/15">
                 <p className="text-xs text-slate-500 mb-1 font-mono">{copy.beneficiary}</p>
-                <p className="font-bold text-slate-200 text-lg">{activeStudent?.name || copy.connecting}</p>
-                {activeId && <p className="text-[10px] text-slate-600 font-mono mt-1">{activeId}</p>}
+                <p className="font-bold text-neutral-200 text-lg">{activeStudent?.name || copy.connecting}</p>
+                {activeId && (
+                  <p className="text-[10px] text-neutral-400 font-mono mt-1">
+                    <TruncateTooltip text={activeId} muted maxWidthClass="max-w-[14rem]" />
+                  </p>
+                )}
               </div>
               <div className="p-4 bg-[#0d0d10]/90 rounded-xl border border-[#c9a962]/15">
                 <p className="text-xs text-slate-500 mb-1 font-mono">{copy.startTime}</p>
@@ -363,17 +371,15 @@ export default function AunakSessionRegistry({ lang = "ar" }) {
                   className="w-24 text-end bg-slate-900 border border-white/[0.08] rounded-lg px-2 py-1 text-emerald-300 font-mono text-sm"
                 />
               </div>
-              <div className="flex justify-between items-center p-4 bg-[#0d0d10]/90 rounded-xl border border-[#c9a962]/15">
-                <span className="text-sm text-slate-400">{copy.paymentStatus}</span>
-                <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">
-                  {paymentFromStudent || "—"}
-                </span>
+              <div className="flex justify-between items-center p-4 bg-neutral-950 rounded-xl border border-slate-800/60 transition-all duration-200 ease-in-out hover:border-amber-500/30">
+                <span className="text-sm text-neutral-400">{copy.paymentStatus}</span>
+                <StatusBadge status={paymentFromStudent || "—"} label={paymentFromStudent || "—"} />
               </div>
                 </>
               )}
-              <div className="flex justify-between items-center p-4 bg-[#0d0d10]/90 rounded-xl border border-[#c9a962]/15">
-                <span className="text-sm text-slate-400">{copy.attachmentEncryption}</span>
-                <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">AES-256 SECURED</span>
+              <div className="flex justify-between items-center p-4 bg-neutral-900/40 rounded-xl border border-slate-800/60 transition-all duration-200 ease-in-out hover:border-amber-500/30">
+                <span className="text-sm text-neutral-400">{copy.attachmentEncryption}</span>
+                <StatusBadge variant="active" label="AES-256 SECURED" />
               </div>
             </div>
           </div>
@@ -400,8 +406,12 @@ export default function AunakSessionRegistry({ lang = "ar" }) {
                 <span>{copy.mismatch}</span>
               </div>
             )}
-            <p className="text-[10px] font-mono text-slate-500 mb-3">
-              {sovereignApproved ? copy.sovereignApproved : copy.pendingApproval}
+            <p className="text-[10px] font-mono mb-3">
+              {sovereignApproved ? (
+                <StatusBadge variant="active" label={copy.sovereignApproved} />
+              ) : (
+                <StatusBadge variant="draft" label={copy.pendingApproval} />
+              )}
             </p>
             {sovereign && (
               <div className="space-y-2 pt-2 border-t border-[#c9a962]/15">

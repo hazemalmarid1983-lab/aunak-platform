@@ -12,6 +12,7 @@ import {
   serializeZeroPointReport,
 } from '../lib/zeroPointSchema';
 import { ClipboardList, BrainCircuit, Activity, CheckCircle, AlertTriangle, Lock, Loader2 } from 'lucide-react';
+import { StatusBadge, TruncateTooltip } from './ui/SovereignTable';
 
 export default function AunakDiagnostics({ lang = 'ar' }) {
   const { students, refetch } = useStudents(lang);
@@ -204,28 +205,30 @@ export default function AunakDiagnostics({ lang = 'ar' }) {
               <h3 className="text-2xl font-bold text-slate-300">
                 {copy.scaleTitle} {activeScale}
               </h3>
-              <span className="px-3 py-1 bg-amber-500/10 text-[#d4af37] border border-amber-500/30 rounded-lg text-xs font-mono font-bold">
-                {copy.inProgress}
-              </span>
+              <StatusBadge variant="draft" label={copy.inProgress} />
             </div>
 
             <p className="text-xs uppercase tracking-widest text-fuchsia-300/80 font-mono mb-3">
               {copy.clinicalItems}
             </p>
-            <div className="max-h-64 overflow-y-auto grid sm:grid-cols-2 gap-2 mb-6 pr-1">
-              {scaleFields.map((def) => (
+            <div className="max-h-64 overflow-y-auto overflow-x-auto w-full border border-slate-800/50 rounded-xl scrollbar-thin scrollbar-thumb-amber-500/20 grid sm:grid-cols-2 gap-2 mb-6 p-2">
+              {scaleFields.map((def, i) => (
                 <label
                   key={def.id}
-                  className="flex items-center justify-between gap-2 p-2 rounded-lg bg-[#0d0d10]/90 border border-white/[0.06] text-xs"
+                  className={`flex items-center justify-between gap-2 py-4 px-6 rounded-lg border border-slate-800/60 text-xs transition-all duration-200 ease-in-out hover:bg-neutral-900/80 hover:border-amber-500/30 ${i % 2 === 1 ? 'bg-neutral-900/40' : 'bg-neutral-950'}`}
                 >
-                  <span className="text-slate-400 truncate">{lang === 'ar' ? def.labelAr : def.labelEn}</span>
+                  <TruncateTooltip
+                    text={lang === 'ar' ? def.labelAr : def.labelEn}
+                    muted
+                    maxWidthClass="max-w-[10rem]"
+                  />
                   <input
                     type="number"
                     min={0}
                     max={4}
                     value={fieldValues[def.id] ?? ''}
                     onChange={(e) => setClinicalScore(def.id, e.target.value)}
-                    className="w-14 bg-slate-900 border border-slate-600 rounded-md p-1 text-center text-white font-mono"
+                    className="w-14 bg-slate-900 border border-slate-700 rounded-md p-1 text-center text-neutral-200 font-mono shrink-0"
                   />
                 </label>
               ))}

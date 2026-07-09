@@ -1,7 +1,14 @@
 import { useState } from 'react';
 import { Lock, Sparkles, Check, Minus, Zap, PlayCircle, X, Film, KeyRound } from 'lucide-react';
 import { PLAN_CODES, PLAN_LABELS, planAllows, planRank, normalizePlanCode } from '../lib/plans';
-import { LUX } from '../lib/luxTheme.js';
+import {
+  SovereignTable,
+  SovereignTableShell,
+  SovereignTd,
+  SovereignTh,
+  SovereignThead,
+  SovereignTr,
+} from './ui/SovereignTable';
 
 const FEATURE_ROWS = [
   { id: 'community', ar: 'مجتمع عونك', en: 'Aunak Community', min: PLAN_CODES.FREE },
@@ -98,50 +105,53 @@ export default function AunakPaywall({ lang = 'ar', featureName, currentPlan = P
             </p>
           </header>
 
-          <div className="rounded-3xl bg-white/[0.04] backdrop-blur-xl border border-white/10 shadow-2xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-white/10">
-                    <th className="text-start p-3 text-slate-400 font-bold text-xs">{copy.feature}</th>
+          <div className="rounded-3xl bg-neutral-950/80 backdrop-blur-xl border border-slate-800/50 shadow-2xl overflow-hidden">
+            <SovereignTableShell className="border-0 rounded-none">
+              <SovereignTable>
+                <SovereignThead>
+                  <tr>
+                    <SovereignTh>{copy.feature}</SovereignTh>
                     {PLAN_COLUMNS.map(({ code, accent, featured }) => (
-                      <th key={code} className={`p-3 text-center font-bold whitespace-nowrap text-xs ${accent} ${featured ? 'bg-gradient-to-r from-[#c9a962] to-[#d4af37]/[0.06]' : ''}`}>
+                      <SovereignTh
+                        key={code}
+                        className={`text-center ${accent} ${featured ? 'bg-amber-500/5' : ''}`}
+                      >
                         {labels[code]}
-                        {code === current && <span className="block text-[9px] text-slate-500">({copy.you})</span>}
-                      </th>
+                        {code === current && <span className="block text-[9px] text-neutral-400 normal-case tracking-normal">({copy.you})</span>}
+                      </SovereignTh>
                     ))}
                   </tr>
-                </thead>
+                </SovereignThead>
                 <tbody>
-                  {FEATURE_ROWS.map((row) => {
+                  {FEATURE_ROWS.map((row, i) => {
                     const rowLocked = !rowAllowedForPlan(row, current);
                     return (
-                      <tr key={row.id} className="border-b border-white/5 last:border-0">
-                        <td className="p-3 text-slate-300 font-medium text-xs">
+                      <SovereignTr key={row.id} index={i}>
+                        <SovereignTd className="font-medium text-xs">
                           {rowLocked ? (
-                            <button type="button" onClick={() => openPromo(row)} className="inline-flex items-center gap-2 hover:text-[#e8c872]">
+                            <button type="button" onClick={() => openPromo(row)} className="inline-flex items-center gap-2 hover:text-amber-400 transition-all duration-200 ease-in-out">
                               <PlayCircle className="w-4 h-4 shrink-0" />
                               {lang === 'ar' ? row.ar : row.en}
                             </button>
                           ) : (
                             lang === 'ar' ? row.ar : row.en
                           )}
-                        </td>
+                        </SovereignTd>
                         {PLAN_COLUMNS.map(({ code, featured }) => (
-                          <td key={code} className={`p-3 text-center ${featured ? 'bg-gradient-to-r from-[#c9a962] to-[#d4af37]/[0.06]' : ''}`}>
+                          <SovereignTd key={code} className={`text-center ${featured ? 'bg-amber-500/5' : ''}`}>
                             {rowAllowedForPlan(row, code) ? (
                               <Check className="w-4 h-4 text-emerald-400 inline" strokeWidth={2.5} />
                             ) : (
                               <Minus className="w-4 h-4 text-slate-700 inline" />
                             )}
-                          </td>
+                          </SovereignTd>
                         ))}
-                      </tr>
+                      </SovereignTr>
                     );
                   })}
                 </tbody>
-              </table>
-            </div>
+              </SovereignTable>
+            </SovereignTableShell>
 
             <div className="p-5 bg-white/[0.03] border-t border-white/10 flex justify-center">
               <button
