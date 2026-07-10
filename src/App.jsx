@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import ErrorBoundary from './components/ErrorBoundary';
 import AunakEcosystemHub from './components/AunakEcosystemHub';
 import AunakGate from './components/AunakGate';
@@ -212,6 +213,7 @@ export default function App() {
           <GatedPlatform />
         )}
       </AuthProvider>
+      <SpeedInsights />
     </ErrorBoundary>
   );
 }
