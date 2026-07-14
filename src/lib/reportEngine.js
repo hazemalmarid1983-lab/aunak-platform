@@ -118,8 +118,8 @@ function buildAcademicSection(sessions, lang) {
   } else {
     summary =
       lang === 'en'
-        ? `${highlights.length} sealed sessions documented educational and skill-building progress across ${groupBySpecialist(academicSessions).length} specialist(s).`
-        : `${highlights.length} جلسة مختومة وثّقت التقدم الأكاديمي والمهاري عبر ${groupBySpecialist(academicSessions).length} أخصائي/ة.`;
+        ? `${highlights.length} sealed sessions documented educational and skill-building progress across ${groupBySpecialist(academicSessions).length} behavior therapist(s).`
+        : `${highlights.length} جلسة مختومة وثّقت التقدم الأكاديمي والمهاري عبر ${groupBySpecialist(academicSessions).length} معالج سلوكي.`;
   }
 
   return { summary, highlights, bySpecialist, sessionCount: academicSessions.length };
@@ -196,16 +196,16 @@ function buildRecommendations(sessions, period, lang) {
       source: 'engine',
       text:
         lang === 'en'
-          ? 'Maintain a consistent home routine aligned with session days to reinforce skills transferred from the center.'
-          : 'حافظوا على روتين منزلي ثابت متوافق مع أيام الجلسات لتعزيز المهارات المنقولة من المركز.',
+          ? 'Maintain a consistent home behavior-shaping protocol aligned with session days to reinforce skills transferred from the center.'
+          : 'حافظوا على بروتوكول تشكيل السلوك المنزلي والتعميم المشترك المتوافق مع أيام الجلسات لتعزيز المهارات المنقولة من المركز.',
     });
   } else if (count > 0) {
     items.push({
       source: 'engine',
       text:
         lang === 'en'
-          ? 'Increase session frequency if possible — regular contact supports skill consolidation and behavioral stability.'
-          : 'يُفضَّل زيادة انتظام الجلسات إن أمكن — التواصل المنتظم يدعم ترسيخ المهارات والاستقرار السلوكي.',
+          ? 'Increase ABC session frequency if possible — regular contact supports skill consolidation and behavioral stability.'
+          : 'يُفضَّل زيادة انتظام توثيق مصفوفة ABC إن أمكن — التواصل المنتظم يدعم ترسيخ المهارات والاستقرار السلوكي.',
     });
   }
 
@@ -213,8 +213,8 @@ function buildRecommendations(sessions, period, lang) {
     source: 'engine',
     text:
       lang === 'en'
-        ? 'Share daily observations with the assigned specialist before the next sealed session for continuity of care.'
-        : 'شاركوا ملاحظاتكم اليومية مع الأخصائي/ة المعيّن قبل الجلسة المختومة التالية لضمان استمرارية الرعاية.',
+        ? 'Share daily observations with the assigned behavior therapist before the next sealed ABC session for continuity of care.'
+        : 'شاركوا ملاحظاتكم اليومية مع المعالج السلوكي المعيّن قبل جلسة ABC المختومة التالية لضمان استمرارية الرعاية.',
   });
 
   if (period === REPORT_PERIODS.MONTHLY) {
@@ -222,15 +222,15 @@ function buildRecommendations(sessions, period, lang) {
       source: 'engine',
       text:
         lang === 'en'
-          ? 'Review monthly progress with the center coordinator and adjust home goals based on sealed session trends.'
-          : 'راجعوا التقدم الشهري مع منسق المركز وعدّلوا الأهداف المنزلية وفق اتجاهات الجلسات المختومة.',
+          ? 'Review monthly progress with the center coordinator and adjust Active IEP home goals based on sealed session trends.'
+          : 'راجعوا التقدم الشهري مع منسق المركز وعدّلوا أهداف IEP المنزلية وفق اتجاهات الجلسات المختومة.',
     });
   }
 
   const summary =
     lang === 'en'
-      ? `${items.length} guidance item(s) for home follow-up during this ${period} reporting window.`
-      : `${items.length} توصية/إرشاد للمتابعة المنزلية خلال نافذة التقرير ${period === REPORT_PERIODS.MONTHLY ? 'الشهرية' : 'الأسبوعية'}.`;
+      ? `${items.length} guidance item(s) for home behavior-shaping follow-up during this ${period} reporting window.`
+      : `${items.length} توصية/إرشاد لبروتوكول تشكيل السلوك المنزلي خلال نافذة التقرير ${period === REPORT_PERIODS.MONTHLY ? 'الشهرية' : 'الأسبوعية'}.`;
 
   return { summary, items, explicitCount: explicit.length };
 }
@@ -304,7 +304,7 @@ export function formatReportAsText(report, lang = 'ar') {
   lines.push(isAr ? '   تقرير الأداء — منصة عونك السيادية' : '   Performance Report — Aunak Sovereign Platform');
   lines.push(isAr ? '═══════════════════════════════════════' : '═══════════════════════════════════════');
   lines.push('');
-  lines.push(isAr ? `الطالب: ${meta.studentName}` : `Student: ${meta.studentName}`);
+  lines.push(isAr ? `المستفيد: ${meta.studentName}` : `Beneficiary: ${meta.studentName}`);
   lines.push(
     isAr
       ? `الفترة: ${meta.periodLabel} (${meta.startDate} → ${meta.endDate})`

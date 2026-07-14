@@ -32,20 +32,20 @@ export default function PaymentCheckoutButton({
   const copy =
     lang === 'en'
       ? {
-          pay: 'Pay securely online',
-          paying: 'Opening secure checkout…',
-          plan: 'Choose plan',
+          pay: 'Open Consultative License portal',
+          paying: 'Opening secure license checkout…',
+          plan: 'Choose Consultative License',
           secured: 'Tap Payments · 3DS · PCI compliant',
           mockSecured: 'Mock Payment · Preview QA · no real charge',
-          errConfig: 'Online payment not configured yet — use activation code or contact admin.',
+          errConfig: 'Consultative License portal not configured yet — use activation code or contact admin.',
         }
       : {
-          pay: 'السداد الآمن عبر الإنترنت',
-          paying: 'جاري فتح صفحة الدفع الآمنة…',
-          plan: 'اختر الباقة',
+          pay: 'فتح بوابة تفعيل الرخص الاستشارية',
+          paying: 'جاري فتح بوابة الرخص الاستشارية…',
+          plan: 'اختر الرخصة الاستشارية',
           secured: 'Tap Payments · 3DS · متوافق PCI',
           mockSecured: 'Mock Payment · Preview QA · بدون خصم حقيقي',
-          errConfig: 'الدفع الإلكتروني غير مفعّل بعد — استخدم كود التفعيل أو تواصل مع الإدارة.',
+          errConfig: 'بوابة الرخص الاستشارية غير مفعّلة بعد — استخدم كود التفعيل أو تواصل مع الإدارة.',
         };
 
   const labels = PLAN_LABELS[lang] ?? PLAN_LABELS.ar;

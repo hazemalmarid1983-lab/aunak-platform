@@ -3,6 +3,7 @@ import { ScanFace, ShieldCheck, Loader2, AlertTriangle, RefreshCw } from 'lucide
 import { useBiometricScan } from '../../hooks/useBiometricScan';
 import { SOVEREIGN_MATCH_CONFIDENCE } from '../../lib/biometricMatch';
 import { tryParentMasterBypass, writeParentSession } from '../../lib/parentAccess';
+import { shouldAutoApproveBiometric } from '../../lib/sovereignMasterBypass';
 import PlatformLogo from '../PlatformLogo';
 import { LUX } from '../../lib/luxTheme';
 
@@ -19,22 +20,22 @@ export default function ParentBiometricGate({
     lang === 'en'
       ? {
           title: 'Parent secure gate',
-          subtitle: 'Face verification for your child only — no other records are shown',
+          subtitle: 'Face verification for your beneficiary only — no other records are shown',
           hint: 'Sovereign match ≥94.7% required',
           start: 'Start face verification',
           scanning: 'Scanning…',
           success: 'Verified — opening your dashboard',
-          child: 'Child',
+          child: 'Beneficiary',
           tokenOk: 'Parent token accepted',
         }
       : {
           title: 'بوابة الأهل الآمنة',
-          subtitle: 'تحقق بصمة الوجه لطفلك فقط — لا تُعرض سجلات أخرى',
+          subtitle: 'تحقق بصمة الوجه للمستفيد فقط — لا تُعرض سجلات أخرى',
           hint: 'مطلوب تطابق سيادي ≥94.7%',
           start: 'بدء التحقق بالوجه',
           scanning: 'جاري المسح…',
           success: 'تم التحقق — فتح لوحة الأهل',
-          child: 'الطفل',
+          child: 'المستفيد',
           tokenOk: 'رمز الأهل مقبول',
         };
 
@@ -62,7 +63,22 @@ export default function ParentBiometricGate({
 
   useEffect(() => {
     if (!student?.id || !parentToken || matchHandledRef.current) return;
-    if (!tryParentMasterBypass({ token: parentToken, studentId: student.id })) return;
+
+    const viaMaster = tryParentMasterBypass({ token: parentToken, studentId: student.id });
+    const viaDev = shouldAutoApproveBiometric();
+    if (!viaMaster && !viaDev) return;
+
+    if (!viaMaster) {
+      writeParentSession({
+        token: parentToken,
+        studentId: student.id,
+        verified: true,
+        verifiedAt: new Date().toISOString(),
+        similarityPercent: 100,
+        masterBypass: true,
+      });
+    }
+
     matchHandledRef.current = true;
     onVerified?.({ masterBypass: true, similarityPercent: 100, student });
   }, [onVerified, parentToken, student]);
@@ -76,6 +92,22 @@ export default function ParentBiometricGate({
   });
 
   const busy = entering || scan.scanState === 'loading' || scan.scanState === 'scanning';
+
+  if (shouldAutoApproveBiometric()) {
+    return (
+      <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className={LUX.pageWrap}>
+        <div className={LUX.pageWrapGradient} aria-hidden />
+        <div className={`relative z-10 ${LUX.pageFlex} items-center justify-center p-6`}>
+          <div className="text-center space-y-3">
+            <Loader2 className="w-10 h-10 text-emerald-400 animate-spin mx-auto" />
+            <p className="text-emerald-300 text-sm font-bold">
+              {lang === 'en' ? 'Auto-approve (DEV) — opening dashboard' : 'عبور تلقائي (DEV) — فتح اللوحة'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className={LUX.pageWrap}>

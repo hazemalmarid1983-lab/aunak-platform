@@ -57,13 +57,13 @@ export default function TawasulMirrorPanel({ lang = 'ar', student, goalDraft, on
     lang === 'en'
       ? {
           title: 'Ghost Mirror',
-          echo: 'Echo goal on child screen',
+          echo: 'Echo IEP goal on beneficiary screen',
           star: 'Drop star reward',
           calm: 'Calm pulse',
         }
       : {
           title: 'المرآة الشبحية',
-          echo: 'تكرار الهدف على شاشة الطفل',
+          echo: 'تكرار هدف IEP على شاشة المستفيد',
           star: 'إسقاط مكافأة نجمة',
           calm: 'نبضة هدوء',
         };

@@ -2,13 +2,13 @@ import { useCallback, useEffect, useRef } from 'react';
 
 const PROMO_SCRIPT = {
   ar: `ولي الأمر الكريم…
-طفلك يحمل قدرات حقيقية… لكن بدون التقييم الشامل الكامل، تبقى نصف الصورة مخفية.
+المستفيد يحمل قدرات حقيقية… لكن بدون التقييم الشامل الكامل، تبقى نصف الصورة مخفية.
 التقييم الشامل في عونك يختصر أشهراً من التخمين… ويمنحك خطة تأهيل دقيقة… مبنية على بيانات… لا على ظنون.
-لا تترك فرصة طفلك للصدفة… فعّل الباقة الشاملة… وابدأ اليوم.`,
+لا تترك فرصة المستفيد للصدفة… فعّل الرخصة الاستشارية الشاملة… وابدأ اليوم.`,
   en: `Dear parent…
-Your child has real abilities — but without the full comprehensive assessment, half the picture stays hidden.
+Your beneficiary has real abilities — but without the full comprehensive assessment, half the picture stays hidden.
 Aunak's full assessment saves months of guessing and delivers a precise rehabilitation plan built on data, not assumptions.
-Don't leave your child's future to chance — activate the full plan and start today.`,
+Don't leave your beneficiary's future to chance — activate the Consultative License and start today.`,
 };
 
 export function usePromoVoice(lang = 'ar') {

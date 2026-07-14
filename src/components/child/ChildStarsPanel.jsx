@@ -15,12 +15,12 @@ export default function ChildStarsPanel({
     lang === 'en'
       ? {
           title: sovereign ? 'Sovereign stars' : 'My stars',
-          empty: sovereign ? 'Engage to earn up to 5 stars' : 'Play to collect stars!',
+          empty: sovereign ? 'Engage to earn up to 5 stars' : 'Join sensory intervention to collect stars!',
           count: cap != null ? `${displayCount} of ${cap} sealed` : 'Stars collected',
         }
       : {
           title: sovereign ? 'النجوم السيادية' : 'نجومي',
-          empty: sovereign ? 'تفاعل لجمع حتى 5 نجوم' : 'العب لجمع النجوم!',
+          empty: sovereign ? 'تفاعل لجمع حتى 5 نجوم' : 'انضم للتدخل الحسي لجمع النجوم!',
           count: cap != null ? `${displayCount} من ${cap} مُختومة` : 'نجومك',
         };
 

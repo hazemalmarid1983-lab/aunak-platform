@@ -36,23 +36,17 @@ export default function ChildAssessmentPanel({
   const copyOverrides =
     lang === 'en'
       ? {
-          title: 'Neural skills river',
-          subtitle: 'Six questions — flows into your sovereign profile',
-          progress: 'Question',
-          of: 'of',
-          back: 'Back',
-          next: 'Next',
-          seeResult: 'Seal my result',
+          badge: 'Developmental Screening Matrix',
+          brand: 'Aunak Interactive Platform',
+          tagline: 'Twelve items — flows into your sovereign profile',
+          ctaContinue: 'Seal my result',
           saving: 'Syncing to neural vault…',
         }
       : {
-          title: 'نهر المهارات العصبي',
-          subtitle: 'ستة أسئلة — تنساب إلى ملفك السيادي',
-          progress: 'سؤال',
-          of: 'من',
-          back: 'رجوع',
-          next: 'التالي',
-          seeResult: 'ختم نتيجتي',
+          badge: 'مقياس المسح النمائي الأولي',
+          brand: 'منصة عونك التفاعلية',
+          tagline: 'اثنا عشر بنداً — تنساب إلى ملفك السيادي',
+          ctaContinue: 'ختم نتيجتي',
           saving: 'مزامنة مع الخزنة العصبية…',
         };
 

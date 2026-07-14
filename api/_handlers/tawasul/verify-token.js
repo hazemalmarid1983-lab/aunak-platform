@@ -32,7 +32,8 @@ async function airtableGet(url, apiKey) {
 async function findRecordByTokenField(apiKey, baseId, tableId, fieldName, token) {
   const key = normalizeToken(token);
   const esc = key.replace(/'/g, "\\'");
-  const formula = encodeURIComponent(`{${fieldName}}='${esc}'`);
+  // Case-insensitive match — stored tokens may be mixed-case (e.g. AUN-CHD-alhusain-2026)
+  const formula = encodeURIComponent(`LOWER({${fieldName}})=LOWER('${esc}')`);
   const filteredUrl = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableId)}?filterByFormula=${formula}&maxRecords=1`;
 
   try {
@@ -49,6 +50,29 @@ async function findRecordByTokenField(apiKey, baseId, tableId, fieldName, token)
       (r) => normalizeToken(pickField(r.fields, fieldName)) === key
     ) ?? null
   );
+}
+
+/** Accept active / B2B_PREMIUM / نشط — reject only explicit inactive. */
+function isChildRecordActivated(fields) {
+  const status = String(pickField(fields, SF.status, 'status', 'Status') ?? '').toLowerCase();
+  const subscription = String(
+    pickField(
+      fields,
+      SF.subscription_status,
+      'subscription_status',
+      'Payment_Status',
+      'payment_status'
+    ) ?? ''
+  ).toLowerCase();
+
+  if (/inactive|disabled|معطل|موقوف/.test(status)) return false;
+  if (/expired|منته|lapsed/.test(subscription)) return false;
+
+  // Token gate: any non-inactive record with a child token is allowed.
+  // Explicit active / premium / B2B tags also pass.
+  if (/active|نشط|مفعل|فعال|b2b_premium|premium/.test(subscription)) return true;
+  if (/active|نشط|مفعل|فعال|b2b_premium|premium|new|جديد/.test(status)) return true;
+  return Boolean(pickField(fields, SF.child_interactive_token, 'child_interactive_token'));
 }
 
 function buildSpecialistSession(record, token) {
@@ -74,8 +98,7 @@ function buildSpecialistSession(record, token) {
 
 function buildChildPayload(record, token) {
   const f = record.fields ?? {};
-  const status = String(pickField(f, SF.status, 'status') ?? 'active').toLowerCase();
-  if (/inactive|disabled|معطل/.test(status)) return null;
+  if (!isChildRecordActivated(f)) return null;
 
   return {
     id: record.id,

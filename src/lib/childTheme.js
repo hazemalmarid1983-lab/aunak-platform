@@ -1,4 +1,4 @@
-/** Child interactive shell — bright, lock-free play theme. */
+/** Beneficiary interactive shell — bright sensory intervention theme. */
 
 export const CHILD = {
   root: 'child-play-root min-h-screen text-slate-800 font-sans overflow-hidden select-none',
@@ -26,11 +26,16 @@ export const CHILD = {
 export const CHILD_GREETINGS = {
   ar: [
     'مرحباً يا بطل! أنا عوني 🌟',
-    'يلا نلعب ونتعلّم!',
+    'يلا نبدأ التدخل الحسي والتمكين!',
     'أنت رائع! استمر!',
-    'يا سلام! إجابة صح!',
+    'يا سلام! استجابة صحيحة!',
   ],
-  en: ['Hi champion! I am Awni 🌟', "Let's play and learn!", 'You are amazing!', 'Wow! Correct!'],
+  en: [
+    'Hi champion! I am Awni 🌟',
+    "Let's begin sensory intervention!",
+    'You are amazing!',
+    'Wow! Correct response!',
+  ],
 };
 
 export const BUBBLE_COLORS = [

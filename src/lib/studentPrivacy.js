@@ -119,7 +119,7 @@ export function maskFinancialFields(fields, role) {
 
 export function getMaskedStudentLabel(index, lang = 'ar') {
   const num = String(index + 1).padStart(2, '0');
-  return lang === 'ar' ? `طالب-${num}` : `Student-${num}`;
+  return lang === 'ar' ? `مستفيد-${num}` : `Beneficiary-${num}`;
 }
 
 export function getStudentInitials(name) {

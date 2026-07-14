@@ -36,7 +36,19 @@ import ChildAssessmentPanel from './ChildAssessmentPanel';
 import ChildAvatar from './ChildAvatar';
 import ChildCelebration from './ChildCelebration';
 import ChildCalmOverlay from './ChildCalmOverlay';
+import AunakChildEcosystem from './AunakChildEcosystem';
 import PlatformLogo from '../PlatformLogo';
+
+function readChildViewParam() {
+  if (typeof window === 'undefined') return '';
+  try {
+    const path = (window.location.pathname || '/').replace(/\/$/, '') || '/';
+    if (path === '/islands' || path.startsWith('/islands/')) return 'islands';
+    return String(new URLSearchParams(window.location.search).get('view') || '').trim().toLowerCase();
+  } catch {
+    return '';
+  }
+}
 
 export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
   const tawasul = isTawasulExperience();
@@ -51,12 +63,15 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
   const [gazeAlert, setGazeAlert] = useState('');
   const [rewardBurst, setRewardBurst] = useState(false);
   const [calmActive, setCalmActive] = useState(false);
+  /** After 5/5 stars — open interactive islands map (AunakChildEcosystem) */
+  const [world, setWorld] = useState(() => (readChildViewParam() === 'islands' ? 'islands' : 'shell'));
   const mirrorSeenRef = useRef('');
   const welcomeSpokenRef = useRef(false);
   const humRef = useRef(null);
   const rewardTimerRef = useRef(null);
   const calmTimerRef = useRef(null);
   const calmDroneRef = useRef(null);
+  const islandsNavRef = useRef(false);
 
   const reloadStudent = useCallback(async () => {
     const token = parseChildRouteToken();
@@ -118,8 +133,8 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
       if (!token) {
         setError(
           lang === 'en'
-            ? 'Missing child token in URL (?token=AUN-CHD-...)'
-            : 'رمز الطفل مفقود في الرابط (?token=AUN-CHD-...)'
+            ? 'Missing beneficiary token in URL (?token=AUN-CHD-...)'
+            : 'رمز المستفيد مفقود في الرابط (?token=AUN-CHD-...)'
         );
         setLoading(false);
         return;
@@ -128,7 +143,7 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
         const row = await findStudentByChildToken(token);
         if (cancelled) return;
         if (!row) {
-          setError(lang === 'en' ? 'Invalid or inactive child token' : 'رمز الطفل غير صالح أو غير مفعّل');
+          setError(lang === 'en' ? 'Invalid or inactive beneficiary token' : 'رمز المستفيد غير صالح أو غير مفعّل');
         } else {
           setStudent(row);
         }
@@ -185,7 +200,7 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
           (payloadGoal && payloadGoal !== 'live' ? payloadGoal : '') ||
           row.programmedGoal?.trim() ||
           student?.programmedGoal?.trim() ||
-          (lang === 'en' ? 'Your specialist set a new goal.' : 'هدف جديد من الأخصائي.');
+          (lang === 'en' ? 'Your behavior therapist set a new IEP goal.' : 'هدف IEP جديد من المعالج السلوكي.');
         unlockAcademyVoice();
         enqueueAcademySpeech(spokenGoal, { lang, preferCloud: true });
       }
@@ -251,13 +266,13 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
   const copy =
     lang === 'en'
       ? {
-          title: tawasul ? 'Aunak Neural Empire' : 'Awni Play World',
-          subtitle: tawasul ? 'Gold · Emerald · Sovereign flow' : 'Play · Learn · Smile',
+          title: tawasul ? 'Aunak Neural Empire' : 'Sensory Intervention Environment',
+          subtitle: tawasul ? 'Gold · Emerald · Sovereign flow' : 'Sense · Empower · Grow',
           loading: 'Initializing neural island…',
         }
       : {
-          title: tawasul ? 'عونك · الإمبراطورية العصبية' : 'عالم عوني',
-          subtitle: tawasul ? 'ذهب · زمرد · نهر سيادي' : 'لعب · تعلّم · ابتسام',
+          title: tawasul ? 'عونك · الإمبراطورية العصبية' : 'بيئة التدخل الحسي والتمكين النمائي',
+          subtitle: tawasul ? 'ذهب · زمرد · نهر سيادي' : 'حسّ · تمكين · نمو',
           loading: 'تهيئة الجزيرة العصبية…',
         };
 
@@ -272,6 +287,28 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
   const handleAssessmentComplete = () => {
     reloadStudent().then(() => setTab('home'));
   };
+
+  const openIslandsWorld = useCallback(() => {
+    if (islandsNavRef.current || world === 'islands') return;
+    islandsNavRef.current = true;
+    playTaDaFanfare();
+    try {
+      const params = new URLSearchParams(window.location.search);
+      params.set('view', 'islands');
+      const qs = params.toString();
+      window.history.replaceState({}, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`);
+    } catch {
+      /* ignore */
+    }
+    // Brief celebration then hand off to islands map
+    window.setTimeout(() => setWorld('islands'), 700);
+  }, [world]);
+
+  // Auto-navigate when star bar hits 5/5 (play zone or mirror rewards)
+  useEffect(() => {
+    if (starCount < SOVEREIGN_CHILD_MAX_STARS) return;
+    openIslandsWorld();
+  }, [starCount, openIslandsWorld]);
 
   if (loading) {
     return (
@@ -299,6 +336,37 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
   }
 
   const firstName = student.name?.split(' ')?.[0] ?? student.name;
+
+  // After 5/5 stars (or ?view=islands) — interactive islands map for the active child
+  if (world === 'islands') {
+    return (
+      <AunakChildEcosystem
+        studentId={student.id}
+        studentName={student.name || firstName}
+        programmedGoal={student.programmedGoal}
+        reloadStudent={reloadStudent}
+        initialStep="map"
+        onBackToGate={() => {
+          window.location.href = '/';
+        }}
+      />
+    );
+  }
+
+  // Sovereign child path — full sensory island ecosystem (non-Tawasul)
+  if (!tawasul) {
+    return (
+      <AunakChildEcosystem
+        studentId={student.id}
+        studentName={student.name || firstName}
+        programmedGoal={student.programmedGoal}
+        reloadStudent={reloadStudent}
+        onBackToGate={() => {
+          window.location.href = '/';
+        }}
+      />
+    );
+  }
 
   return (
     <div className={theme.root} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
@@ -383,6 +451,7 @@ export default function ChildInteractiveShell({ lang: langProp = 'ar' }) {
             studentName={firstName}
             studentId={student.id}
             onCelebrate={onStarEarned}
+            onCapReached={openIslandsWorld}
             sovereignIsland={tawasul}
             starCap={tawasul ? SOVEREIGN_CHILD_MAX_STARS : null}
             globalStarCount={starCount}

@@ -4,9 +4,10 @@
  */
 
 import { DAILY_SESSION as DS, STUDENT as SF } from '../../src/lib/airtableFields.js';
+import { CENTRAL_BASE_ID, CENTRAL_TABLES } from '../../src/lib/centralAirtable.js';
 
-const DEFAULT_BASE_ID = 'appaGfKj4vYhMw0cb';
-const DEFAULT_DAILY_SESSIONS_TABLE_ID = 'tbl3mlewMLvqp6AXB';
+const DEFAULT_BASE_ID = CENTRAL_BASE_ID;
+const DEFAULT_DAILY_SESSIONS_TABLE_ID = CENTRAL_TABLES.dailySessions;
 const CLAIM_STATUS_SEALED = 'Sealed';
 
 function sanitizeAscii(value) {

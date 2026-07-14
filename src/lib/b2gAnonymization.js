@@ -4,7 +4,7 @@
  * Server-side HMAC runs in api/_handlers/b2g/anonymize.js (salt never in browser bundle).
  */
 
-import { STUDENT as SF, DAILY_SESSION as DS } from './airtableFields';
+import { STUDENT as SF, DAILY_SESSION as DS } from './airtableFields.js';
 
 export const B2G_ROLE = 'ministry_auditor';
 

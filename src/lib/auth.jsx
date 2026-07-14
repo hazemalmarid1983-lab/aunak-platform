@@ -28,14 +28,14 @@ export const SOVEREIGN_ONLY_SECTIONS = ['access', 'specialists'];
 
 /** Admin (non-sovereign) clinical manager — specialist areas + resources. */
 export const CLINICAL_MANAGER_SECTIONS = [
-  'live', 'registry', 'diagnostics', 'behavior', 'classrooms',
+  'live', 'governance', 'assessmentProtocol', 'registry', 'diagnostics', 'behavior', 'classrooms',
   'scientific', 'learning', 'emotion', 'crisis', 'media', 'enrollment',
   'biometrics', 'community', 'research', 'reports', 'resources', 'summerAcademy',
 ];
 
 /** Clinical sections unlocked after sovereign biometric login (≥94.7%). */
 export const BIOMETRIC_SOVEREIGN_SECTIONS = [
-  'live', 'registry', 'diagnostics', 'behavior', 'classrooms',
+  'live', 'governance', 'assessmentProtocol', 'registry', 'diagnostics', 'behavior', 'classrooms',
   'scientific', 'learning', 'emotion', 'crisis', 'media', 'enrollment',
   'biometrics', 'community', 'research', 'reports', 'resources', 'summerAcademy',
 ];
@@ -43,11 +43,11 @@ export const BIOMETRIC_SOVEREIGN_SECTIONS = [
 const ROLE_ACCESS = {
   [ROLES.ADMIN]: null,
   [ROLES.SPECIALIST]: [
-    'live', 'registry', 'diagnostics', 'behavior', 'classrooms',
+    'live', 'governance', 'assessmentProtocol', 'registry', 'diagnostics', 'behavior', 'classrooms',
     'scientific', 'learning', 'emotion', 'crisis', 'media', 'enrollment',
     'biometrics', 'community', 'research', 'reports',
   ],
-  [ROLES.PARENT]: ['media', 'community', 'biometrics', 'resources', 'emotion', 'reports', 'summerAcademy'],
+  [ROLES.PARENT]: ['reports', 'biometrics', 'governance'],
   [ROLES.MINISTRY]: ['ministry'],
 };
 
@@ -163,7 +163,7 @@ export async function verifyAccessToken(inputToken) {
             ? 'مفتش الوزارة'
             : role === ROLES.ADMIN
               ? 'المدير الأعلى'
-              : 'أخصائي'),
+              : 'المعالج السلوكي'),
         email: email || '',
         permissions: getField(f, AF.permissions) || '',
         recordId: record.id,
@@ -217,7 +217,7 @@ export async function verifyBiometricChild(childIdentifier) {
   return session;
 }
 
-const SUBSCRIPTION_ACTIVE = ["active", "نشط", "مفعل", "فعال"];
+const SUBSCRIPTION_ACTIVE = ["active", "نشط", "مفعل", "فعال", "b2b_premium", "premium"];
 const SUBSCRIPTION_PENDING = ["pending", "معلق", "بانتظار"];
 const SUBSCRIPTION_EXPIRED = ["expired", "منته", "انته", "lapsed"];
 

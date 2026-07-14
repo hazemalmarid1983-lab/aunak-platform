@@ -14,24 +14,24 @@ export default function AunakCommunityChat({ lang = 'ar' }) {
 
   const t = {
     ar: {
-      title: 'مجتمع عونك',
-      subtitle: 'الصدقة الجارية - الدعم التكافلي',
+      title: 'منتدى الدعم الأسري ومجتمع التمكين المشترك',
+      subtitle: 'الصدقة الجارية - الدعم التكافلي الأسري',
       moderator: 'الرقيب الذكي نشط',
-      privacyBanner: 'لحماية أطفالنا: يمنع الرقيب الآلي مشاركة الأسماء، التشخيصات الطبية، أو بيانات التواصل.',
+      privacyBanner: 'لحماية مستفيدينا: يمنع الرقيب الآلي مشاركة الأسماء، التشخيصات الطبية، أو بيانات التواصل.',
       you: 'أنت',
-      placeholder: 'اكتب رسالتك هنا...',
+      placeholder: 'اكتب مشاركتك في منتدى الدعم هنا...',
       securityAlert: 'تنبيه أمني: اكتشف الرقيب الذكي بيانات حساسة. يرجى مسحها.',
-      emptyChat: 'لا توجد رسائل بعد — ابدأ المحادثة الأولى.',
+      emptyChat: 'لا توجد مشاركات بعد — ابدأ أول مشاركة في منتدى الدعم.',
     },
     en: {
-      title: 'Aunak Community',
-      subtitle: 'Ongoing charity — peer support network',
+      title: 'Family Support Forum & Shared Empowerment Community',
+      subtitle: 'Ongoing charity — peer family support network',
       moderator: 'Smart Moderator Active',
-      privacyBanner: 'To protect our children: the AI moderator blocks names, medical diagnoses, and contact details.',
+      privacyBanner: 'To protect our beneficiaries: the AI moderator blocks names, medical diagnoses, and contact details.',
       you: 'You',
-      placeholder: 'Type your message here...',
+      placeholder: 'Share in the family support forum...',
       securityAlert: 'Security alert: sensitive data detected. Please remove it.',
-      emptyChat: 'No messages yet — start the conversation.',
+      emptyChat: 'No posts yet — start the first forum contribution.',
     },
   };
 
@@ -39,7 +39,7 @@ export default function AunakCommunityChat({ lang = 'ar' }) {
   const [chatLogs, setChatLogs] = useState([]);
 
   const SENSITIVE_PATTERNS = [
-    /\b(اسم[ي ه]|اسم الطفل|طفل[ي ه]|ابن[ي ه]|بنت[ي ه])\b/i,
+    /\b(اسم[ي ه]|اسم المستفيد|اسم الطفل|طفل[ي ه]|ابن[ي ه]|بنت[ي ه]|مستفيد[ي ه])\b/i,
     /\b(تقرير|تشخيص|نتيجة فحص|خطة علاجية)\b/i,
     /\b(my child|my son|my daughter|[A-Z][a-z]+ is \d+ years)\b/i,
     /\b(diagnosis|assessment report|clinical data)\b/i,

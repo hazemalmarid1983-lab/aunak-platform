@@ -26,11 +26,12 @@ import { activateSovereignBiometricLogin } from '../lib/sovereignLogin';
 import { useAuth } from '../lib/auth';
 import { LUX } from '../lib/luxTheme';
 import SovereignMasterBypassPanel from './SovereignMasterBypassPanel';
-import { isMasterBypassActive } from '../lib/sovereignMasterBypass';
+import { isMasterBypassActive, shouldAutoApproveBiometric } from '../lib/sovereignMasterBypass';
 
 function BiometricVerifyStep({ recordId, referenceDescriptorJson, lang, onVerified }) {
   const { login } = useAuth();
   const startedRef = useRef(false);
+  const bypassDoneRef = useRef(false);
 
   const copy =
     lang === 'en'
@@ -55,6 +56,34 @@ function BiometricVerifyStep({ recordId, referenceDescriptorJson, lang, onVerifi
     [lang, login, onVerified]
   );
 
+  useEffect(() => {
+    if (!shouldAutoApproveBiometric() || !recordId || bypassDoneRef.current) return undefined;
+    let cancelled = false;
+    bypassDoneRef.current = true;
+    (async () => {
+      try {
+        const students = await fetchStudents();
+        if (cancelled) return;
+        const student = (Array.isArray(students) ? students : []).find((s) => s.id === recordId);
+        if (!student) {
+          bypassDoneRef.current = false;
+          return;
+        }
+        const session = await activateSovereignBiometricLogin(
+          { student, similarityPercent: 100, masterBypass: true },
+          login,
+          lang
+        );
+        if (!cancelled && session) onVerified?.(session);
+      } catch {
+        bypassDoneRef.current = false;
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [recordId, lang, login, onVerified]);
+
   const scan = useBiometricScan({
     lang,
     selectedStudentId: recordId,
@@ -66,12 +95,24 @@ function BiometricVerifyStep({ recordId, referenceDescriptorJson, lang, onVerifi
   });
 
   useEffect(() => {
+    if (shouldAutoApproveBiometric()) return undefined;
     if (!recordId || !referenceDescriptorJson || startedRef.current) return;
     startedRef.current = true;
     const frame = requestAnimationFrame(() => scan.startScan());
     return () => cancelAnimationFrame(frame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recordId, referenceDescriptorJson]);
+
+  if (shouldAutoApproveBiometric()) {
+    return (
+      <div className="max-w-lg mx-auto text-center p-8">
+        <Loader2 className="w-10 h-10 text-emerald-400 animate-spin mx-auto mb-3" />
+        <p className="text-emerald-300 text-sm font-bold">
+          {lang === 'en' ? 'Auto-approve (DEV) — skipping camera' : 'عبور تلقائي (DEV) — تخطي الكاميرا'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-lg mx-auto bg-[#12121a]/70 backdrop-blur-xl border border-emerald-400/25 rounded-3xl p-6">
@@ -127,11 +168,13 @@ export default function PostActivationBiometric({
   onComplete,
   onBlocked,
 }) {
+  const { login } = useAuth();
   const [step, setStep] = useState('consent');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [blocked, setBlocked] = useState(false);
   const [descriptorJson, setDescriptorJson] = useState(null);
+  const autoDoneRef = useRef(false);
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -149,6 +192,7 @@ export default function PostActivationBiometric({
           back: 'Back',
           errCamera: 'Camera unavailable',
           errCapture: 'Could not capture stable face',
+          autoBypass: 'Auto-approve (DEV) — opening live dashboard',
         }
       : {
           consentTitle: 'تسجيل البصمة (بعد السداد فقط)',
@@ -161,7 +205,36 @@ export default function PostActivationBiometric({
           back: 'رجوع',
           errCamera: 'تعذر تشغيل الكاميرا',
           errCapture: 'تعذر التقاط وجه مستقر',
+          autoBypass: 'عبور تلقائي (DEV) — فتح اللوحة الحية',
         };
+
+  useEffect(() => {
+    if (!shouldAutoApproveBiometric() || !recordId || autoDoneRef.current) return undefined;
+    let cancelled = false;
+    autoDoneRef.current = true;
+    (async () => {
+      try {
+        const students = await fetchStudents();
+        if (cancelled) return;
+        const student = (Array.isArray(students) ? students : []).find((s) => s.id === recordId);
+        if (!student) {
+          autoDoneRef.current = false;
+          return;
+        }
+        const session = await activateSovereignBiometricLogin(
+          { student, similarityPercent: 100, masterBypass: true },
+          login,
+          lang
+        );
+        if (!cancelled) onComplete?.(session ?? { masterBypass: true, student });
+      } catch {
+        autoDoneRef.current = false;
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [recordId, lang, login, onComplete]);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks?.().forEach((tr) => tr.stop());
@@ -200,6 +273,7 @@ export default function PostActivationBiometric({
       const stable = await captureStableDescriptor(videoRef.current);
       if (!stable?.descriptor) throw new Error(copy.errCapture);
 
+      // Anti-spoof: full Students registry via /api/airtable → production base
       const registry = await fetchStudents();
       assertFaceUniqueInRegistry(registry, stable.descriptor, recordId, lang);
 
@@ -207,6 +281,7 @@ export default function PostActivationBiometric({
       await saveStudentFaceBiometric(recordId, json);
       await createCameraAccessPermission(recordId, studentName?.trim() || '');
       try {
+        // Status only — never reset subscription_status after license activation
         await promoteStudentStatus(recordId);
       } catch {
         /* non-blocking */
@@ -222,12 +297,28 @@ export default function PostActivationBiometric({
         stopCamera();
         onBlocked?.(e);
       } else {
-        setError(e?.message || copy.errCapture);
+        const raw = String(e?.message || copy.errCapture);
+        const friendly =
+          /Failed to fetch|BIOMETRIC_MODELS|NetworkError|Load failed/i.test(raw)
+            ? lang === 'en'
+              ? 'Could not load face models or reach Airtable. Refresh and retry (models are served from /models).'
+              : 'تعذر تحميل نماذج التعرف أو الاتصال بـ Airtable. حدّث الصفحة وأعد المحاولة (النماذج من /models محلياً).'
+            : raw;
+        setError(friendly);
       }
     } finally {
       setBusy(false);
     }
   };
+
+  if (shouldAutoApproveBiometric()) {
+    return (
+      <div className="max-w-md mx-auto text-center p-8">
+        <Loader2 className="w-10 h-10 text-emerald-400 animate-spin mx-auto mb-4" />
+        <p className="text-emerald-300 text-sm font-bold">{copy.autoBypass}</p>
+      </div>
+    );
+  }
 
   if (blocked) {
     return (

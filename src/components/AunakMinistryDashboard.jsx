@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity,
+  AlertTriangle,
   BarChart3,
   Eye,
   Loader2,
@@ -19,6 +20,11 @@ import {
   mapSessionToB2GView,
   mapStudentToB2GView,
 } from '../lib/b2gAnonymization';
+import { buildGovernanceAlertFeed } from '../lib/governanceAnomalies';
+import { listAllSealedAttendance } from '../lib/attendanceLedger';
+import { hydrateAttendanceFromCloud } from '../lib/attendanceLedger';
+import { hydrateGoalsFromCloud } from '../lib/iepGoalAssignment';
+import { governanceCloudReady } from '../lib/governanceCloud';
 import {
   RiskBadge,
   StatusBadge,
@@ -39,70 +45,91 @@ export default function AunakMinistryDashboard({ lang = 'ar', user, onLogout }) 
   const [students, setStudents] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [lastSync, setLastSync] = useState(null);
+  const [alerts, setAlerts] = useState([]);
+  const [cloudHint, setCloudHint] = useState('');
 
   const copy =
     lang === 'ar'
       ? {
-          title: 'لوحة التدقيق الحي — B2G',
-          subtitle: 'قراءة فقط · بيانات مُقنّعة · CHD-XXXX',
-          liveFeed: 'البث الحي للجلسات',
+          title: 'لوحة رقابة الوزارة',
+          subtitle: 'قراءة فقط · بيانات مرمّزة للمستفيد · CHD-XXXX',
+          liveFeed: 'آخر الجلسات الموثّقة',
           activeSessions: 'جلسات نشطة',
-          avgHarmony: 'متوسط التناغم',
-          compliance: 'نسبة الامتثال (جلسات مقفلة)',
-          studentList: 'سجل الطلاب المُقنّع',
+          avgHarmony: 'متوسط مؤشر المتابعة',
+          compliance: 'نسبة الجلسات الموثّقة',
+          studentList: 'سجل المستفيدين المرمّز',
           code: 'الرمز',
           focus: 'التركيز',
-          harmony: 'التناغم',
-          risk: 'مخاطر',
+          harmony: 'المتابعة',
+          risk: 'مستوى الملاحظة',
           status: 'الحالة',
           refresh: 'تحديث',
-          loading: 'جاري تحميل البيانات المُقنّعة…',
-          readOnly: 'وضع القراءة فقط — لا تعديل · لا محادثة · لا بيانات شخصية',
-          sealed: 'مقفلة',
-          open: 'مفتوحة',
-          noStudents: 'لا توجد سجلات حية لعرضها حالياً',
-          noSessions: 'لا توجد سجلات حية لعرضها حالياً',
-          auditor: 'مفتش الوزارة',
+          loading: 'جاري تحميل بيانات الرقابة…',
+          readOnly: 'وضع القراءة فقط — لا تعديل · لا بيانات شخصية ظاهرة',
+          sealed: 'موثّقة',
+          open: 'غير موثّقة',
+          noStudents: 'لا توجد سجلات لعرضها حالياً',
+          noSessions: 'لا توجد جلسات لعرضها حالياً',
+          auditor: 'عضو لجنة الرقابة',
           logout: 'خروج',
+          alerts: 'تنبيهات الرقابة (حضور · أهداف بلا دليل تحقق)',
+          noAlerts: 'لا تنبيهات حالياً',
+          sealedDays: 'أيام حضور موثّقة',
+          cloudOn: 'مزامنة سجلات التربية الخاصة مفعّلة',
+          cloudOff: 'جداول المزامنة غير مربوطة — نفّذ سكربت المزامنة',
         }
       : {
-          title: 'Live Audit Dashboard — B2G',
-          subtitle: 'Read-only · Anonymized · CHD-XXXX',
-          liveFeed: 'Live session feed',
+          title: 'Ministry Oversight Dashboard',
+          subtitle: 'Read-only · Pseudonymized beneficiaries · CHD-XXXX',
+          liveFeed: 'Latest certified sessions',
           activeSessions: 'Active sessions',
-          avgHarmony: 'Avg harmony',
-          compliance: 'Compliance (sealed sessions)',
-          studentList: 'Anonymized student registry',
+          avgHarmony: 'Avg follow-up index',
+          compliance: 'Certified session rate',
+          studentList: 'Pseudonymized beneficiary register',
           code: 'Code',
           focus: 'Focus',
-          harmony: 'Harmony',
-          risk: 'Risk',
+          harmony: 'Follow-up',
+          risk: 'Review flag',
           status: 'Status',
           refresh: 'Refresh',
-          loading: 'Loading anonymized audit data…',
-          readOnly: 'Read-only — no edits · no chat · no PII',
-          sealed: 'Sealed',
-          open: 'Open',
-          noStudents: 'No live records available to display',
-          noSessions: 'No live records available to display',
-          auditor: 'Ministry auditor',
+          loading: 'Loading oversight data…',
+          readOnly: 'Read-only — no edits · no visible personal data',
+          sealed: 'Certified',
+          open: 'Uncertified',
+          noStudents: 'No records available to display',
+          noSessions: 'No sessions available to display',
+          auditor: 'Review committee member',
           logout: 'Logout',
+          alerts: 'Oversight alerts (attendance · goals without verification)',
+          noAlerts: 'No alerts right now',
+          sealedDays: 'Certified attendance days',
+          cloudOn: 'Special education record sync enabled',
+          cloudOff: 'Sync tables not linked — run the sync schema script',
         };
 
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
+      const ready = governanceCloudReady();
+      setCloudHint(ready.attendance ? 'on' : 'off');
+      await hydrateAttendanceFromCloud();
       const [studentRows, sessionRows] = await Promise.all([
         fetchStudents(),
         fetchAirtableRecords(AIRTABLE_TABLES.dailySessions).catch(() => []),
       ]);
-      setStudents(
-        (Array.isArray(studentRows) ? studentRows : []).map((row) => mapStudentToB2GView(row))
+      const mappedStudents = (Array.isArray(studentRows) ? studentRows : []).map((row) =>
+        mapStudentToB2GView(row)
       );
+      // Hydrate goals for anomaly scan (uses raw rows before anonymize strip of goals JSON)
+      for (const row of Array.isArray(studentRows) ? studentRows.slice(0, 40) : []) {
+        await hydrateGoalsFromCloud(row).catch(() => {});
+      }
+      setStudents(mappedStudents);
       setSessions(
         (Array.isArray(sessionRows) ? sessionRows : []).map((row) => mapSessionToB2GView(row))
       );
+      setAlerts(buildGovernanceAlertFeed({ attendanceRows: listAllSealedAttendance() }));
       setLastSync(new Date());
     } catch (e) {
       setError(e?.message ?? 'B2G_LOAD_FAILED');
@@ -179,6 +206,8 @@ export default function AunakMinistryDashboard({ lang = 'ar', user, onLogout }) 
             <Lock className="w-3.5 h-3.5" />
             {copy.readOnly}
             {user?.name ? ` · ${user.name}` : ''}
+            {' · '}
+            {cloudHint === 'on' ? copy.cloudOn : copy.cloudOff}
           </p>
         </header>
 
@@ -209,6 +238,37 @@ export default function AunakMinistryDashboard({ lang = 'ar', user, onLogout }) 
               </div>
               <p className="text-3xl font-black text-[#e8c872] font-mono">{compliancePct}%</p>
             </div>
+          </section>
+
+          <section className={`${LUX.glassCard}`}>
+            <h2 className={`${LUX.headingGold} mb-4 flex items-center gap-2`}>
+              <AlertTriangle className="w-5 h-5 text-amber-400" />
+              {copy.alerts}
+            </h2>
+            <p className="text-[10px] font-mono text-slate-500 mb-3">
+              {copy.sealedDays}: {listAllSealedAttendance().length}
+            </p>
+            {!alerts.length ? (
+              <p className={`text-sm ${LUX.muted}`}>{copy.noAlerts}</p>
+            ) : (
+              <ul className="space-y-2">
+                {alerts.slice(0, 12).map((a) => (
+                  <li
+                    key={a.id}
+                    className={`text-xs rounded-xl border px-3 py-2.5 ${
+                      a.severity === 'high'
+                        ? 'border-rose-500/35 bg-rose-950/30 text-rose-100'
+                        : a.severity === 'medium'
+                          ? 'border-amber-500/35 bg-amber-950/25 text-amber-100'
+                          : 'border-slate-500/30 bg-white/[0.03] text-slate-300'
+                    }`}
+                  >
+                    <span className="font-mono text-[10px] opacity-70">{a.code}</span>
+                    <p className="mt-1">{lang === 'ar' ? a.ar : a.en}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
           <section className={`${LUX.glassCard}`}>

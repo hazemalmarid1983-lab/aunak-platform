@@ -13,7 +13,7 @@ function buildSessionFromRecord(record, inputToken) {
   const status = String(getField(f, SP.status) ?? 'active').toLowerCase();
   if (/inactive|disabled|معطل/.test(status)) return null;
 
-  const name = getField(f, SP.name) || getField(f, 'Name') || 'أخصائي';
+  const name = getField(f, SP.name) || getField(f, 'Name') || 'المعالج السلوكي';
   const email = getField(f, SP.email) || getField(f, 'Email') || '';
 
   return {

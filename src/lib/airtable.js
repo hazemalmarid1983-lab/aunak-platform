@@ -78,18 +78,23 @@ export function generateStudentId(name, parentPhone) {
 export function buildStudentEnrollmentFields({
   name,
   age,
-  diagnosis,
+  presentingSymptoms,
+  symptoms,
   status,
   parentPhone,
   parentCountryCode,
   preferredLanding,
+  nationalId,
 } = {}) {
   const fields = {};
   if (name?.trim()) fields[SF.name] = name.trim();
+  if (nationalId?.trim()) fields[SF.national_id] = String(nationalId).trim().toUpperCase();
   if (age != null && age !== "" && Number.isFinite(Number(age))) {
     fields[SF.age] = Number(age);
   }
-  if (diagnosis?.trim()) fields[SF.diagnosis] = diagnosis.trim();
+  const sx = String(presentingSymptoms ?? symptoms ?? "").trim();
+  if (sx) fields[SF.presenting_symptoms] = sx;
+  fields[SF.diagnosis] = "under_assessment";
   fields[SF.status] = status ?? SS.status.new;
   fields[SF.subscription_status] = SS.subscription_status.pending;
   if (parentCountryCode?.trim()) fields[SF.parent_country_code] = parentCountryCode.trim();
@@ -97,10 +102,12 @@ export function buildStudentEnrollmentFields({
   const code = generateUniqueStudentCode({ name, parentPhone });
   if (code) fields[SF.id] = code;
   if (preferredLanding?.trim()) fields[SF.preferred_destination] = preferredLanding.trim();
+  else fields[SF.preferred_destination] = "live";
   return fields;
 }
 
-const DEFAULT_AIRTABLE_BASE_ID = "appaGfKj4vYhMw0cb";
+/** Central multi-center production base (Jul 2026). Legacy archive: appaGfKj4vYhMw0cb */
+const DEFAULT_AIRTABLE_BASE_ID = "appcjitgWsbvIebwf";
 
 /** Paste your Airtable Personal Access Token here (pat...) — dev-only; never shipped in prod bundle. */
 const HARDCODED_API_KEY = "put_your_token_here";
@@ -330,6 +337,9 @@ export async function fetchAllRecords(tableId, params = {}) {
     const pageParams = { ...params };
     if (offset) pageParams.offset = offset;
     const page = await airtableFetchTable(tableId, pageParams);
+    if (!page || typeof page !== "object") {
+      throw new Error("Airtable response missing page body");
+    }
     if (Array.isArray(page.records)) allRecords.push(...page.records);
     offset = page.offset;
   } while (offset);
@@ -472,6 +482,26 @@ export function formatAirtableWriteError(err) {
   }
 }
 
+export async function createAirtableRecord(tableId, fields) {
+  if (!tableId) throw new Error("tableId required");
+  try {
+    const data = await airtableWrite(tableId, "POST", { fields: scrubFields(fields) });
+    return data?.id ? data : mapRecord(data);
+  } catch (err) {
+    throw new Error(formatAirtableWriteError(err));
+  }
+}
+
+export async function updateAirtableRecord(tableId, recordId, fields) {
+  if (!tableId || !recordId) throw new Error("tableId and recordId required");
+  try {
+    const data = await airtableWrite(tableId, "PATCH", { fields: fields ?? {} }, recordId);
+    return data?.id ? data : mapRecord(data);
+  } catch (err) {
+    throw new Error(formatAirtableWriteError(err));
+  }
+}
+
 export async function createStudentRecord(fields) {
   try {
     const data = await airtableWrite(STUDENTS_TABLE, "POST", { fields: scrubFields(fields) });
@@ -483,8 +513,12 @@ export async function createStudentRecord(fields) {
 
 export async function updateStudentRecord(recordId, fields) {
   if (!recordId) throw new Error("recordId required");
-  const data = await airtableWrite(STUDENTS_TABLE, "PATCH", { fields: fields ?? {} }, recordId);
-  return mapRecord(data);
+  try {
+    const data = await airtableWrite(STUDENTS_TABLE, "PATCH", { fields: fields ?? {} }, recordId);
+    return mapRecord(data);
+  } catch (err) {
+    throw new Error(formatAirtableWriteError(err));
+  }
 }
 
 export async function saveStudentFaceBiometric(
@@ -492,21 +526,22 @@ export async function saveStudentFaceBiometric(
   descriptorJson,
   { captureStatus = REFERENCE_CAPTURE_APPROVED_STATUS } = {}
 ) {
-  const row = await updateStudentRecord(recordId, { [SF.face_biometric]: descriptorJson });
-  try {
-    await updateStudentRecord(recordId, { [SF.biometric_status]: captureStatus });
-  } catch (err) {
-    console.warn("[saveStudentFaceBiometric] biometric_status:", err?.message);
+  if (!recordId) throw new Error("recordId required");
+  if (!descriptorJson || !String(descriptorJson).trim()) {
+    throw new Error("face_biometric descriptor required");
   }
-  return row;
+  // Single PATCH — face_biometric + biometric_status together (production Students)
+  return updateStudentRecord(recordId, {
+    [SF.face_biometric]: descriptorJson,
+    [SF.biometric_status]: captureStatus,
+  });
 }
 
-/** Ensure student Status is Active after enrollment; subscription stays Pending until activation code. */
+/** Mark student Status active after enrollment data — does NOT touch subscription_status. */
 export async function promoteStudentStatus(recordId) {
   if (!recordId) throw new Error("recordId required");
   return updateStudentRecord(recordId, {
     [SF.status]: DEFAULT_ENROLLMENT_STATUS,
-    [SF.subscription_status]: SS.subscription_status.pending,
   });
 }
 

@@ -23,6 +23,7 @@ export default function ChildPlayZone({
   studentName,
   studentId,
   onCelebrate,
+  onCapReached,
   sovereignIsland = false,
   starCap = null,
   globalStarCount = 0,
@@ -38,6 +39,7 @@ export default function ChildPlayZone({
   const [targetColor, setTargetColor] = useState(0);
   const [mode, setMode] = useState('bubbles');
   const sealTriggeredRef = useRef(false);
+  const capNotifiedRef = useRef(false);
 
   const maybeSealSession = useCallback(
     (nextCount) => {
@@ -66,6 +68,13 @@ export default function ChildPlayZone({
     setGreetingIdx((i) => (i + 1) % greetings.length);
     onCelebrate?.();
   }, [atCap, greetings.length, onCelebrate]);
+
+  // When sovereign star cap is reached (5/5), notify parent shell to open islands world
+  useEffect(() => {
+    if (!sovereignIsland || !atCap || capNotifiedRef.current) return;
+    capNotifiedRef.current = true;
+    onCapReached?.();
+  }, [sovereignIsland, atCap, onCapReached]);
 
   const pop = useCallback(
     (id) => {

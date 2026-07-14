@@ -25,32 +25,40 @@ export default function AssessmentPromoModal({
           sub: 'Comprehensive assessment — not guesswork',
           bullets: [
             'Hidden strengths revealed in 48 hours',
-            'Personalized rehab plan for your child',
+            'Personalized rehab plan for your beneficiary',
             'Sovereign data — trusted by centers',
           ],
           cta: 'Continue with activation code',
-          payOnline: 'Secure online payment',
+          payOnline: 'Consultative License portal',
           payDivider: 'or enter admin code at next step',
           skip: 'Continue to activation',
           mute: 'Mute voice',
           unmute: 'Play voice',
-          scenes: ['Every child has a hidden map…', 'The free scan shows the surface…', 'The full assessment unlocks the path.'],
+          scenes: [
+            'Every beneficiary has a hidden map…',
+            'The free Developmental Screening Matrix shows the surface…',
+            'The full assessment unlocks the path.',
+          ],
         }
       : {
           headline: 'الصورة الكاملة… تغيّر كل شيء',
           sub: 'التقييم الشامل — لا تخمين ولا انتظار',
           bullets: [
             'كشف نقاط القوة المخفية خلال 48 ساعة',
-            'خطة تأهيل شخصية لطفلك',
+            'خطة تأهيل شخصية للمستفيد',
             'بيانات سيادية معتمدة من المراكز',
           ],
           cta: 'متابعة بكود التفعيل',
-          payOnline: 'السداد الآمن عبر الإنترنت',
+          payOnline: 'بوابة تفعيل الرخص الاستشارية',
           payDivider: 'أو أدخل كود الإدارة في الخطوة التالية',
           skip: 'متابعة للتفعيل',
           mute: 'كتم الصوت',
           unmute: 'تشغيل الصوت الرنان',
-          scenes: ['كل طفل يحمل خريطة قدرات…', 'المسح المجاني يكشف السطح…', 'التقييم الشامل يفتح الطريق.'],
+          scenes: [
+            'كل مستفيد يحمل خريطة قدرات…',
+            'مقياس المسح النمائي الأولي يكشف السطح…',
+            'التقييم الشامل يفتح الطريق.',
+          ],
         };
 
   useEffect(() => {

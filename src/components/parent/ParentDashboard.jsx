@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   BarChart3,
@@ -19,6 +20,8 @@ import { getField } from '../../lib/airtable';
 import { STUDENT as SF } from '../../lib/airtableFields';
 import PlatformLogo from '../PlatformLogo';
 import { LUX } from '../../lib/luxTheme';
+import { monthAttendanceSummary, hydrateAttendanceFromCloud } from '../../lib/attendanceLedger';
+import { getStudentGoalPlan, listGoalEvidence, hydrateGoalsFromCloud } from '../../lib/iepGoalAssignment';
 
 const METRIC_COLORS = {
   emerald: 'from-emerald-500 to-emerald-400',
@@ -66,7 +69,7 @@ function SessionRow({ session, lang }) {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-slate-200 truncate">
-          {session.specialistName || (lang === 'en' ? 'Specialist' : 'الإخصائي')}
+          {session.specialistName || (lang === 'en' ? 'Behavior Therapist' : 'المعالج السلوكي')}
         </p>
         {session.notes ? (
           <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{session.notes}</p>
@@ -125,47 +128,79 @@ export default function ParentDashboard({ lang = 'ar', student, parentToken, onL
         : String(parentPhoneRaw)
     : '—';
 
+  const sealedMonth = student?.id
+    ? monthAttendanceSummary(student.id, new Date().toISOString().slice(0, 7))
+    : null;
+  const goalPlan = student?.id ? getStudentGoalPlan(student.id) : null;
+  const evidenceRows = student?.id ? listGoalEvidence(student.id) : [];
+  const [govTick, setGovTick] = useState(0);
+
+  useEffect(() => {
+    if (!student?.id) return;
+    let cancelled = false;
+    (async () => {
+      await hydrateAttendanceFromCloud();
+      await hydrateGoalsFromCloud(student);
+      if (!cancelled) setGovTick((n) => n + 1);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [student?.id]);
+
   const copy =
     lang === 'en'
       ? {
-          title: 'Parent Dashboard',
-          subtitle: 'Your child only — sovereign parent token',
-          child: 'Child',
-          plan: 'Plan',
+          title: 'Parent / Guardian Dashboard',
+          subtitle: 'Your beneficiary only — secure parent access token',
+          child: 'Beneficiary',
+          plan: 'Consultative License',
           subscription: 'Subscription',
-          diagnosis: 'Diagnosis',
+          diagnosis: 'Diagnosis / status',
           parentContact: 'Parent contact',
           refresh: 'Refresh',
           logout: 'Lock dashboard',
-          sectionAssessment: 'Summary & preliminary report',
-          sectionSessions: 'Daily session registry',
-          sectionTreatment: 'Treatment plan & metrics',
-          noAssessment: 'No preliminary assessment yet — complete the free assessment during enrollment.',
-          noSessions: 'No sealed sessions in the last 90 days.',
-          goal: 'Programmed goal',
-          overall: 'Overall progress index',
+          sectionAssessment: 'Summary & initial developmental screening',
+          sectionSessions: 'Certified session register',
+          sectionTreatment: 'Individualized Education Plan (IEP) & progress',
+          noAssessment: 'No developmental screening yet — complete the free matrix during enrollment.',
+          noSessions: 'No certified sessions in the last 90 days.',
+          goal: 'Active IEP goal',
+          overall: 'Follow-up index & baseline',
           comprehensive: 'Comprehensive assessment',
-          attendance: 'Attendance ledger',
+          attendance: 'Attendance register',
+          sealedAttendance: 'Certified center attendance (this month)',
+          present: 'Present',
+          absent: 'Absent',
+          excused: 'Excused absence',
+          activeGoals: 'Active IEP goals',
+          evidenceCount: 'Certified verification records',
         }
       : {
-          title: 'لوحة الأهل',
-          subtitle: 'بيانات طفلك فقط — رمز الأهل السيادي',
-          child: 'الطفل',
-          plan: 'الباقة',
+          title: 'لوحة ولي الأمر',
+          subtitle: 'بيانات المستفيد فقط — دخول برمز ولي الأمر',
+          child: 'المستفيد',
+          plan: 'الرخصة الاستشارية',
           subscription: 'الاشتراك',
-          diagnosis: 'التشخيص',
+          diagnosis: 'التشخيص / الحالة',
           parentContact: 'تواصل ولي الأمر',
           refresh: 'تحديث',
           logout: 'قفل اللوحة',
-          sectionAssessment: 'الملخص والتقرير المبدئي',
-          sectionSessions: 'سجل الجلسات اليومية',
-          sectionTreatment: 'الخطة العلاجية والمقاييس',
-          noAssessment: 'لا يوجد تقييم مبدئي بعد — أكمل التقييم المجاني أثناء التسجيل.',
+          sectionAssessment: 'الملخص والمسح النمائي الأولي',
+          sectionSessions: 'سجل الجلسات الموثّقة',
+          sectionTreatment: 'الخطة التربوية الفردية والتقدم',
+          noAssessment: 'لا يوجد مسح نمائي أولي بعد — أكمل المقياس أثناء التسجيل.',
           noSessions: 'لا توجد جلسات موثّقة خلال آخر 90 يوماً.',
-          goal: 'الهدف المبرمج',
-          overall: 'مؤشر التقدم العام',
+          goal: 'الهدف الفردي النشط',
+          overall: 'مؤشر المتابعة وخط الأساس',
           comprehensive: 'التقييم الشامل',
           attendance: 'سجل الحضور',
+          sealedAttendance: 'حضور المركز الموثّق (هذا الشهر)',
+          present: 'حضور',
+          absent: 'غياب',
+          excused: 'غياب بعذر',
+          activeGoals: 'أهداف الخطة الفردية',
+          evidenceCount: 'أدلة تحقق موثّقة',
         };
 
   const comprehensiveLabels = {
@@ -238,6 +273,33 @@ export default function ParentDashboard({ lang = 'ar', student, parentToken, onL
             </div>
           </section>
 
+          {sealedMonth && (
+            <section className={`${LUX.glassCard} space-y-3`} key={govTick}>
+              <div className="flex items-center gap-2">
+                <CalendarCheck className="w-5 h-5 text-emerald-400" />
+                <h2 className={LUX.headingGold}>{copy.sealedAttendance}</h2>
+              </div>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div>
+                  <p className="text-2xl font-mono text-emerald-300">{sealedMonth.present}</p>
+                  <p className="text-[10px] text-slate-500">{copy.present}</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-mono text-rose-300">{sealedMonth.absent}</p>
+                  <p className="text-[10px] text-slate-500">{copy.absent}</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-mono text-amber-300">{sealedMonth.excused}</p>
+                  <p className="text-[10px] text-slate-500">{copy.excused}</p>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500">
+                {copy.activeGoals}: {goalPlan?.goals?.length ?? 0} · {copy.evidenceCount}:{' '}
+                {evidenceRows.length}
+              </p>
+            </section>
+          )}
+
           {/* Section 1 — Assessment */}
           <section className="space-y-4">
             <div className="flex items-center gap-2">
@@ -289,7 +351,7 @@ export default function ParentDashboard({ lang = 'ar', student, parentToken, onL
             </div>
             {attendance.lastSessionDate && (
               <p className="text-xs text-slate-500 font-mono">
-                {lang === 'en' ? 'Last session' : 'آخر جلسة'}: {attendance.lastSessionDate}
+                {lang === 'en' ? 'Last ABC session' : 'آخر جلسة ABC'}: {attendance.lastSessionDate}
                 {attendance.lastSpecialist ? ` · ${attendance.lastSpecialist}` : ''}
               </p>
             )}
@@ -338,8 +400,8 @@ export default function ParentDashboard({ lang = 'ar', student, parentToken, onL
                 ) : (
                   <p className={`${LUX.muted} text-sm text-center py-6`}>
                     {lang === 'en'
-                      ? 'Metrics will appear after specialist sessions update the student record.'
-                      : 'ستظهر المقاييس بعد تحديث سجل الطالب من جلسات الإخصائي.'}
+                      ? 'Metrics will appear after behavior therapist sessions update the beneficiary record.'
+                      : 'ستظهر المقاييس بعد تحديث سجل المستفيد من جلسات المعالج السلوكي.'}
                   </p>
                 )}
               </div>

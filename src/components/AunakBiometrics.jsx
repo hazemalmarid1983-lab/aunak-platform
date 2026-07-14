@@ -1,14 +1,29 @@
 ﻿import { useCallback, useEffect, useRef, useState } from "react";
 import { ScanFace, ShieldCheck, AlertTriangle, Camera, RefreshCw, Fingerprint, Loader2 } from "lucide-react";
 import PlatformLogo from "./PlatformLogo";
-import { fetchStudents, STUDENTS_TABLE } from "../lib/airtable";
+import { fetchStudents, STUDENTS_TABLE, getField } from "../lib/airtable";
 import { useBiometricScan } from "../hooks/useBiometricScan";
 import { SOVEREIGN_MATCH_CONFIDENCE } from "../lib/biometricMatch";
-import { useAuth, ROLES } from "../lib/auth";
+import { useAuth, ROLES, isSubscriptionActive } from "../lib/auth";
 import { PLAN_CODES } from "../lib/plans";
 import { activateSovereignBiometricLogin } from "../lib/sovereignLogin";
 import { subscribeEmergencyLogin } from "../lib/studentPrivacy";
+import { shouldAutoApproveBiometric } from "../lib/sovereignMasterBypass";
+import { STUDENT as SF } from "../lib/airtableFields";
 import { LUX } from "../lib/luxTheme.js";
+
+function pickQaBypassStudent(students) {
+  const list = Array.isArray(students) ? students : [];
+  const alHusain = list.find((s) => {
+    const blob = `${s.name ?? ""} ${s.nameAr ?? ""} ${s.studentCode ?? ""} ${getField(s.fields, SF.national_id) ?? ""}`;
+    return /al[\s-]?hussein|الحسين|ALHUSAIN|AUN-ALHS/i.test(blob);
+  });
+  if (alHusain) return alHusain;
+  const active = list.find((s) =>
+    isSubscriptionActive(getField(s.fields, SF.subscription_status) ?? s.subscriptionStatus)
+  );
+  return active || list[0] || null;
+}
 
 export default function AunakBiometrics({
   lang = "ar",
@@ -20,6 +35,7 @@ export default function AunakBiometrics({
   const [registryCount, setRegistryCount] = useState(null);
   const [registryLoading, setRegistryLoading] = useState(false);
   const [entering, setEntering] = useState(false);
+  const [bypassNote, setBypassNote] = useState("");
   const matchHandledRef = useRef(false);
 
   const t = {
@@ -34,8 +50,8 @@ export default function AunakBiometrics({
       threshold: "عتبة الثقة السيادية",
       permission: "بوابة صلاحية الكاميرا",
       permissionBlocked: "صلاحية الكاميرا غير مفعلة في سجل الوصول",
-      studentId: "إسم الطالب",
-      selectStudent: "اختر الطالب (Student_ID)",
+      studentId: "إسم المستفيد",
+      selectStudent: "اختر المستفيد (الحالة المستهدفة)",
       selectPlaceholder: "— اختر من السجل الحي —",
       verifyHint: "المطابقة المزدوجة 1:1 — الوجه يجب أن يطابق الاسم المختار",
       harmonyIndex: "درجة التناغم",
@@ -44,6 +60,7 @@ export default function AunakBiometrics({
       liveRegistry: "السجل الحي",
       entering: "جاري تفعيل الجلسة السيادية...",
       scanSuccess: "تم التعرف بنجاح",
+      autoBypass: "عبور تلقائي (DEV) — بدون كاميرا",
     },
     en: {
       title: "Biometric ID System",
@@ -56,8 +73,8 @@ export default function AunakBiometrics({
       threshold: "Sovereign confidence",
       permission: "Camera permission gate",
       permissionBlocked: "Camera permission inactive in access registry",
-      studentId: "Student name",
-      selectStudent: "Select student (Student_ID)",
+      studentId: "Beneficiary name",
+      selectStudent: "Select beneficiary (target case)",
       selectPlaceholder: "— choose from live registry —",
       verifyHint: "1:1 dual verification — face must match selected name",
       harmonyIndex: "Harmony score",
@@ -66,6 +83,7 @@ export default function AunakBiometrics({
       liveRegistry: "Live registry",
       entering: "Activating sovereign session...",
       scanSuccess: "Recognition successful",
+      autoBypass: "Auto-approve (DEV) — camera skipped",
     },
   };
   const copy = t[lang] ?? t.ar;
@@ -103,6 +121,50 @@ export default function AunakBiometrics({
     [autoEnterOnMatch, gateMode, lang, login, onBiometricSuccess, setActiveStudent]
   );
 
+  /** DEV QA: skip camera timeout — enter live dashboard immediately. */
+  useEffect(() => {
+    if (!gateMode || !shouldAutoApproveBiometric()) return undefined;
+    if (matchHandledRef.current) return undefined;
+    let cancelled = false;
+
+    (async () => {
+      setEntering(true);
+      setBypassNote(copy.autoBypass);
+      try {
+        const students = await fetchStudents();
+        if (cancelled) return;
+        const student = pickQaBypassStudent(students);
+        if (!student?.id) {
+          setBypassNote(lang === "ar" ? "لا يوجد سجل للعبور التلقائي" : "No student for auto-bypass");
+          return;
+        }
+        matchHandledRef.current = true;
+        setActiveStudent(student.id);
+        await activateSovereignBiometricLogin(
+          {
+            student,
+            similarityPercent: 100,
+            childCode: student.studentCode,
+            masterBypass: true,
+          },
+          login,
+          lang
+        );
+      } catch (e) {
+        if (!cancelled) {
+          matchHandledRef.current = false;
+          setBypassNote(e?.message || "AUTO_BYPASS_FAILED");
+        }
+      } finally {
+        if (!cancelled) setEntering(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [gateMode, lang, login, setActiveStudent, copy.autoBypass]);
+
   useEffect(() => {
     if (!gateMode) return undefined;
     return subscribeEmergencyLogin(handleEmergencyLogin);
@@ -136,10 +198,22 @@ export default function AunakBiometrics({
   }, [gateMode, loadLiveRegistry]);
 
   useEffect(() => {
+    if (shouldAutoApproveBiometric() && gateMode) return;
     if (scan.scanState === "idle" || scan.scanState === "error") {
       matchHandledRef.current = false;
     }
-  }, [scan.scanState]);
+  }, [scan.scanState, gateMode]);
+
+  // While DEV auto-bypass runs, show a compact entering state (no camera wait)
+  if (gateMode && shouldAutoApproveBiometric() && (entering || matchHandledRef.current)) {
+    return (
+      <div className="w-full max-w-md mx-auto text-center p-8">
+        <Loader2 className="w-10 h-10 text-emerald-400 animate-spin mx-auto mb-4" />
+        <p className="text-emerald-300 text-sm font-bold">{copy.entering}</p>
+        {bypassNote ? <p className="text-[11px] text-amber-400/90 font-mono mt-2">{bypassNote}</p> : null}
+      </div>
+    );
+  }
 
   const student = scan.matchedStudent?.student;
   const harmony = scan.matchedStudent?.harmonyScore;

@@ -2,8 +2,8 @@ import { Home, Gamepad2, Moon, Star, ClipboardList } from 'lucide-react';
 
 const BASE_TABS = [
   { id: 'home', icon: Home, ar: 'الرئيسية', en: 'Home' },
-  { id: 'play', icon: Gamepad2, ar: 'تفاعل', en: 'Engage' },
-  { id: 'assessment', icon: ClipboardList, ar: 'التقييم', en: 'Assessment', sovereignOnly: true },
+  { id: 'play', icon: Gamepad2, ar: 'تدخل حسي', en: 'Sensory' },
+  { id: 'assessment', icon: ClipboardList, ar: 'مسح نمائي', en: 'Screening', sovereignOnly: true },
   { id: 'calm', icon: Moon, ar: 'هدوء', en: 'Calm' },
   { id: 'stars', icon: Star, ar: 'نجومي', en: 'Stars' },
 ];

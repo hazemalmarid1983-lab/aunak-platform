@@ -45,3 +45,28 @@ export function formatPhoneDisplay(countryIso, nationalRaw) {
   const e164 = formatPhoneE164(countryIso, nationalRaw);
   return `+${e164}`;
 }
+
+/**
+ * Split stored E.164 / local phone into { countryIso, national }.
+ * Fixes enrollment restore where `.replace(/^\+\d+/)` wiped the whole number.
+ */
+export function splitStoredPhone(raw, fallbackIso = DEFAULT_COUNTRY_ISO) {
+  const trimmed = String(raw ?? '').trim();
+  if (!trimmed) return { countryIso: fallbackIso, national: '' };
+
+  const digits = trimmed.replace(/\D/g, '');
+  if (!digits) return { countryIso: fallbackIso, national: '' };
+
+  const sorted = [...COUNTRY_DIAL_CODES].sort((a, b) => b.dial.length - a.dial.length);
+  for (const c of sorted) {
+    if (digits.startsWith(c.dial) && digits.length > c.dial.length) {
+      let national = digits.slice(c.dial.length);
+      if (national.startsWith('0')) national = national.slice(1);
+      return { countryIso: c.iso, national };
+    }
+  }
+
+  let national = digits;
+  if (national.startsWith('0')) national = national.slice(1);
+  return { countryIso: fallbackIso, national };
+}

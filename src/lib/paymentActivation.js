@@ -10,19 +10,38 @@ import {
   buildActivationRedeemFields,
   buildTriplePortalLinks,
 } from './tripleAccessProtocol.js';
+import { CENTRAL_BASE_ID, CENTRAL_TABLES } from './centralAirtable.js';
 
 export function sanitizeAscii(value) {
   if (value == null) return '';
   return String(value).replace(/[^\x20-\x7E]/g, '').trim();
 }
 
+export function sanitizeAirtablePat(value) {
+  let key = sanitizeAscii(value);
+  if (
+    (key.startsWith('"') && key.endsWith('"')) ||
+    (key.startsWith("'") && key.endsWith("'"))
+  ) {
+    key = key.slice(1, -1).trim();
+  }
+  if (/^bearer\s+/i.test(key)) {
+    key = key.replace(/^bearer\s+/i, '').trim();
+  }
+  return key;
+}
+
 export function airtableConfigFromEnv() {
-  const apiKey = process.env.AIRTABLE_API_KEY || process.env.VITE_AIRTABLE_PAT;
+  const apiKey =
+    sanitizeAirtablePat(process.env.AIRTABLE_API_KEY) ||
+    sanitizeAirtablePat(process.env.VITE_AIRTABLE_PAT) ||
+    sanitizeAirtablePat(process.env.VITE_AIRTABLE_API_KEY) ||
+    '';
   const baseId = sanitizeAscii(
-    process.env.AIRTABLE_BASE_ID || process.env.VITE_AIRTABLE_BASE_ID || 'appaGfKj4vYhMw0cb'
+    process.env.AIRTABLE_BASE_ID || process.env.VITE_AIRTABLE_BASE_ID || CENTRAL_BASE_ID
   ).split('/')[0];
   const studentsTable =
-    sanitizeAscii(process.env.VITE_AIRTABLE_STUDENTS_TABLE_ID) || 'tblzYmBGmCxx2vdcr';
+    sanitizeAscii(process.env.VITE_AIRTABLE_STUDENTS_TABLE_ID) || CENTRAL_TABLES.students;
   return { apiKey, baseId, studentsTable };
 }
 
@@ -51,7 +70,7 @@ export async function fetchStudentRecord(studentId, config = airtableConfigFromE
 
   const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(studentsTable)}/${encodeURIComponent(studentId)}`;
   const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${sanitizeAscii(apiKey)}`, Accept: 'application/json' },
+    headers: { Authorization: `Bearer ${sanitizeAirtablePat(apiKey)}`, Accept: 'application/json' },
   });
   if (!res.ok) return null;
   return res.json();
@@ -129,7 +148,7 @@ export async function activateStudentAfterPayment({
   const response = await fetch(recordUrl, {
     method: 'PATCH',
     headers: {
-      Authorization: `Bearer ${sanitizeAscii(apiKey)}`,
+      Authorization: `Bearer ${sanitizeAirtablePat(apiKey)}`,
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },

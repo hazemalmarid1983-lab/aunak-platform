@@ -3,7 +3,7 @@
  * Used by airtable.js fetchSealedClaimsForStudent and Vitest coverage.
  */
 
-import { DAILY_SESSION as DS } from './airtableFields';
+import { DAILY_SESSION as DS } from './airtableFields.js';
 
 export const CLAIM_STATUS_SEALED = 'Sealed';
 

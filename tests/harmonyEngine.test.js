@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   computeHarmonyScore,
   normalize0to100,
-  HARMONY_GAP_THRESHOLD,
+  HARMONY_GAP_PENALTY_RATE,
 } from '../src/lib/harmonyEngine.js';
 
 describe('harmonyEngine', () => {
@@ -12,21 +12,24 @@ describe('harmonyEngine', () => {
     expect(normalize0to100('bad')).toBe(null);
   });
 
-  it('computeHarmonyScore applies 20% penalty when academic-behavior gap >= threshold', () => {
-    const noPenalty = computeHarmonyScore({
-      academicProgress: 90,
-      behaviorIntensity: 85,
-      baseScore: 80,
-    });
-    const penalized = computeHarmonyScore({
+  it('Harmony Score = Base − (Gap × 0.2)', () => {
+    // Base 80, Gap |90−60|=30 → 80 − 30*0.2 = 74
+    const score = computeHarmonyScore({
       academicProgress: 90,
       behaviorIntensity: 60,
       baseScore: 80,
     });
-    expect(HARMONY_GAP_THRESHOLD).toBe(20);
-    expect(penalized).toBeLessThan(noPenalty);
-    expect(penalized).toBe(64);
-    expect(noPenalty).toBe(80);
+    expect(HARMONY_GAP_PENALTY_RATE).toBe(0.2);
+    expect(score).toBe(74);
+  });
+
+  it('zero gap leaves base unchanged', () => {
+    const score = computeHarmonyScore({
+      academicProgress: 80,
+      behaviorIntensity: 80,
+      baseScore: 80,
+    });
+    expect(score).toBe(80);
   });
 
   it('computeHarmonyScore returns null when no inputs', () => {
@@ -34,7 +37,9 @@ describe('harmonyEngine', () => {
   });
 
   it('computeHarmonyScore blends academic and inverted behavior when no base', () => {
+    // base = round((70 + (100-65))/2) = round(52.5) = 53
+    // gap = |70-65|=5 → 53 − 5*0.2 = 52
     const score = computeHarmonyScore({ academicProgress: 70, behaviorIntensity: 65 });
-    expect(score).toBe(53);
+    expect(score).toBe(52);
   });
 });

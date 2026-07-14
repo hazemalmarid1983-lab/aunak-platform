@@ -11,8 +11,8 @@ import {
 } from './ui/SovereignTable';
 
 const FEATURE_ROWS = [
-  { id: 'community', ar: 'مجتمع عونك', en: 'Aunak Community', min: PLAN_CODES.FREE },
-  { id: 'resources', ar: 'الموارد العامة', en: 'Public Resources', min: PLAN_CODES.FREE },
+  { id: 'community', ar: 'منتدى الدعم الأسري', en: 'Family Support Forum', min: PLAN_CODES.FREE },
+  { id: 'resources', ar: 'موارد منتدى الدعم', en: 'Forum Resources', min: PLAN_CODES.FREE },
   { id: 'media', ar: 'الوسائط الآمنة', en: 'Safe Media', min: PLAN_CODES.TUTOR },
   { id: 'biometrics', ar: 'البصمة الحيوية', en: 'Biometrics', min: PLAN_CODES.TUTOR },
   { id: 'emotion', ar: 'مختبر الألحان', en: 'Melodies Lab', min: PLAN_CODES.TUTOR },
@@ -20,10 +20,10 @@ const FEATURE_ROWS = [
   { id: 'diagnostics', ar: 'التشخيص + تقرير نقطة الصفر', en: 'Diagnostics + Zero-Point', min: PLAN_CODES.MEDICAL },
   { id: 'crisis', ar: 'الدرع الذكي', en: 'Smart Shield', min: PLAN_CODES.MEDICAL },
   { id: 'live', ar: 'الرصد الحي', en: 'Live Monitoring', min: PLAN_CODES.MEDICAL },
-  { id: 'registry', ar: 'سجل الجلسات', en: 'Session Registry', min: PLAN_CODES.INSTITUTION },
+  { id: 'registry', ar: 'توثيق مصفوفة ABC', en: 'ABC Sessional Mapping', min: PLAN_CODES.INSTITUTION },
   { id: 'research', ar: 'مركز الأبحاث', en: 'Research Center', min: PLAN_CODES.INSTITUTION },
   { id: 'access', ar: 'التحكم السيادي', en: 'Sovereign Control', min: PLAN_CODES.INSTITUTION },
-  { id: 'assessment', ar: 'التقييم الشامل (معزول)', en: 'Full Assessment (isolated)', min: PLAN_CODES.ASSESSMENT_ONLY, assessmentOnly: true },
+  { id: 'assessment', ar: 'مقياس المسح النمائي (معزول)', en: 'Developmental Screening Matrix (isolated)', min: PLAN_CODES.ASSESSMENT_ONLY, assessmentOnly: true },
 ].map((row) => ({ ...row, video: `/videos/promo-${row.id}.mp4` }));
 
 const PLAN_COLUMNS = [
@@ -47,28 +47,28 @@ export default function AunakPaywall({ lang = 'ar', featureName, currentPlan = P
 
   const t = {
     ar: {
-      locked: (f) => `"${f}" خارج نطاق باقتك الحالية`,
-      hint: 'المصفوفة الخماسية السيادية — انقر على ميزة مقفلة أو فعّل اشتراكك:',
-      currentPlan: 'باقتك الحالية:',
+      locked: (f) => `"${f}" خارج نطاق رخصتك الاستشارية الحالية`,
+      hint: 'المصفوفة الخماسية السيادية — انقر على ميزة مقفلة أو فعّل رخصتك:',
+      currentPlan: 'رخصتك الاستشارية الحالية:',
       feature: 'الميزة',
-      upgrade: 'إدخال كود التفعيل',
+      upgrade: 'تفعيل الرخصة الاستشارية',
       featured: 'الأكثر قيمة',
       you: 'أنت هنا',
       promoTitle: 'عرض توضيحي قصير',
-      promoFallback: 'العرض قيد الإنتاج — تفعّل فوراً بكود من الإدارة',
+      promoFallback: 'العرض قيد الإنتاج — تُفعَّل فوراً برمز من الإدارة',
       close: 'إغلاق',
       watch: 'مشاهدة العرض',
     },
     en: {
-      locked: (f) => `"${f}" is outside your current plan`,
-      hint: 'Sovereign five-tier matrix — click a locked feature or activate:',
-      currentPlan: 'Your current plan:',
+      locked: (f) => `"${f}" is outside your current consultative license`,
+      hint: 'Sovereign five-tier matrix — click a locked feature or activate your license:',
+      currentPlan: 'Your consultative license:',
       feature: 'Feature',
-      upgrade: 'Enter Activation Code',
+      upgrade: 'Activate Consultative License',
       featured: 'Best Value',
       you: 'You are here',
       promoTitle: 'Promotional Micro-Video',
-      promoFallback: 'Video in production — activate with admin code',
+      promoFallback: 'Video in production — activate with admin license code',
       close: 'Close',
       watch: 'Watch promo',
     },

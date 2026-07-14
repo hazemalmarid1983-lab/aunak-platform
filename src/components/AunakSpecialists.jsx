@@ -13,8 +13,8 @@ import { SPECIALIST } from '../lib/airtableFields';
 const ADMIN_NOTES_FIELD = SPECIALIST.admin_notes;
 
 function hasSpecialistName(s, lang) {
-  const fallback = lang === 'en' ? 'Specialist' : 'أخصائي';
-  return Boolean(s.name && s.name !== fallback);
+  const fallback = lang === 'en' ? 'Behavior Therapist' : 'المعالج السلوكي';
+  return Boolean(s.name && s.name !== fallback && s.name !== (lang === 'en' ? 'Specialist' : 'أخصائي') && s.name !== (lang === 'en' ? 'Behavior Therapist' : 'المعالج السلوكي'));
 }
 
 export default function AunakSpecialists({ lang = 'ar' }) {
@@ -37,8 +37,8 @@ export default function AunakSpecialists({ lang = 'ar' }) {
 
   const t = {
     ar: {
-      title: 'إدارة الكادر والأخصائيين',
-      subtitle: 'بيانات حية من Airtable — جدول الأخصائيين',
+      title: 'إدارة الكادر والمعالجين السلوكيين',
+      subtitle: 'بيانات حية من Airtable — جدول المعالجين السلوكيين',
       staff: 'الكادر السريري',
       profile: 'الملف المهني السريري',
       verified: 'موثق ومسجل',
@@ -53,8 +53,8 @@ export default function AunakSpecialists({ lang = 'ar' }) {
       saveErr: 'تعذر حفظ الملاحظات',
     },
     en: {
-      title: 'Specialists & Staff Management',
-      subtitle: 'Live data from Airtable — Specialists table',
+      title: 'Behavior Therapists & Staff',
+      subtitle: 'Live data from Airtable — Behavior Therapists table',
       staff: 'Clinical Staff',
       profile: 'Clinical Professional Profile',
       verified: 'Verified & Registered',

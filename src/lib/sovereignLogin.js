@@ -204,21 +204,9 @@ function isNewEnrollmentStatus(statusRaw) {
   return status === "new" || status === "جديد";
 }
 
-/** Smart routing: New → diagnostics (forced); Active → الوجهة المفضلة (English String). */
-export function resolveBiometricLandingSection(student) {
-  const statusRaw = getStudentEnrollmentStatus(student);
-  const preferredRaw = readPreferredLandingFromStudent(student);
-
-  if (isNewEnrollmentStatus(statusRaw)) {
-    return "diagnostics";
-  }
-
-  const status = String(statusRaw ?? "").trim().toLowerCase();
-  if (status === "active" || status === "نشط") {
-    return normalizeLandingSection(preferredRaw, "live");
-  }
-
-  return "diagnostics";
+/** Smart routing: after successful biometric match → live gate immediately. */
+export function resolveBiometricLandingSection(_student) {
+  return "live";
 }
 
 /** Resolve session plan from student Status — New=FREE, Active=actual Airtable plan. */

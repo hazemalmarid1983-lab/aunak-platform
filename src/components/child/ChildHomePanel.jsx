@@ -8,14 +8,14 @@ export default function ChildHomePanel({ lang = 'ar', studentName, programmedGoa
     lang === 'en'
       ? {
           hi: 'Hi',
-          todayGoal: "Today's goal from your specialist",
-          noGoal: 'Your specialist will set a goal soon — keep smiling!',
+          todayGoal: "Today's Active IEP goal from your behavior therapist",
+          noGoal: 'Your behavior therapist will set an IEP goal soon — keep smiling!',
           mascot: 'You can do it!',
         }
       : {
           hi: 'مرحباً',
-          todayGoal: 'هدفك اليوم من الأخصائي',
-          noGoal: 'سيضع الأخصائي هدفاً قريباً — ابتسم!',
+          todayGoal: 'هدف IEP النشط اليوم من المعالج السلوكي',
+          noGoal: 'سيضع المعالج السلوكي هدفاً قريباً — ابتسم!',
           mascot: 'أنت تستطيع!',
         };
 

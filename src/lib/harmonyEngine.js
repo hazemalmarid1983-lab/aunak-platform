@@ -1,5 +1,7 @@
 /**
- * Harmony Score — academic vs behavioral gap with 20% penalty.
+ * Harmony Score — sovereign passage equation:
+ *   Harmony Score = Base − (Gap × 0.2)
+ * Avoids statistical deception from raw averages without gap penalty.
  */
 
 import {
@@ -11,7 +13,7 @@ import {
 } from "./airtable";
 import { HARMONY_DEDUCTION_RATE } from "./sovereignProtocol";
 
-export const HARMONY_GAP_THRESHOLD = 20;
+export const HARMONY_GAP_THRESHOLD = 0;
 export const HARMONY_GAP_PENALTY_RATE = HARMONY_DEDUCTION_RATE;
 export const HARMONY_LOGIN_DEDUCTION_RATE = HARMONY_DEDUCTION_RATE;
 
@@ -23,24 +25,26 @@ export function normalize0to100(value) {
   return Math.max(0, Math.min(100, Math.round(n)));
 }
 
-/** Core harmony: optional base, 20% penalty when academic–behavior gap ≥ 20. */
+/**
+ * Core harmony: Base − (Gap × 0.2).
+ * Gap = |academicProgress − behaviorIntensity|.
+ */
 export function computeHarmonyScore({ academicProgress, behaviorIntensity, baseScore }) {
   const academic = normalize0to100(academicProgress);
   const behavior = normalize0to100(behaviorIntensity);
 
-  let score =
+  let base =
     parseHarmonyScore(baseScore) ??
     (academic != null && behavior != null
       ? Math.round((academic + (100 - behavior)) / 2)
       : academic ?? (behavior != null ? Math.round(100 - behavior) : null));
 
-  if (score == null) return null;
+  if (base == null) return null;
 
+  let score = base;
   if (academic != null && behavior != null) {
     const gap = Math.abs(academic - behavior);
-    if (gap >= HARMONY_GAP_THRESHOLD) {
-      score = Math.round(score * (1 - HARMONY_GAP_PENALTY_RATE));
-    }
+    score = Math.round(base - gap * HARMONY_GAP_PENALTY_RATE);
   }
 
   return Math.max(0, Math.min(100, score));

@@ -120,7 +120,7 @@ export function mapSpecialist(record, lang = "ar") {
   const name = pick(f, SPECIALIST.name) || firstTitle(f) || null;
   return {
     id: record.id,
-    name: name || (lang === "en" ? "Specialist" : "أخصائي"),
+    name: name || (lang === "en" ? "Behavior Therapist" : "المعالج السلوكي"),
     specialty,
     email: pick(f, SPECIALIST.email) || "",
     phone: pick(f, SPECIALIST.phone) || "",
@@ -140,6 +140,7 @@ export function mapStudent(record, lang = "ar") {
   return {
     id: record.id,
     name: pick(f, SF.name) || pick(f, 'Name') || firstTitle(f) || (lang === "en" ? "Unknown student" : "اسم غير معروف"),
+    nameAr: pick(f, SF.student_name_ar) || null,
     studentCode: pick(f, SF.id) || null,
     parentPhone: pick(f, SF.parent_phone) || null,
     parentCountryCode: pick(f, SF.parent_country_code) || null,

@@ -1,12 +1,15 @@
 /**
  * Strict sovereign enrollment validation — step 1 gate (100% before assessment).
+ * Parents enter: national_id + English name (PK) · age · presenting symptoms.
+ * Diagnosis is NEVER parent-selected — clinical engines own that later.
  */
 
 import { getCountryByIso, formatPhoneDisplay, formatPhoneE164, getCountryOptions, DEFAULT_COUNTRY_ISO } from './countryDialCodes';
-import { isValidDiagnosis } from './diagnosisOptions';
 
 export const ENROLLMENT_AGE_MIN = 2;
 export const ENROLLMENT_AGE_MAX = 18;
+export const SYMPTOMS_MIN_CHARS = 8;
+export const SYMPTOMS_MAX_CHARS = 800;
 
 const NAME_GIBBERISH = /^(test|fake|dummy|asdf|qwerty|abc|xyz|none|na|null|undefined|طفل|اسم|ولد|بنت|student|child)$/i;
 const NAME_PART_MIN = 2;
@@ -26,7 +29,7 @@ export function validateStudentName(raw, lang = 'ar') {
     return {
       ok: false,
       code: 'NAME_EMPTY',
-      message: msg(lang, 'أدخل اسم الطالب كاملاً', 'Enter the student full name'),
+      message: msg(lang, 'أدخل اسم المستفيد كاملاً', 'Enter the beneficiary full name'),
     };
   }
 
@@ -60,8 +63,8 @@ export function validateStudentName(raw, lang = 'ar') {
       code: 'NAME_SYMBOLS',
       message: msg(
         lang,
-        'يُمنع استخدام الرموز أو الأرقام في اسم الطالب',
-        'Numbers and symbols are not allowed in the student name'
+        'يُمنع استخدام الرموز أو الأرقام في اسم المستفيد',
+        'Numbers and symbols are not allowed in the beneficiary name'
       ),
     };
   }
@@ -92,8 +95,8 @@ export function validateStudentName(raw, lang = 'ar') {
         code: 'NAME_GIBBERISH',
         message: msg(
           lang,
-          'الاسم المدخل غير مقبول — استخدم الاسم الحقيقي للطفل',
-          'Invalid name — use the child real name'
+          'الاسم المدخل غير مقبول — استخدم الاسم الحقيقي للمستفيد',
+          'Invalid name — use the beneficiary real name'
         ),
       };
     }
@@ -120,7 +123,7 @@ export function validateEnrollmentAge(raw, lang = 'ar') {
     return {
       ok: false,
       code: 'AGE_EMPTY',
-      message: msg(lang, 'أدخل عمر الطفل', 'Enter the child age'),
+      message: msg(lang, 'أدخل عمر المستفيد', 'Enter the beneficiary age'),
     };
   }
 
@@ -156,23 +159,62 @@ export function validateEnrollmentAge(raw, lang = 'ar') {
   return { ok: true, value: n };
 }
 
-export function validateDiagnosis(raw, lang = 'ar') {
-  const key = String(raw ?? '').trim();
-  if (!key) {
+/** Presenting symptoms only — free text from guardian (no diagnosis picker). */
+export function validatePresentingSymptoms(raw, lang = 'ar') {
+  const text = String(raw ?? '')
+    .trim()
+    .replace(/\s+/g, ' ');
+
+  if (!text) {
     return {
       ok: false,
-      code: 'DIAGNOSIS_EMPTY',
-      message: msg(lang, 'اختر التشخيص من القائمة', 'Select a diagnosis from the list'),
+      code: 'SYMPTOMS_EMPTY',
+      message: msg(
+        lang,
+        'أدخل الأعراض الملاحظة (بدون اختيار تشخيص)',
+        'Enter observed symptoms (no diagnosis selection)'
+      ),
     };
   }
-  if (!isValidDiagnosis(key)) {
+
+  if (text.length < SYMPTOMS_MIN_CHARS) {
     return {
       ok: false,
-      code: 'DIAGNOSIS_INVALID',
-      message: msg(lang, 'التشخيص المختار غير صالح', 'Selected diagnosis is invalid'),
+      code: 'SYMPTOMS_TOO_SHORT',
+      message: msg(
+        lang,
+        `صف الأعراض بجملة أوضح (حد أدنى ${SYMPTOMS_MIN_CHARS} أحرف)`,
+        `Describe symptoms more clearly (min ${SYMPTOMS_MIN_CHARS} characters)`
+      ),
     };
   }
-  return { ok: true, value: key };
+
+  if (text.length > SYMPTOMS_MAX_CHARS) {
+    return {
+      ok: false,
+      code: 'SYMPTOMS_TOO_LONG',
+      message: msg(
+        lang,
+        `النص طويل جداً — اختصر إلى ${SYMPTOMS_MAX_CHARS} حرفاً`,
+        `Too long — keep under ${SYMPTOMS_MAX_CHARS} characters`
+      ),
+    };
+  }
+
+  return { ok: true, value: text };
+}
+
+/** @deprecated Parents never select diagnosis — kept for legacy callers. */
+export function validateDiagnosis(_raw, lang = 'ar') {
+  return {
+    ok: false,
+    code: 'DIAGNOSIS_FORBIDDEN',
+    message: msg(
+      lang,
+      'التشخيص لا يُختار من الأهل — أدخل الأعراض والعمر فقط',
+      'Diagnosis is not parent-selected — enter symptoms and age only'
+    ),
+  };
 }
 
 function isAllSameDigit(digits) {
@@ -262,27 +304,28 @@ export function validateParentPhone(nationalRaw, countryIso, lang = 'ar') {
   };
 }
 
-/** Full step-1 validation — all fields must pass. */
+/** Full step-1 validation — identity name/age/symptoms/phone. No diagnosis. */
 export function validateEnrollmentStep1({
   name,
   age,
   parentPhone,
   countryIso,
-  diagnosis,
+  symptoms,
+  presenting_symptoms,
   lang = 'ar',
 }) {
   const errors = {};
   const nameResult = validateStudentName(name, lang);
   const ageResult = validateEnrollmentAge(age, lang);
   const phoneResult = validateParentPhone(parentPhone, countryIso, lang);
-  const diagnosisResult = validateDiagnosis(diagnosis, lang);
+  const symptomsResult = validatePresentingSymptoms(symptoms ?? presenting_symptoms, lang);
 
   if (!nameResult.ok) errors.name = nameResult.message;
   if (!ageResult.ok) errors.age = ageResult.message;
   if (!phoneResult.ok) errors.phone = phoneResult.message;
-  if (!diagnosisResult.ok) errors.diagnosis = diagnosisResult.message;
+  if (!symptomsResult.ok) errors.symptoms = symptomsResult.message;
 
-  const ok = nameResult.ok && ageResult.ok && phoneResult.ok && diagnosisResult.ok;
+  const ok = nameResult.ok && ageResult.ok && phoneResult.ok && symptomsResult.ok;
 
   return {
     ok,
@@ -294,9 +337,9 @@ export function validateEnrollmentStep1({
           parentPhone: phoneResult.display,
           parentPhoneE164: phoneResult.normalized,
           parentCountryCode: phoneResult.countryCode,
-          diagnosis: diagnosisResult.value,
+          presenting_symptoms: symptomsResult.value,
         }
       : null,
-    firstError: errors.name || errors.age || errors.phone || errors.diagnosis || null,
+    firstError: errors.name || errors.age || errors.symptoms || errors.phone || null,
   };
 }

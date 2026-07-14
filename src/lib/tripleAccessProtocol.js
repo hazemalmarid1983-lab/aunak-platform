@@ -85,14 +85,14 @@ export const TRIPLE_PORTAL_META = {
   child: {
     path: '/child',
     param: 'token',
-    label: { ar: 'عالم عوني — الطفل', en: 'Awni Play World' },
+    label: { ar: 'بيئة التدخل الحسي — المستفيد', en: 'Sensory Intervention Environment' },
     emoji: '🌈',
   },
   specialist: {
     path: '/',
     param: 'token',
     section: 'specialists',
-    label: { ar: 'البوابة السريرية', en: 'Clinical Portal' },
+    label: { ar: 'بوابة المعالج السلوكي', en: 'Behavior Therapist Portal' },
     emoji: '🩺',
   },
 };

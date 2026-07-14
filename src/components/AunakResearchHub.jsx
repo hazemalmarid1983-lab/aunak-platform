@@ -69,7 +69,7 @@ export default function AunakResearchHub({ lang = 'ar' }) {
       censorPass: 'نظيف 100%',
       censorBlocked: (n) => `حُجبت ${n} سجلات`,
       atlas: 'أطلس التوحد الوطني',
-      atlasHint: 'توزيعات مجمعة — لا يمكن إرجاع أي مؤشر لهوية طفل بعينه',
+      atlasHint: 'توزيعات مجمعة — لا يمكن إرجاع أي مؤشر لهوية مستفيد بعينه',
       diagDist: 'توزيع التشخيصات',
       moodDist: 'توزيع الحالات المزاجية المرصودة',
       harmonyDist: 'توزيع درجات التناغم',

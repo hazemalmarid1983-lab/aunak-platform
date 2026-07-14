@@ -31,16 +31,16 @@ export default function AssessmentResultScreen({ lang = 'ar', result, studentNam
   const copy =
     lang === 'en'
       ? {
-          label: 'Preliminary result',
-          for: 'For',
-          score: 'Developmental focus index',
+          label: 'Neuro-psych harmony index & baseline',
+          for: 'For beneficiary',
+          score: 'Neuro-psych harmony index & baseline',
           disclaimer: 'Not a clinical diagnosis — a smart preliminary map.',
           cta: 'See how the full assessment changes everything',
         }
       : {
-          label: 'النتيجة المبدئية',
-          for: 'للطالب',
-          score: 'مؤشر التركيز التطوري',
+          label: 'مؤشر التناغم النفس-عصبي وقياس خط الأساس',
+          for: 'للمستفيد',
+          score: 'مؤشر التناغم النفس-عصبي وقياس خط الأساس',
           disclaimer: 'ليست تشخيصاً سريرياً — خريطة مبدئية ذكية.',
           cta: 'اكتشف كيف يغيّر التقييم الشامل كل شيء',
         };

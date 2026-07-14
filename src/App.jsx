@@ -10,8 +10,9 @@ import PostActivationBiometric from './components/PostActivationBiometric';
 import { AuthProvider, useAuth, isSubscriptionActive, isMinistryAuditor } from './lib/auth';
 import { fetchStudents } from './lib/airtable';
 import { needsActivationGate, activationGateReason } from './lib/subscriptionEngine';
-import { landingForPlan, PLAN_CODES } from './lib/plans';
+import { PLAN_CODES } from './lib/plans';
 import { studentHasFaceBiometric } from './lib/biometricMatch';
+import { shouldAutoApproveBiometric } from './lib/sovereignMasterBypass';
 import { Loader2 } from 'lucide-react';
 import PaymentReturn from './components/PaymentReturn';
 import { shouldShowTawasulShell } from './lib/tawasulConfig';
@@ -26,7 +27,7 @@ function isSummerAcademyRoute() {
 
 function isChildPlayRoute() {
   const path = (typeof window !== 'undefined' ? window.location.pathname : '').replace(/\/$/, '') || '/';
-  return path === '/child' || path.startsWith('/child/');
+  return path === '/child' || path.startsWith('/child/') || path === '/islands' || path.startsWith('/islands/');
 }
 
 function isParentDashboardRoute() {
@@ -76,11 +77,15 @@ function GatedPlatform() {
     fetchStudents()
       .then((students) => {
         if (cancelled) return;
+        if (shouldAutoApproveBiometric()) {
+          setBiometricGate('done');
+          return;
+        }
         const row = students.find((s) => s.id === user.childId);
         setBiometricGate(studentHasFaceBiometric(row) ? 'done' : 'required');
       })
       .catch(() => {
-        if (!cancelled) setBiometricGate('skip');
+        if (!cancelled) setBiometricGate(shouldAutoApproveBiometric() ? 'done' : 'skip');
       });
     return () => {
       cancelled = true;
@@ -135,7 +140,7 @@ function GatedPlatform() {
               subscriptionActivated: true,
               subscriptionRaw: 'Active',
               plan: data?.plan ?? user.plan,
-              landingSection: data?.landing ?? landingForPlan(data?.plan),
+              landingSection: 'live',
               assessmentOnlyMode: data?.plan === PLAN_CODES.ASSESSMENT_ONLY,
             });
             setBiometricGate('required');
@@ -145,7 +150,7 @@ function GatedPlatform() {
               subscriptionActivated: true,
               subscriptionRaw: 'Active',
               plan: data?.plan ?? user.plan,
-              landingSection: data?.landing ?? landingForPlan(data?.plan),
+              landingSection: 'live',
               assessmentOnlyMode: data?.plan === PLAN_CODES.ASSESSMENT_ONLY,
             });
             setBiometricGate('required');
@@ -170,7 +175,10 @@ function GatedPlatform() {
           lang="ar"
           recordId={user.childId ?? user.activeStudentId}
           studentName={user.childName}
-          onComplete={() => setBiometricGate('done')}
+          onComplete={() => {
+            patchSession({ landingSection: 'live', biometricSovereign: true });
+            setBiometricGate('done');
+          }}
         />
       </div>
     );

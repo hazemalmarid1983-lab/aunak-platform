@@ -5,15 +5,24 @@
  * Activate via:
  *   - URL: ?master=AUNAK-MASTER-2026
  *   - sessionStorage after validateMasterKey()
+ *   - Local DEV: shouldAutoApproveBiometric() skips camera entirely
  * Optional override: VITE_AUNAK_MASTER_KEY in .env.local
  */
 
 export const SOVEREIGN_MASTER_KEY_DEFAULT = 'AUNAK-MASTER-2026';
-const BYPASS_LS = 'aunak.sovereignMasterBypass.v1';
+const BYPASS_STORAGE = 'aunak.sovereignMasterBypass.v1';
 
 /** Production builds never honor master bypass (P0 hardening). */
 export function isMasterBypassAllowedInEnvironment() {
   return !import.meta.env.PROD;
+}
+
+/**
+ * Local QA: auto-approve biometric without camera / timeout.
+ * Always on in Vite DEV; never in production builds.
+ */
+export function shouldAutoApproveBiometric() {
+  return isMasterBypassAllowedInEnvironment() && Boolean(import.meta.env.DEV);
 }
 
 function expectedMasterKey() {
@@ -34,7 +43,7 @@ export function activateMasterBypass(key) {
   if (!isMasterBypassAllowedInEnvironment()) return false;
   if (!validateMasterKey(key)) return false;
   try {
-    sessionStorage.setItem(BYPASS_LS, expectedMasterKey());
+    sessionStorage.setItem(BYPASS_STORAGE, expectedMasterKey());
   } catch {
     /* ignore */
   }
@@ -43,7 +52,7 @@ export function activateMasterBypass(key) {
 
 export function clearMasterBypass() {
   try {
-    sessionStorage.removeItem(BYPASS_LS);
+    sessionStorage.removeItem(BYPASS_STORAGE);
   } catch {
     /* ignore */
   }
@@ -51,8 +60,9 @@ export function clearMasterBypass() {
 
 export function isMasterBypassActive() {
   if (!isMasterBypassAllowedInEnvironment()) return false;
+  if (shouldAutoApproveBiometric()) return true;
   try {
-    const stored = sessionStorage.getItem(BYPASS_LS);
+    const stored = sessionStorage.getItem(BYPASS_STORAGE);
     if (stored && stored === expectedMasterKey()) return true;
   } catch {
     /* ignore */

@@ -66,7 +66,7 @@ export default function Sidebar({
 
   const t = {
     ar: {
-      studentsTable: 'جدول الطلاب',
+      studentsTable: 'سجل المستفيدين',
       loadingStudents: (label) => `جاري التحميل من ${label}...`,
       retry: 'إعادة المحاولة',
       noRecords: (label) => `لا يوجد سجلات في "${label}"`,
@@ -78,7 +78,7 @@ export default function Sidebar({
       privacyProtected: 'محمي',
     },
     en: {
-      studentsTable: 'Students Table',
+      studentsTable: 'Beneficiaries Registry',
       loadingStudents: (label) => `Loading from ${label}...`,
       retry: 'Retry',
       noRecords: (label) => `No records in "${label}"`,

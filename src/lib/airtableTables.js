@@ -1,14 +1,19 @@
-﻿/** Canonical Airtable table IDs for all hub sections. */
-const DEFAULT_STUDENTS_TABLE_ID = "tblzYmBGmCxx2vdcr";
+﻿/** Canonical Airtable table IDs — central multi-center base appcjitgWsbvIebwf */
+const DEFAULT_STUDENTS_TABLE_ID = "tblTidBPaVM4cf3O9";
+const DEFAULT_CENTERS_TABLE_ID = "tblm1ayaXTG0vdm7d";
+const DEFAULT_SPECIALISTS_TABLE_ID = "tblqTYEHCPBO23DBa";
+const DEFAULT_ACCESS_TABLE_ID = "tblsGNIKRfTpMZ8Kn";
+const DEFAULT_DAILY_SESSIONS_TABLE_ID = "tblnNGiaKccMSpizT";
+const DEFAULT_SESSION_PERIODS_TABLE_ID = "tblkuCfFaopSsOKOG";
+const DEFAULT_ATTENDANCE_TABLE_ID = "tbl1oGzt0E5jYNA5e";
+const DEFAULT_GOAL_EVIDENCE_TABLE_ID = "tblnZC5LIbRWze6T9";
+const DEFAULT_ATTENDANCE_CORRECTIONS_TABLE_ID = "tblpxTavOza4SAjlH";
 
-function resolveTableId(envKey, fallback = DEFAULT_STUDENTS_TABLE_ID) {
+function resolveTableId(envKey, fallback = "") {
   const raw = import.meta.env[envKey];
   const cleaned = raw != null ? String(raw).trim() : "";
   return cleaned || fallback;
 }
-
-/** tblDailySessions — سجل الجلسات (cloud, isolated from Students). */
-export const DEFAULT_DAILY_SESSIONS_TABLE_ID = "tbl3mlewMLvqp6AXB";
 
 function resolveDailySessionsTableId() {
   const raw = import.meta.env.VITE_AIRTABLE_DAILY_SESSIONS_TABLE_ID;
@@ -23,42 +28,34 @@ function resolveDailySessionsTableId() {
   return DEFAULT_DAILY_SESSIONS_TABLE_ID;
 }
 
+export { DEFAULT_DAILY_SESSIONS_TABLE_ID };
+
 export const AIRTABLE_TABLES = {
+  centers: resolveTableId("VITE_AIRTABLE_CENTERS_TABLE_ID", DEFAULT_CENTERS_TABLE_ID),
   students: resolveTableId("VITE_AIRTABLE_STUDENTS_TABLE_ID", DEFAULT_STUDENTS_TABLE_ID),
   dailySessions: resolveDailySessionsTableId(),
-  scientificItems: "tblnCbBSmwDWwO5SJ",
-  specialists: resolveTableId("VITE_AIRTABLE_SPECIALISTS_TABLE_ID", "tblnmcLd5M3U6sErl"),
-  abcData: "tblJ580ptTVkv07hD",
-  safeMedia: "tbljdOSE8CozrzBZN",
-  melodyLab: "tblMddsXqCz91hfoU",
-  communityResources: "tblV28iWarzve32pP",
-  accessControl: "tblfBvd5WI7alVCFU",
-  learningDifficulties: "tblcNXSmU90TomEHH",
-  emotionalMonitoring: "tblokLHmSHss3FQft",
-  /** Set VITE_AIRTABLE_GOAL_ATTEMPTS_TABLE_ID after creating «محاولات الأهداف | Goal Attempts» in base appaGfKj4vYhMw0cb */
-  goalAttempts: resolveTableId("VITE_AIRTABLE_GOAL_ATTEMPTS_TABLE_ID", ""),
-  /** Set VITE_AIRTABLE_SUMMER_ACADEMY_TABLE_ID after creating «الأكاديمية الصيفية | Summer Academy» */
-  summerAcademy: resolveTableId("VITE_AIRTABLE_SUMMER_ACADEMY_TABLE_ID", ""),
+  sessionPeriods: resolveTableId(
+    "VITE_AIRTABLE_SESSION_PERIODS_TABLE_ID",
+    DEFAULT_SESSION_PERIODS_TABLE_ID
+  ),
+  specialists: resolveTableId("VITE_AIRTABLE_SPECIALISTS_TABLE_ID", DEFAULT_SPECIALISTS_TABLE_ID),
+  accessControl: resolveTableId("VITE_AIRTABLE_ACCESS_TABLE_ID", DEFAULT_ACCESS_TABLE_ID),
+  attendanceLedger: resolveTableId("VITE_AIRTABLE_ATTENDANCE_TABLE_ID", DEFAULT_ATTENDANCE_TABLE_ID),
+  goalEvidence: resolveTableId("VITE_AIRTABLE_GOAL_EVIDENCE_TABLE_ID", DEFAULT_GOAL_EVIDENCE_TABLE_ID),
+  attendanceCorrections: resolveTableId(
+    "VITE_AIRTABLE_ATTENDANCE_CORRECTIONS_TABLE_ID",
+    DEFAULT_ATTENDANCE_CORRECTIONS_TABLE_ID
+  ),
 };
 
 export const SECTION_TABLE_MAP = [
-  { section: "السجل الحي / Live Dashboard", tableId: AIRTABLE_TABLES.students },
-  { section: "سجل الجلسات / Session Registry", tableId: AIRTABLE_TABLES.students },
-  { section: "مقاييس التشخيص / Diagnostics", tableId: AIRTABLE_TABLES.students },
-  { section: "الفصول الدراسية / Classrooms", tableId: AIRTABLE_TABLES.students },
-  { section: "مجتمع عونك / Community", tableId: AIRTABLE_TABLES.students },
-  { section: "تعديل السلوك (ABC) / Behavior Mod", tableId: AIRTABLE_TABLES.abcData },
-  { section: "مكتبة البنود / Scientific Items", tableId: AIRTABLE_TABLES.scientificItems },
-  { section: "الأخصائيين / Specialists", tableId: AIRTABLE_TABLES.specialists },
-  { section: "مكتبة الوسائط / Safe Media", tableId: AIRTABLE_TABLES.safeMedia },
-  { section: "مختبر الألحان / Melody Lab", tableId: AIRTABLE_TABLES.melodyLab },
-  { section: "موارد المجتمع / Resources", tableId: AIRTABLE_TABLES.communityResources },
-  { section: "التحكم في الوصول / Access Control", tableId: AIRTABLE_TABLES.accessControl },
-  { section: "صعوبات التعلم / Learning Center", tableId: AIRTABLE_TABLES.learningDifficulties },
-  { section: "الرصد العاطفي / Emotional Monitoring", tableId: AIRTABLE_TABLES.emotionalMonitoring },
-  { section: "الدرع الذكي / Smart Shield (Crisis)", tableId: AIRTABLE_TABLES.emotionalMonitoring },
-  { section: "البصمة الحيوية / Biometrics", tableId: AIRTABLE_TABLES.students },
-  { section: "Daily Sessions / Reconciliation", tableId: AIRTABLE_TABLES.dailySessions },
-  { section: "محاولات الأهداف / Goal Attempts", tableId: AIRTABLE_TABLES.goalAttempts },
-  { section: "الأكاديمية الصيفية / Summer Academy", tableId: AIRTABLE_TABLES.summerAcademy },
+  { section: "مراكز / Centers", tableId: AIRTABLE_TABLES.centers, essential: true },
+  { section: "مستفيدون / Students", tableId: AIRTABLE_TABLES.students, essential: true },
+  { section: "أخصائيون / Specialists", tableId: AIRTABLE_TABLES.specialists, essential: true },
+  { section: "صلاحيات / Access Control", tableId: AIRTABLE_TABLES.accessControl, essential: true },
+  { section: "جلسات موثّقة / Daily Sessions", tableId: AIRTABLE_TABLES.dailySessions, essential: true },
+  { section: "حصص يومية / Session Periods", tableId: AIRTABLE_TABLES.sessionPeriods, essential: true },
+  { section: "حضور / Attendance Ledger", tableId: AIRTABLE_TABLES.attendanceLedger, essential: true },
+  { section: "أدلة أهداف / Goal Evidence", tableId: AIRTABLE_TABLES.goalEvidence, essential: true },
+  { section: "تصحيح حضور / Attendance Corrections", tableId: AIRTABLE_TABLES.attendanceCorrections, essential: true },
 ];

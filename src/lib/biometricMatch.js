@@ -3,7 +3,18 @@ import { getField } from "./airtable";
 import { STUDENT as SF } from "./airtableFields";
 import { isMasterBypassActive } from "./sovereignMasterBypass";
 
-const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
+/**
+ * Model load order (no env vars required for face recognition):
+ * 1) Local Vite/public assets — works offline / when CDNs are blocked
+ * 2) unpkg fallback
+ * 3) jsDelivr last resort
+ */
+const MODEL_URL_CANDIDATES = [
+  "/models",
+  "https://unpkg.com/@vladmandic/face-api@1.7.15/model",
+  "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model",
+];
+
 const DEFAULT_MATCH_DISTANCE = 0.6;
 
 export const SOVEREIGN_MATCH_CONFIDENCE = 94.7;
@@ -15,15 +26,39 @@ export const ANTI_SPOOF_DUPLICATE_CONFIDENCE = SOVEREIGN_MATCH_CONFIDENCE;
 export const FACE_DUPLICATE_BLOCKED = 'FACE_DUPLICATE_BLOCKED';
 
 let modelsLoaded = false;
+let modelsLoadPromise = null;
+
+async function loadNetsFromUri(baseUrl) {
+  const root = String(baseUrl || "").replace(/\/$/, "");
+  await Promise.all([
+    faceapi.nets.tinyFaceDetector.loadFromUri(root),
+    faceapi.nets.faceLandmark68Net.loadFromUri(root),
+    faceapi.nets.faceRecognitionNet.loadFromUri(root),
+  ]);
+}
 
 export async function ensureBiometricModels() {
   if (modelsLoaded) return;
-  await Promise.all([
-    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-  ]);
-  modelsLoaded = true;
+  if (modelsLoadPromise) return modelsLoadPromise;
+
+  modelsLoadPromise = (async () => {
+    const errors = [];
+    for (const url of MODEL_URL_CANDIDATES) {
+      try {
+        await loadNetsFromUri(url);
+        modelsLoaded = true;
+        return;
+      } catch (err) {
+        errors.push(`${url}: ${err?.message || err}`);
+      }
+    }
+    modelsLoadPromise = null;
+    throw new Error(
+      `BIOMETRIC_MODELS_LOAD_FAILED — could not load face models. Tried: ${errors.join(" | ")}`
+    );
+  })();
+
+  return modelsLoadPromise;
 }
 
 /** Parse Airtable face biometric — JSON array or comma-separated 128 floats. */

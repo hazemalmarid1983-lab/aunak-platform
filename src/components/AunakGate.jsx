@@ -22,26 +22,26 @@ export default function AunakGate({ lang = "ar" }) {
       title: "بوابة عونك",
       subtitle: "النسخة السيادية الموحدة — دخول بيومتري مباشر",
       encrypted: "اتصال مشفر AES-256",
-      enrollmentGate: "تسجيل طالب جديد",
+      enrollmentGate: "تسجيل مستفيد جديد",
       enrollmentDesc: "معالج التسجيل السيادي — بيانات وبصمة وجه في Airtable",
-      specialistGate: "بوابة الأخصائيين والإدارة",
-      specialistDesc: "أدخل رمز الوصول الخاص (Private Access Token) المسجل في سجل الصلاحيات",
+      specialistGate: "بوابة معلمي وأخصائيي التربية الخاصة والإدارة",
+      specialistDesc: "أدخل رمز الوصول الخاص المسجّل في صلاحيات الدخول",
       tokenPlaceholder: "رمز الوصول الخاص...",
       verify: "تحقق ودخول",
       verifying: "جاري التحقق من سجل الصلاحيات...",
-      tokenInvalid: "رمز الوصول غير صحيح أو غير مسجل في AunakAccessControl",
+      tokenInvalid: "رمز الوصول غير صحيح أو غير مسجّل في صلاحيات الدخول",
       back: "رجوع",
       shareEnrollmentLink: "رابط التسجيل للمشاركة",
-      specialistLink: "دخول الأخصائيين",
-      enrollmentLink: "تسجيل طالب",
+      specialistLink: "دخول الأخصائي / معلم التربية الخاصة",
+      enrollmentLink: "تسجيل مستفيد",
     },
     en: {
       title: "Aunak Gate",
       subtitle: "Sovereign Unified Edition — biometric-first access",
       encrypted: "AES-256 encrypted connection",
-      enrollmentGate: "New student enrollment",
+      enrollmentGate: "New beneficiary enrollment",
       enrollmentDesc: "Sovereign enrollment wizard — data and face biometric in Airtable",
-      specialistGate: "Specialists & Admin Gate",
+      specialistGate: "Behavior Therapists & Admin Gate",
       specialistDesc: "Enter the Private Access Token registered in the access control registry",
       tokenPlaceholder: "Private Access Token...",
       verify: "Verify & Enter",
@@ -49,8 +49,8 @@ export default function AunakGate({ lang = "ar" }) {
       tokenInvalid: "Invalid token — not registered in AunakAccessControl",
       back: "Back",
       shareEnrollmentLink: "Shareable enrollment link",
-      specialistLink: "Specialist login",
-      enrollmentLink: "Enroll student",
+      specialistLink: "Behavior therapist login",
+      enrollmentLink: "Enroll beneficiary",
     },
   };
   const copy = t[lang] ?? t.ar;
@@ -71,8 +71,8 @@ export default function AunakGate({ lang = "ar" }) {
           setTokenState("error");
           setTokenError(
             lang === "ar"
-              ? "رمز غير صالح — تحقق من جدول الأخصائيين (AUN-SPC-…)"
-              : "Invalid token — check Specialists table (AUN-SPC-…)"
+              ? "رمز غير صالح — تحقق من سجل المعالجين السلوكيين (AUN-SPC-…)"
+              : "Invalid token — check Behavior Therapists table (AUN-SPC-…)"
           );
           return;
         }

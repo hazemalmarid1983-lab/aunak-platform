@@ -55,17 +55,17 @@ export default function GoalEngine({
 
   const t = {
     ar: {
-      title: "محرك الأهداف — التدرج المرن",
+      title: "الخطة التربوية الفردية النشطة — التدرج المرن",
       engine: `محرك ${ENGINE_ID}`,
-      noGoals: "لا توجد أهداف معتمدة في خطة الطفل — أضف أهدافاً في Airtable.",
-      switchHint: "تبديل فوري بين الأهداف المعتمدة (بدون قفل 80%)",
+      noGoals: "لا توجد أهداف معتمدة في الخطة التربوية الفردية — أضف أهدافاً في Airtable.",
+      switchHint: "تبديل فوري بين أهداف IEP المعتمدة (بدون قفل 80%)",
       successLabel: "نسبة النجاح %",
       notesLabel: "ملاحظات المحاولة",
       record: "تسجيل محاولة",
       recording: "جاري التسجيل…",
       sessionAttempts: "محاولات الجلسة",
       weeklyReport: "ملخص الأسبوع (للمشرف)",
-      goal: "الهدف",
+      goal: "هدف IEP",
       attempts: "المحاولات",
       average: "متوسط النجاح",
       advisory: (label, avg) =>
@@ -73,17 +73,17 @@ export default function GoalEngine({
       emptyAttempts: "لا محاولات مسجلة في هذه الجلسة بعد.",
     },
     en: {
-      title: "Goal Engine — Dynamic Flow",
+      title: "Active IEP Goals — Dynamic Flow",
       engine: `Engine ${ENGINE_ID}`,
-      noGoals: "No approved goals on the child plan — add goals in Airtable.",
-      switchHint: "Instant switch between approved goals (no 80% lock)",
+      noGoals: "No approved goals on the Active IEP — add goals in Airtable.",
+      switchHint: "Instant switch between approved IEP goals (no 80% lock)",
       successLabel: "Success %",
       notesLabel: "Attempt notes",
       record: "Record attempt",
       recording: "Recording…",
       sessionAttempts: "Session attempts",
       weeklyReport: "Weekly summary (supervisor)",
-      goal: "Goal",
+      goal: "IEP Goal",
       attempts: "Attempts",
       average: "Avg success",
       advisory: (label, avg) =>

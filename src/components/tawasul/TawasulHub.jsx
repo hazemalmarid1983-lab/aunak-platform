@@ -245,7 +245,7 @@ export default function TawasulHub({ lang = 'ar', onOpenSovereign }) {
                   onChange={(e) => setGoalDraft(e.target.value)}
                   rows={4}
                   className="w-full rounded-xl border border-white/10 bg-black/30 p-3 text-sm text-white focus:border-cyan-500/40 focus:outline-none resize-none"
-                  placeholder={lang === 'en' ? 'Programmed goal for child home screen…' : 'الهدف الإجرائي اليومي يظهر في واجهة الطفل…'}
+                  placeholder={lang === 'en' ? 'Active IEP goal for beneficiary home screen…' : 'هدف الخطة الفردية النشطة يظهر في واجهة المستفيد…'}
                 />
                 <button
                   type="button"

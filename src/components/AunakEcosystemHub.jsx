@@ -1,5 +1,5 @@
-﻿import { useState, useEffect, useRef, useMemo } from 'react';
-import { UserPlus, ScanFace, MessageSquare, ShieldAlert, ShieldCheck, Globe, Music, Target, Activity, FileText, ClipboardList, Video, TrendingDown, BookOpen, Database, Stethoscope, FolderOpen, LogOut, UserCircle2, Lock, Volume2, VolumeX, FlaskConical, Eye, PanelLeftClose, PanelLeftOpen, HandMetal, EyeOff, Map, FileBarChart } from 'lucide-react';
+﻿import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
+import { UserPlus, ScanFace, MessageSquare, ShieldAlert, ShieldCheck, Music, Target, Activity, FileText, ClipboardList, Video, TrendingDown, BookOpen, Database, Stethoscope, FolderOpen, LogOut, UserCircle2, Lock, Volume2, VolumeX, FlaskConical, Eye, PanelLeftClose, PanelLeftOpen, FileBarChart, ClipboardCheck, BookOpenCheck, Loader2, Globe } from 'lucide-react';
 import PlatformLogo, { HEADER_LOGO_CLASS } from './PlatformLogo';
 import AunakPaywall from './AunakPaywall';
 import { useAuth, ROLES, canAccessSection, isSovereignOwner, isSubscriptionActive } from '../lib/auth';
@@ -14,54 +14,62 @@ import {
   toggleAppStealth,
   handleSovereignKeyInput,
 } from '../lib/studentPrivacy';
+/** Core product path — always loaded */
 import AunakAccessControl from './AunakAccessControl';
-import AunakResources from './AunakResources';
 import AunakSpecialists from './AunakSpecialists';
-import AunakScientificItems from './AunakScientificItems';
-import AunakBehaviorMod from './AunakBehaviorMod';
-import AunakClassrooms from './AunakClassrooms';
-import AunakSafeMedia from './AunakSafeMedia';
-import AunakDiagnostics from './AunakDiagnostics';
 import AunakBiometrics from './AunakBiometrics';
-import AunakCommunityChat from './AunakCommunityChat';
-import AunakCrisisManagement from './AunakCrisisManagement';
-import AunakEmotionalLab from './AunakEmotionalLab';
-import AunakLearningCenter from './AunakLearningCenter';
 import AunakLiveDashboard from './AunakLiveDashboard';
 import AunakSessionRegistry from './AunakSessionRegistry';
-import AunakResearchHub from './AunakResearchHub';
 import AunakReportsDashboard from './AunakReportsDashboard';
 import AunakEnrollment from './AunakEnrollment';
+import AunakChildGovernance from './AunakChildGovernance';
+import AunakAssessmentProtocol from './AunakAssessmentProtocol';
 import SovereignCommandBar from './SovereignCommandBar';
+/** Theatrical / legacy — lazy (only used in ?full=1) */
+const AunakResources = lazy(() => import('./AunakResources'));
+const AunakScientificItems = lazy(() => import('./AunakScientificItems'));
+const AunakBehaviorMod = lazy(() => import('./AunakBehaviorMod'));
+const AunakClassrooms = lazy(() => import('./AunakClassrooms'));
+const AunakSafeMedia = lazy(() => import('./AunakSafeMedia'));
+const AunakDiagnostics = lazy(() => import('./AunakDiagnostics'));
+const AunakCommunityChat = lazy(() => import('./AunakCommunityChat'));
+const AunakCrisisManagement = lazy(() => import('./AunakCrisisManagement'));
+const AunakEmotionalLab = lazy(() => import('./AunakEmotionalLab'));
+const AunakLearningCenter = lazy(() => import('./AunakLearningCenter'));
+const AunakResearchHub = lazy(() => import('./AunakResearchHub'));
 import { useGazeNeutralityObserver } from '../hooks/useGazeNeutralityObserver';
 import { useMeltdownPredictor } from '../hooks/useMeltdownPredictor';
 import { useHarmonyEngine } from '../hooks/useHarmonyEngine';
 import { useActiveStudentMetrics } from '../hooks/useActiveStudentMetrics';
 import { useRoadmapStats } from '../hooks/useRoadmapStats';
 import { isStealthMode, setStealthMode } from '../lib/sovereignAudio';
+import { filterHubNavItems, hubSensorsEnabled, isHubFullMode, HUB_THEATRICAL } from '../lib/hubNavConfig';
 import { LUX } from '../lib/luxTheme.js';
+import { DEFAULT_LANG, getStoredLang, setStoredLang, applyDocumentLang } from '../lib/locale';
 
 
 const TABS = {
-  live: { ar: 'السجل الحي', en: 'Live Registry' },
+  live: { ar: 'لوحة المتابعة', en: 'Follow-up Board' },
   crisis: { ar: 'الدرع الذكي', en: 'Smart Shield' },
-  learning: { ar: 'صعوبات التعلم', en: 'Learning Center' },
+  learning: { ar: 'البرامج التربوية', en: 'Educational Programs' },
   emotion: { ar: 'مختبر الألحان', en: 'Melodies Lab' },
-  biometrics: { ar: 'البصمة الحيوية', en: 'Biometrics ID' },
-  community: { ar: 'مجتمع عونك', en: 'Aunak Community' },
+  biometrics: { ar: 'التحقق من الحضور', en: 'Attendance Verify' },
+  community: { ar: 'منتدى الدعم الأسري', en: 'Family Support Forum' },
 };
 
 /** Extra English/Arabic labels that may appear as activeTab values. */
 const TAB_ALIASES = {
-  live: ['Live Registry', 'السجل الحي'],
+  live: ['Live Registry', 'السجل الحي', 'Follow-up Board', 'لوحة المتابعة'],
   crisis: ['Smart Shield', 'الدرع الذكي'],
-  learning: ['Learning Center', 'صعوبات التعلم'],
+  learning: ['Learning Center', 'صعوبات التعلم', 'Educational Programs', 'البرامج التربوية'],
   emotion: ['Melodies Lab', 'مختبر الألحان'],
-  biometrics: ['Biometrics ID', 'البصمة الحيوية'],
-  community: ['Aunak Community', 'Community', 'مجتمع عونك'],
+  biometrics: ['Biometrics ID', 'البصمة الحيوية', 'Attendance Verify', 'التحقق من الحضور'],
+  community: ['Family Support Forum', 'Aunak Community', 'Community', 'منتدى الدعم الأسري', 'مجتمع عونك'],
 };
 
 const MAIN_NAV_ITEMS = [
+  { id: 'governance', icon: ClipboardCheck, activeClass: LUX.navActiveGold },
+  { id: 'assessmentProtocol', icon: BookOpenCheck, activeClass: LUX.navActiveGold },
   { id: 'enrollment', icon: UserPlus, activeClass: LUX.navActiveGold },
   { id: 'registry', icon: FileText, activeClass: LUX.navActiveGold },
   { id: 'diagnostics', icon: ClipboardList, activeClass: LUX.navActiveGold },
@@ -97,6 +105,8 @@ const TAB_PANELS = {
 const TAB_IDS = Object.keys(TABS);
 
 const MAIN_SECTIONS = {
+  governance: AunakChildGovernance,
+  assessmentProtocol: AunakAssessmentProtocol,
   enrollment: AunakEnrollment,
   registry: AunakSessionRegistry,
   diagnostics: AunakDiagnostics,
@@ -111,19 +121,35 @@ const MAIN_SECTIONS = {
   access: AunakAccessControl,
 };
 
-
 const PREMIUM_SECTIONS = new Set(['emotion', 'crisis']);
 
 const DEFAULT_TAB_BY_ROLE = {
-  [ROLES.ADMIN]: 'live',
-  [ROLES.SPECIALIST]: 'live',
-  [ROLES.PARENT]: 'media',
+  [ROLES.ADMIN]: 'governance',
+  [ROLES.SPECIALIST]: 'governance',
+  [ROLES.PARENT]: 'reports',
 };
+
+function LazyPanel({ Component, ...props }) {
+  if (!Component) return null;
+  const isLazy = Component.$$typeof === Symbol.for('react.lazy');
+  if (!isLazy) return <Component {...props} />;
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center py-16">
+          <Loader2 className="w-8 h-8 animate-spin text-[#c9a962]" />
+        </div>
+      }
+    >
+      <Component {...props} />
+    </Suspense>
+  );
+}
 
 function sectionCanAccess(user, role, sectionId) {
   const plan = user?.plan ?? PLAN_CODES.FREE;
   if (plan === PLAN_CODES.ASSESSMENT_ONLY || user?.assessmentOnlyMode) {
-    if (!['diagnostics', 'enrollment'].includes(sectionId)) return false;
+    if (!['assessmentProtocol', 'enrollment', 'diagnostics'].includes(sectionId)) return false;
   }
   return canAccessSection(user, role, sectionId) && !isSectionHiddenInStealth(sectionId);
 }
@@ -148,7 +174,11 @@ export default function AunakEcosystemHub() {
     (role === ROLES.ADMIN ? PLAN_CODES.INSTITUTION : role === ROLES.SPECIALIST ? PLAN_CODES.INSTITUTION : PLAN_CODES.FREE);
 
   const [activeTab, setActiveTab] = useState(() => user?.landingSection ?? DEFAULT_TAB_BY_ROLE[role] ?? 'live');
-  const [lang, setLang] = useState('ar');
+  const [lang, setLang] = useState(() => getStoredLang() || DEFAULT_LANG);
+
+  useEffect(() => {
+    applyDocumentLang(lang);
+  }, [lang]);
   const [audioOn, setAudioOn] = useState(() => isAudioEnabled());
   const [stealthActive, setStealthActive] = useState(() => isAppStealthActive());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -174,7 +204,7 @@ export default function AunakEcosystemHub() {
 
   useEffect(() => {
     if (!isAssessmentOnly) return;
-    setActiveTab('diagnostics');
+    setActiveTab('assessmentProtocol');
     setAudioEnabled(false);
     setAudioOn(false);
     setStealthMode(true);
@@ -189,6 +219,12 @@ export default function AunakEcosystemHub() {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  /** Kick user off theatrical sections when lean mode */
+  useEffect(() => {
+    if (isHubFullMode()) return;
+    if (HUB_THEATRICAL.has(activeTab)) setActiveTab('governance');
+  }, [activeTab]);
+
   const sovereign = isSovereignOwner(user);
   const manualOverride = Boolean(user?.manualOverride);
   const { stats: roadmapStats } = useRoadmapStats({ enabled: sovereign });
@@ -199,7 +235,7 @@ export default function AunakEcosystemHub() {
     const sectionId = MAIN_SECTIONS[activeTab] ? activeTab : normalizeTab(activeTab);
     if (!isSectionHiddenInStealth(sectionId)) return;
     if (user?.biometricSovereign && user?.landingSection === sectionId) return;
-    setActiveTab('learning');
+    setActiveTab('governance');
   }, [stealthActive, activeTab, user?.biometricSovereign, user?.landingSection]);
 
   const onLogoTap = () => {
@@ -222,7 +258,7 @@ export default function AunakEcosystemHub() {
   const requestedAllowed = MAIN_SECTIONS[activeTab]
     ? sectionCanAccess(user, role, activeTab)
     : sectionCanAccess(user, role, normalizeTab(activeTab));
-  const requestedTab = requestedAllowed ? activeTab : DEFAULT_TAB_BY_ROLE[role] ?? 'media';
+  const requestedTab = requestedAllowed ? activeTab : DEFAULT_TAB_BY_ROLE[role] ?? 'governance';
 
   const tabId = normalizeTab(requestedTab);
   const ActivePanel = TAB_PANELS[tabId] || AunakLiveDashboard;
@@ -230,8 +266,10 @@ export default function AunakEcosystemHub() {
 
   const sectionKey = MainSection ? requestedTab : tabId;
 
+  const sensorsOn = hubSensorsEnabled();
+
   const gaze = useGazeNeutralityObserver({
-    active: Boolean(user?.gazeObserverActive),
+    active: sensorsOn && Boolean(user?.gazeObserverActive),
     triggerCondition: gazeTrigger,
     lang,
   });
@@ -246,7 +284,7 @@ export default function AunakEcosystemHub() {
   const meltdownLive = sectionKey === 'registry' || sectionKey === 'live' || sectionKey === 'crisis';
 
   const meltdown = useMeltdownPredictor({
-    active: neuralLiveActive && meltdownLive,
+    active: sensorsOn && neuralLiveActive && meltdownLive,
     lang,
     abc: abcDefaults,
   });
@@ -301,71 +339,75 @@ export default function AunakEcosystemHub() {
   const t = {
     ar: {
       title: 'بوابة عونك',
-      subtitle: 'النسخة السيادية الموحدة',
+      subtitle: 'منصة متابعة التربية الخاصة',
       live: TABS.live.ar,
       crisis: TABS.crisis.ar,
       learning: TABS.learning.ar,
       emotion: TABS.emotion.ar,
       biometrics: TABS.biometrics.ar,
       community: TABS.community.ar,
-      enrollment: 'تسجيل الطلاب',
-      registry: 'سجل الجلسات',
-      diagnostics: 'مقاييس التشخيص',
-      media: 'مكتبة الوسائط',
+      governance: 'الحضور والأهداف الفردية',
+      assessmentProtocol: 'بروتوكول التقييم الإجرائي',
+      enrollment: 'تسجيل المستفيدين',
+      registry: 'سجل الجلسات اليومية',
+      diagnostics: 'مقاييس التقييم',
+      media: 'مكتبة الوسائط الآمنة',
       behavior: 'تعديل السلوك',
-      classrooms: 'الفصول الدراسية',
+      classrooms: 'الفصول والمجموعات',
       scientific: 'المكتبة العلمية',
-      specialists: 'إدارة الأخصائيين',
-      resources: 'موارد المجتمع',
+      specialists: 'المعلمون والأخصائيون',
+      resources: 'موارد الدعم الأسري',
       research: 'مركز الأبحاث',
-      reports: 'تقارير الأداء',
-      access: 'التحكم السيادي',
+      reports: 'تقارير التقدم التربوي',
+      access: 'صلاحيات الدخول',
       secured: 'AES-256 SECURED',
       online: 'متصل',
       logout: 'تسجيل الخروج',
-      roleLabels: { admin: 'مدير أعلى', specialist: 'أخصائي', parent: 'ولي أمر' },
-      childLabel: 'الطفل:',
+      roleLabels: { admin: 'إدارة المركز', specialist: 'معلم / أخصائي تربية خاصة', parent: 'ولي الأمر' },
+      childLabel: 'المستفيد:',
       fieldSession: 'جلسة ميدانية',
       showControls: 'أدوات التحكم',
       expandNav: 'فتح القائمة',
       collapseNav: 'طي القائمة',
-      roadmapNew: 'New → تقييم',
-      roadmapActive: 'Active → حي/جزر',
+      roadmapNew: 'جديد → مسح نمائي أولي',
+      roadmapActive: 'نشط → متابعة',
       manualOverride: 'تحكم يدوي',
       stealth: 'تخفي',
     },
     en: {
       title: 'Aunak Hub',
-      subtitle: 'Sovereign Unified Edition',
+      subtitle: 'Special education follow-up platform',
       live: TABS.live.en,
       crisis: TABS.crisis.en,
       learning: TABS.learning.en,
       emotion: TABS.emotion.en,
       biometrics: TABS.biometrics.en,
       community: TABS.community.en,
-      enrollment: 'Student Enrollment',
-      registry: 'Session Registry',
-      diagnostics: 'Diagnostics',
-      media: 'Safe Media',
-      behavior: 'Behavior Mod',
-      classrooms: 'Classrooms',
-      scientific: 'Scientific Lib',
-      specialists: 'Specialists',
-      resources: 'Resources',
+      governance: 'Attendance & IEP Goals',
+      assessmentProtocol: 'Operational Assessment Protocol',
+      enrollment: 'Beneficiary Registration',
+      registry: 'Daily Session Register',
+      diagnostics: 'Assessment Scales',
+      media: 'Safe Media Library',
+      behavior: 'Behavior Support',
+      classrooms: 'Classes & Groups',
+      scientific: 'Resource Library',
+      specialists: 'Teachers & Specialists',
+      resources: 'Family Support Resources',
       research: 'Research Center',
-      reports: 'Performance Reports',
-      access: 'Access Control',
+      reports: 'Educational Progress Reports',
+      access: 'Access Permissions',
       secured: 'AES-256 SECURED',
       online: 'ONLINE',
       logout: 'Logout',
-      roleLabels: { admin: 'Super Admin', specialist: 'Specialist', parent: 'Parent' },
-      childLabel: 'Child:',
+      roleLabels: { admin: 'Center Admin', specialist: 'Special Education Teacher / Specialist', parent: 'Parent / Guardian' },
+      childLabel: 'Beneficiary:',
       fieldSession: 'Field session',
       showControls: 'Controls',
       expandNav: 'Expand menu',
       collapseNav: 'Collapse menu',
-      roadmapNew: 'New → assessment',
-      roadmapActive: 'Active → live/media',
+      roadmapNew: 'New → Initial screening',
+      roadmapActive: 'Active → Follow-up',
       manualOverride: 'Manual override',
       stealth: 'Stealth',
     },
@@ -376,7 +418,7 @@ export default function AunakEcosystemHub() {
   const selectTab = (id) => setActiveTab(id);
 
   const toggleLang = () => {
-    setLang((prev) => (prev === 'ar' ? 'en' : 'ar'));
+    setLang((prev) => setStoredLang(prev === 'ar' ? 'en' : 'ar'));
   };
 
   const asideBorderClass = lang === 'ar' ? LUX.asideBorderAr : LUX.asideBorderEn;
@@ -522,7 +564,9 @@ export default function AunakEcosystemHub() {
         )}
 
         <nav className={`${LUX.navArea} ${LUX.navScroll}`} aria-label={lang === 'ar' ? 'قائمة المواضيع' : 'Topics menu'}>
-          {MAIN_NAV_ITEMS.filter(({ id }) => sectionCanAccess(user, role, id)).map(({ id, icon, activeClass }) => {
+          {filterHubNavItems(MAIN_NAV_ITEMS)
+            .filter(({ id }) => sectionCanAccess(user, role, id))
+            .map(({ id, icon, activeClass }) => {
             const locked = !planAllows(plan, id);
             return renderNavButton({
               id,
@@ -534,7 +578,9 @@ export default function AunakEcosystemHub() {
               label: copy[id],
             });
           })}
-          {NAV_ITEMS.filter(({ id }) => sectionCanAccess(user, role, id)).map(({ id, icon, activeClass }) => {
+          {filterHubNavItems(NAV_ITEMS)
+            .filter(({ id }) => sectionCanAccess(user, role, id))
+            .map(({ id, icon, activeClass }) => {
             const locked = !planAllows(plan, id);
             return renderNavButton({
               id,
@@ -597,9 +643,9 @@ export default function AunakEcosystemHub() {
               onActivate={() => patchSession({ subscriptionActivated: false })}
             />
           ) : MainSection ? (
-            <MainSection lang={lang} role={role} defaultStealth={isSovereignOwner(user)} />
+            <LazyPanel Component={MainSection} lang={lang} role={role} defaultStealth={isSovereignOwner(user)} />
           ) : (
-            <ActivePanel lang={lang} role={role} />
+            <LazyPanel Component={ActivePanel} lang={lang} role={role} />
           )}
         </main>
       </div>

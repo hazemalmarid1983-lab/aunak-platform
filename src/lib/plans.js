@@ -71,6 +71,8 @@ export const SECTION_MIN_PLAN = {
   live: PLAN_CODES.MEDICAL,
   scientific: PLAN_CODES.MEDICAL,
   registry: PLAN_CODES.INSTITUTION,
+  governance: PLAN_CODES.TUTOR,
+  assessmentProtocol: PLAN_CODES.TUTOR,
   behavior: PLAN_CODES.INSTITUTION,
   enrollment: PLAN_CODES.INSTITUTION,
   specialists: PLAN_CODES.INSTITUTION,
@@ -145,17 +147,17 @@ export function landingForPlan(plan) {
 
 export const PLAN_LABELS = {
   ar: {
-    free: 'المنصة المجتمعية',
+    free: 'منتدى الدعم الأسري',
     institution: 'المراكز والوزارات',
-    tutor: 'المدرس الخصوصي',
+    tutor: 'ممارس تحليل السلوك التطبيقي المعتمد',
     medical: 'الأطباء والعيادات',
-    assessment_only: 'باقة التقييم الشامل',
+    assessment_only: 'رخصة مقياس المسح النمائي الشامل',
   },
   en: {
-    free: 'Community Platform',
+    free: 'Family Support Forum',
     institution: 'Centers & Ministries',
-    tutor: 'Private Tutor',
+    tutor: 'Board-Certified Behavior Analyst (ABA)',
     medical: 'Doctors & Clinics',
-    assessment_only: 'Full Assessment Only',
+    assessment_only: 'Developmental Screening Matrix License',
   },
 };

@@ -23,23 +23,23 @@ export default function PaymentReturn({ lang = 'ar' }) {
   const copy =
     lang === 'en'
       ? {
-          title: 'Payment confirmation',
-          verifying: 'Verifying secure payment…',
-          success: 'Payment confirmed — subscription active',
+          title: 'Consultative License confirmation',
+          verifying: 'Verifying secure license activation…',
+          success: 'License confirmed — subscription active',
           tokenNote: 'Parent access token issued automatically',
           continueEnrollment: 'Continue to biometric enrollment',
           continueApp: 'Return to Aunak',
-          failed: 'Payment could not be verified',
+          failed: 'Consultative License could not be verified',
           retry: 'Try again from activation gate',
         }
       : {
-          title: 'تأكيد السداد',
-          verifying: 'جاري التحقق من عملية الدفع الآمنة…',
-          success: 'تم تأكيد السداد — الاشتراك Active',
+          title: 'تأكيد الرخصة الاستشارية',
+          verifying: 'جاري التحقق من تفعيل الرخصة الاستشارية…',
+          success: 'تم تأكيد الرخصة — الاشتراك Active',
           tokenNote: 'تم إصدار رمز ولي الأمر parent_access_token تلقائياً',
           continueEnrollment: 'متابعة تسجيل البصمة',
           continueApp: 'العودة إلى عونك',
-          failed: 'تعذّر التحقق من عملية الدفع',
+          failed: 'تعذّر التحقق من الرخصة الاستشارية',
           retry: 'أعد المحاولة من بوابة التفعيل',
         };
 
@@ -68,7 +68,7 @@ export default function PaymentReturn({ lang = 'ar' }) {
       if (!chargeId) {
         if (!cancelled) {
           setState('error');
-          setError(lang === 'en' ? 'Missing charge reference — wait for webhook or retry.' : 'مرجع الدفع مفقود — انتظر Webhook أو أعد المحاولة.');
+          setError(lang === 'en' ? 'Missing charge reference — wait for webhook or retry.' : 'مرجع الرخصة الاستشارية مفقود — انتظر Webhook أو أعد المحاولة.');
         }
         return;
       }

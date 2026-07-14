@@ -6,6 +6,7 @@
 import { createHash } from 'crypto';
 import { DAILY_SESSION as DS } from './airtableFields.js';
 import { airtableConfigFromEnv, sanitizeAscii } from './paymentActivation.js';
+import { CENTRAL_TABLES } from './centralAirtable.js';
 
 export const CHILD_ISLAND_SEAL_THRESHOLD = 5;
 export const ISLAND_SEAL_MARKER = 'AUN-4611 · Island World';
@@ -15,7 +16,7 @@ function dailySessionsTableId() {
   return (
     sanitizeAscii(process.env.AIRTABLE_DAILY_SESSIONS_TABLE_ID) ||
     sanitizeAscii(process.env.VITE_AIRTABLE_DAILY_SESSIONS_TABLE_ID) ||
-    'tbl3mlewMLvqp6AXB'
+    CENTRAL_TABLES.dailySessions
   );
 }
 

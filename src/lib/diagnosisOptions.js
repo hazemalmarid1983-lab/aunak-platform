@@ -24,7 +24,21 @@ export function diagnosisLabel(value, lang = 'ar') {
   return lang === 'en' ? hit.en : hit.ar;
 }
 
+/** Accept airtableValue, id, or Arabic/English label → canonical airtableValue. */
+export function normalizeDiagnosisValue(raw) {
+  const key = String(raw ?? '').trim();
+  if (!key) return '';
+  const hit = DIAGNOSIS_OPTIONS.find(
+    (o) =>
+      o.airtableValue === key ||
+      o.id === key ||
+      o.ar === key ||
+      o.en === key ||
+      o.ar.replace(/\s+/g, '') === key.replace(/\s+/g, '')
+  );
+  return hit?.airtableValue ?? '';
+}
+
 export function isValidDiagnosis(value) {
-  const key = String(value ?? '').trim();
-  return DIAGNOSIS_OPTIONS.some((o) => o.airtableValue === key);
+  return Boolean(normalizeDiagnosisValue(value));
 }

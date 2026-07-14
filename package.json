@@ -10,9 +10,13 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "schema:students:dry": "node scripts/extend-students-schema-production.mjs --dry-run",
+    "schema:students:apply": "node scripts/extend-students-schema-production.mjs --apply",
+    "test:enrollment": "node scripts/test-enrollment-funnel.mjs"
   },
   "dependencies": {
+    "@vercel/speed-insights": "^2.0.0",
     "@vladmandic/face-api": "^1.7.15",
     "ably": "^2.6.0",
     "framer-motion": "^12.42.0",
