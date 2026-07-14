@@ -142,9 +142,19 @@ export default async function handler(req, res) {
     return;
   }
 
-  const tableId = req.query?.table;
-  if (!tableId || typeof tableId !== "string") {
+  const tableIdRaw = req.query?.table;
+  if (!tableIdRaw || typeof tableIdRaw !== "string") {
     res.status(400).json({ error: "Missing ?table= query parameter" });
+    return;
+  }
+  const tableMatch = String(tableIdRaw).match(/tbl[a-zA-Z0-9]{10,}/);
+  const tableId = tableMatch ? tableMatch[0] : "";
+  if (!tableId) {
+    res.status(400).json({
+      error: "INVALID_TABLE_ID",
+      hint: "Use a clean tbl… id only — do not paste Airtable view URLs into env vars.",
+      received: String(tableIdRaw).slice(0, 80),
+    });
     return;
   }
 

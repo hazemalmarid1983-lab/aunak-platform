@@ -9,23 +9,30 @@ const DEFAULT_ATTENDANCE_TABLE_ID = "tbl1oGzt0E5jYNA5e";
 const DEFAULT_GOAL_EVIDENCE_TABLE_ID = "tblnZC5LIbRWze6T9";
 const DEFAULT_ATTENDANCE_CORRECTIONS_TABLE_ID = "tblpxTavOza4SAjlH";
 
-function resolveTableId(envKey, fallback = "") {
-  const raw = import.meta.env[envKey];
+/** Accept raw tbl… or pasted Airtable URLs like tbl…/viw…?blocks=hide */
+export function sanitizeTableId(raw, fallback = "") {
   const cleaned = raw != null ? String(raw).trim() : "";
-  return cleaned || fallback;
+  if (!cleaned) return fallback;
+  const m = cleaned.match(/tbl[a-zA-Z0-9]{10,}/);
+  return m ? m[0] : fallback;
+}
+
+function resolveTableId(envKey, fallback = "", aliases = []) {
+  const keys = [envKey, ...aliases];
+  for (const key of keys) {
+    const raw = import.meta.env[key];
+    const id = sanitizeTableId(raw, "");
+    if (id) return id;
+  }
+  return fallback;
 }
 
 function resolveDailySessionsTableId() {
-  const raw = import.meta.env.VITE_AIRTABLE_DAILY_SESSIONS_TABLE_ID;
-  const cleaned = raw != null ? String(raw).trim() : "";
-  if (/^tbl[a-zA-Z0-9]{10,}$/i.test(cleaned)) return cleaned;
-  if (cleaned) {
-    console.warn(
-      "[airtable] Invalid VITE_AIRTABLE_DAILY_SESSIONS_TABLE_ID (must start with tbl):",
-      cleaned
-    );
-  }
-  return DEFAULT_DAILY_SESSIONS_TABLE_ID;
+  return resolveTableId(
+    "VITE_AIRTABLE_DAILY_SESSIONS_TABLE_ID",
+    DEFAULT_DAILY_SESSIONS_TABLE_ID,
+    ["AIRTABLE_DAILY_SESSIONS_TABLE_ID"]
+  );
 }
 
 export { DEFAULT_DAILY_SESSIONS_TABLE_ID };
@@ -39,7 +46,9 @@ export const AIRTABLE_TABLES = {
     DEFAULT_SESSION_PERIODS_TABLE_ID
   ),
   specialists: resolveTableId("VITE_AIRTABLE_SPECIALISTS_TABLE_ID", DEFAULT_SPECIALISTS_TABLE_ID),
-  accessControl: resolveTableId("VITE_AIRTABLE_ACCESS_TABLE_ID", DEFAULT_ACCESS_TABLE_ID),
+  accessControl: resolveTableId("VITE_AIRTABLE_ACCESS_TABLE_ID", DEFAULT_ACCESS_TABLE_ID, [
+    "VITE_AIRTABLE_ACCESS_CONTROL_TABLE_ID",
+  ]),
   attendanceLedger: resolveTableId("VITE_AIRTABLE_ATTENDANCE_TABLE_ID", DEFAULT_ATTENDANCE_TABLE_ID),
   goalEvidence: resolveTableId("VITE_AIRTABLE_GOAL_EVIDENCE_TABLE_ID", DEFAULT_GOAL_EVIDENCE_TABLE_ID),
   attendanceCorrections: resolveTableId(
