@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Local Vite middleware — mounts Vercel-style api/*.js handlers under /api/*
  * so enrollment and Airtable proxy work with `npm run dev` (no vercel CLI required).
  */
