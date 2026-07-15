@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
-import { UserPlus, ScanFace, MessageSquare, ShieldAlert, ShieldCheck, Music, Target, Activity, FileText, ClipboardList, Video, TrendingDown, BookOpen, Database, Stethoscope, FolderOpen, LogOut, UserCircle2, Lock, Volume2, VolumeX, FlaskConical, Eye, PanelLeftClose, PanelLeftOpen, FileBarChart, ClipboardCheck, BookOpenCheck, Loader2, Globe } from 'lucide-react';
+import { UserPlus, ScanFace, MessageSquare, ShieldAlert, ShieldCheck, Music, Target, Activity, FileText, ClipboardList, Video, TrendingDown, BookOpen, Database, Stethoscope, FolderOpen, LogOut, UserCircle2, Lock, Volume2, VolumeX, FlaskConical, Eye, PanelLeftClose, PanelLeftOpen, FileBarChart, ClipboardCheck, BookOpenCheck, Loader2, Globe, HandMetal, EyeOff, Map } from 'lucide-react';
 import PlatformLogo, { HEADER_LOGO_CLASS } from './PlatformLogo';
 import AunakPaywall from './AunakPaywall';
 import { useAuth, ROLES, canAccessSection, isSovereignOwner, isSubscriptionActive } from '../lib/auth';
