@@ -23,6 +23,7 @@ import {
 } from '../lib/attendanceLedger';
 import {
   normalizeSeverity,
+  SEVERITY,
 } from '../lib/goalBank';
 import GoalBankPicker from './GoalBankPicker';
 import {
