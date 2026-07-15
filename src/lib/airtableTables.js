@@ -2,13 +2,9 @@
 import { CENTRAL_TABLES } from './centralAirtable.js';
 
 /**
- * Env overrides caused production 403s when share/view URLs or the wrong tbl…
- * were pasted into multiple Vercel keys. Defaults are the source of truth.
- * Set VITE_AIRTABLE_ALLOW_TABLE_OVERRIDES=true only for deliberate staging forks.
+ * Production table IDs are locked to CENTRAL_TABLES.
+ * Do not read Vercel VITE_*_TABLE_ID overrides here — scrambled/view URLs caused 403s.
  */
-const ALLOW_OVERRIDES = import.meta.env.VITE_AIRTABLE_ALLOW_TABLE_OVERRIDES === 'true';
-
-/** Accept raw tbl… or pasted Airtable URLs like tbl…/viw…?blocks=hide */
 export function sanitizeTableId(raw, fallback = '') {
   const cleaned = raw != null ? String(raw).trim() : '';
   if (!cleaned) return fallback;
@@ -16,49 +12,18 @@ export function sanitizeTableId(raw, fallback = '') {
   return m ? m[0] : fallback;
 }
 
-function resolveTableId(envKey, fallback, aliases = []) {
-  if (!ALLOW_OVERRIDES) return fallback;
-  const keys = [envKey, ...aliases];
-  for (const key of keys) {
-    const id = sanitizeTableId(import.meta.env[key], '');
-    if (id) return id;
-  }
-  return fallback;
-}
-
 export const DEFAULT_DAILY_SESSIONS_TABLE_ID = CENTRAL_TABLES.dailySessions;
 
 export const AIRTABLE_TABLES = {
-  centers: resolveTableId('VITE_AIRTABLE_CENTERS_TABLE_ID', CENTRAL_TABLES.centers),
-  students: resolveTableId('VITE_AIRTABLE_STUDENTS_TABLE_ID', CENTRAL_TABLES.students),
-  dailySessions: resolveTableId(
-    'VITE_AIRTABLE_DAILY_SESSIONS_TABLE_ID',
-    CENTRAL_TABLES.dailySessions,
-    ['AIRTABLE_DAILY_SESSIONS_TABLE_ID']
-  ),
-  sessionPeriods: resolveTableId(
-    'VITE_AIRTABLE_SESSION_PERIODS_TABLE_ID',
-    CENTRAL_TABLES.sessionPeriods
-  ),
-  specialists: resolveTableId(
-    'VITE_AIRTABLE_SPECIALISTS_TABLE_ID',
-    CENTRAL_TABLES.specialists
-  ),
-  /** Login path — never trust scrambled Vercel table env */
+  centers: CENTRAL_TABLES.centers,
+  students: CENTRAL_TABLES.students,
+  dailySessions: CENTRAL_TABLES.dailySessions,
+  sessionPeriods: CENTRAL_TABLES.sessionPeriods,
+  specialists: CENTRAL_TABLES.specialists,
   accessControl: CENTRAL_TABLES.accessControl,
-  attendanceLedger: resolveTableId(
-    'VITE_AIRTABLE_ATTENDANCE_TABLE_ID',
-    CENTRAL_TABLES.attendanceLedger,
-    ['VITE_AIRTABLE_ATTENDANCE_LEDGER_TABLE_ID']
-  ),
-  goalEvidence: resolveTableId(
-    'VITE_AIRTABLE_GOAL_EVIDENCE_TABLE_ID',
-    CENTRAL_TABLES.goalEvidence
-  ),
-  attendanceCorrections: resolveTableId(
-    'VITE_AIRTABLE_ATTENDANCE_CORRECTIONS_TABLE_ID',
-    CENTRAL_TABLES.attendanceCorrections
-  ),
+  attendanceLedger: CENTRAL_TABLES.attendanceLedger,
+  goalEvidence: CENTRAL_TABLES.goalEvidence,
+  attendanceCorrections: CENTRAL_TABLES.attendanceCorrections,
 };
 
 export const SECTION_TABLE_MAP = [
