@@ -141,6 +141,9 @@ export function mapStudentToB2GView(student) {
   const safeFields = pickAllowedFields(fields, B2G_ALLOWED_STUDENT_KEYS);
   const focusLevel = num(safeFields[SF.focus_level] ?? safeFields.focus_level);
   const harmonyScore = num(safeFields[SF.harmony_score] ?? safeFields.harmony_score);
+  const initialAssessmentScore = num(
+    safeFields[SF.initial_assessment_score] ?? safeFields.initial_assessment_score
+  );
 
   return {
     id: b2gCode,
@@ -157,6 +160,7 @@ export function mapStudentToB2GView(student) {
       String(safeFields[SF.clinical_session_status] ?? safeFields.clinical_session_status ?? '').toLowerCase(),
     comprehensiveAssessmentStatus:
       safeFields[SF.comprehensive_assessment_status] ?? safeFields.comprehensive_assessment_status,
+    initialAssessmentScore,
     isLiveSession: /live|active|جلسة/i.test(
       String(safeFields[SF.clinical_session_status] ?? safeFields.clinical_session_status ?? '')
     ),

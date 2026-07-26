@@ -9,6 +9,8 @@
  * Optional override: VITE_AUNAK_MASTER_KEY in .env.local
  */
 
+import { MOCK_DATA_MODE } from './airtable.js';
+
 export const SOVEREIGN_MASTER_KEY_DEFAULT = 'AUNAK-MASTER-2026';
 const BYPASS_STORAGE = 'aunak.sovereignMasterBypass.v1';
 
@@ -20,8 +22,10 @@ export function isMasterBypassAllowedInEnvironment() {
 /**
  * Local QA: auto-approve biometric without camera / timeout.
  * Always on in Vite DEV; never in production builds.
+ * Disabled while MOCK_DATA_MODE is on — demo login must use MOCK-* tokens only.
  */
 export function shouldAutoApproveBiometric() {
+  if (MOCK_DATA_MODE) return false;
   return isMasterBypassAllowedInEnvironment() && Boolean(import.meta.env.DEV);
 }
 

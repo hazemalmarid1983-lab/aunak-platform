@@ -46,14 +46,14 @@ function g(partial) {
 export const GOAL_BANK = [
   // ─── Early intervention (2–5) · Mild ───
   g({ id: 'e-m-com-1', domain: 'communication', ageBands: ['early'], severities: ['mild'], tier: 'core', ar: 'ينادي المعلم باسمه أو إشارة واضحة عند الحاجة', en: 'Calls the teacher by name or clear signal when needing help', source: 'ABA' }),
-  g({ id: 'e-m-com-2', domain: 'communication', ageBands: ['early'], severities: ['mild'], tier: 'core', ar: 'يكوّن جملة من كلمتين للطلب', en: 'Produces a two-word request phrase', source: 'VB-MAPP' }),
+  g({ id: 'e-m-com-2', domain: 'communication', ageBands: ['early'], severities: ['mild'], tier: 'core', ar: 'يكوّن جملة من كلمتين للطلب', en: 'Produces a two-word request phrase', source: 'مهارات التواصل والتفاعل' }),
   g({ id: 'e-m-soc-1', domain: 'social', ageBands: ['early'], severities: ['mild'], tier: 'core', ar: 'يحيّي زميلًا أو معلمًا عند الدخول', en: 'Greets a peer or teacher when entering', source: 'ESDM' }),
   g({ id: 'e-m-soc-2', domain: 'social', ageBands: ['early'], severities: ['mild'], tier: 'core', ar: 'يتبادل دوراً في نشاط قصير مع زميل', en: 'Takes turns in a short activity with a peer', source: 'ABA' }),
   g({ id: 'e-m-sc-1', domain: 'self_care', ageBands: ['early'], severities: ['mild'], tier: 'core', ar: 'يغسل اليدين باستقلالية شبه كاملة بعد النشاط', en: 'Washes hands nearly independently after activity', source: 'ABA' }),
   g({ id: 'e-m-mot-1', domain: 'motor', ageBands: ['early'], severities: ['mild'], tier: 'core', ar: 'يرمي كرة صغيرة نحو هدف قريب', en: 'Throws a small ball toward a near target', source: 'ABA' }),
   g({ id: 'e-m-cog-1', domain: 'cognitive', ageBands: ['early'], severities: ['mild'], tier: 'core', ar: 'يطابق 4 صور متشابهة باستقلالية', en: 'Matches 4 similar pictures independently', source: 'ABA' }),
   g({ id: 'e-m-beh-1', domain: 'behavior', ageBands: ['early'], severities: ['mild'], tier: 'core', ar: 'يبقى جالساً أثناء النشاط القصير (3 دقائق) بمساعدة بصرية', en: 'Remains seated during a short activity (3 min) with visual support', source: 'ABA' }),
-  g({ id: 'e-m-com-b1', domain: 'communication', ageBands: ['early'], severities: ['mild'], tier: 'bank', ar: 'يعلّق بجملة قصيرة على صورة أو حدث', en: 'Comments with a short phrase on a picture or event', source: 'VB-MAPP' }),
+  g({ id: 'e-m-com-b1', domain: 'communication', ageBands: ['early'], severities: ['mild'], tier: 'bank', ar: 'يعلّق بجملة قصيرة على صورة أو حدث', en: 'Comments with a short phrase on a picture or event', source: 'مهارات التواصل والتفاعل' }),
   g({ id: 'e-m-sc-b1', domain: 'self_care', ageBands: ['early'], severities: ['mild'], tier: 'bank', ar: 'يرتدي الجوارب بمساعدة لفظية فقط', en: 'Puts on socks with verbal prompt only', source: 'ABA' }),
 
   // ─── Early · Moderate ───
@@ -80,7 +80,7 @@ export const GOAL_BANK = [
   g({ id: 'e-s-beh-b1', domain: 'behavior', ageBands: ['early'], severities: ['severe'], tier: 'bank', ar: 'يقبل لمسة توجيهية خفيفة دون تصعيد', en: 'Accepts a light guiding touch without escalation', source: 'ABA' }),
 
   // ─── Primary (6–9) · Mild ───
-  g({ id: 'p-m-com-1', domain: 'communication', ageBands: ['primary'], severities: ['mild'], tier: 'core', ar: 'يسأل سؤالاً بسيطاً للحصول على معلومة', en: 'Asks a simple question to obtain information', source: 'VB-MAPP' }),
+  g({ id: 'p-m-com-1', domain: 'communication', ageBands: ['primary'], severities: ['mild'], tier: 'core', ar: 'يسأل سؤالاً بسيطاً للحصول على معلومة', en: 'Asks a simple question to obtain information', source: 'مهارات التواصل والتفاعل' }),
   g({ id: 'p-m-com-2', domain: 'communication', ageBands: ['primary'], severities: ['mild'], tier: 'core', ar: 'يروي حدثاً قصيراً بجملتين مترابطتين', en: 'Retells a short event in two connected sentences', source: 'ABA' }),
   g({ id: 'p-m-soc-1', domain: 'social', ageBands: ['primary'], severities: ['mild'], tier: 'core', ar: 'يشارك زميلًا في مهمة صفية لمدة 5 دقائق', en: 'Shares a classroom task with a peer for 5 minutes', source: 'ABA' }),
   g({ id: 'p-m-cog-1', domain: 'cognitive', ageBands: ['primary'], severities: ['mild'], tier: 'core', ar: 'يكمل نمطًا من 3 عناصر باستقلالية', en: 'Completes a 3-item pattern independently', source: 'ABA' }),
@@ -91,18 +91,18 @@ export const GOAL_BANK = [
 
   // ─── Primary · Moderate ───
   g({ id: 'p-o-com-1', domain: 'communication', ageBands: ['primary'], severities: ['moderate'], tier: 'core', ar: 'يكوّن جملة من كلمتين للطلب أو التعليق', en: 'Produces a two-word phrase to request or comment', source: 'ABA' }),
-  g({ id: 'p-o-com-2', domain: 'communication', ageBands: ['primary'], severities: ['moderate'], tier: 'core', ar: 'يتبع تعليمات من خطوتين في الصف', en: 'Follows a two-step classroom instruction', source: 'VB-MAPP' }),
+  g({ id: 'p-o-com-2', domain: 'communication', ageBands: ['primary'], severities: ['moderate'], tier: 'core', ar: 'يتبع تعليمات من خطوتين في الصف', en: 'Follows a two-step classroom instruction', source: 'مهارات التواصل والتفاعل' }),
   g({ id: 'p-o-soc-1', domain: 'social', ageBands: ['primary'], severities: ['moderate'], tier: 'core', ar: 'يتبادل دوراً في لعبة بسيطة مع زميل', en: 'Takes turns in a simple game with a peer', source: 'ABA' }),
   g({ id: 'p-o-cog-1', domain: 'cognitive', ageBands: ['primary'], severities: ['moderate'], tier: 'core', ar: 'يطابق 5 بطاقات متشابهة باستقلالية', en: 'Matches 5 similar cards independently', source: 'ABA' }),
   g({ id: 'p-o-sc-1', domain: 'self_care', ageBands: ['primary'], severities: ['moderate'], tier: 'core', ar: 'يرتدي الحذاء بمساعدة لفظية فقط', en: 'Puts on shoes with verbal prompt only', source: 'ABA' }),
   g({ id: 'p-o-beh-1', domain: 'behavior', ageBands: ['primary'], severities: ['moderate'], tier: 'core', ar: 'يستخدم استراتيجية تهدئة عند الإحباط مرة يومياً على الأقل', en: 'Uses a calm-down strategy when frustrated at least once daily', source: 'ABA' }),
   g({ id: 'p-o-mot-1', domain: 'motor', ageBands: ['primary'], severities: ['moderate'], tier: 'core', ar: 'يقص على خط مستقيم بمساعدة جزئية', en: 'Cuts along a straight line with partial support', source: 'ABA' }),
   g({ id: 'p-o-cog-b1', domain: 'cognitive', ageBands: ['primary'], severities: ['moderate'], tier: 'bank', ar: 'يعدّ حتى 5 أشياء ملموسة', en: 'Counts up to 5 concrete objects', source: 'ABA' }),
-  g({ id: 'p-o-com-b1', domain: 'communication', ageBands: ['primary'], severities: ['moderate'], tier: 'bank', ar: 'يسمّي 5 صور مألوفة عند الطلب', en: 'Names 5 familiar pictures on request', source: 'VB-MAPP' }),
+  g({ id: 'p-o-com-b1', domain: 'communication', ageBands: ['primary'], severities: ['moderate'], tier: 'bank', ar: 'يسمّي 5 صور مألوفة عند الطلب', en: 'Names 5 familiar pictures on request', source: 'مهارات التواصل والتفاعل' }),
 
   // ─── Primary · Severe ───
   g({ id: 'p-s-com-1', domain: 'communication', ageBands: ['primary'], severities: ['severe'], tier: 'core', ar: 'يشير إلى غرض مطلوب من بين خيارين', en: 'Points to a requested item from two choices', source: 'ABA' }),
-  g({ id: 'p-s-com-2', domain: 'communication', ageBands: ['primary'], severities: ['severe'], tier: 'core', ar: 'يتبع تعليماً من خطوة واحدة بمساعدة بصرية', en: 'Follows a one-step instruction with visual support', source: 'VB-MAPP' }),
+  g({ id: 'p-s-com-2', domain: 'communication', ageBands: ['primary'], severities: ['severe'], tier: 'core', ar: 'يتبع تعليماً من خطوة واحدة بمساعدة بصرية', en: 'Follows a one-step instruction with visual support', source: 'مهارات التواصل والتفاعل' }),
   g({ id: 'p-s-soc-1', domain: 'social', ageBands: ['primary'], severities: ['severe'], tier: 'core', ar: 'يتسامح مع جلوس زميل قريب دون ابتعاد', en: 'Tolerates a peer sitting nearby without leaving', source: 'ABA' }),
   g({ id: 'p-s-sc-1', domain: 'self_care', ageBands: ['primary'], severities: ['severe'], tier: 'core', ar: 'يشارك في ارتداء المعطف بمساعدة جسدية', en: 'Participates in putting on a coat with physical help', source: 'ABA' }),
   g({ id: 'p-s-mot-1', domain: 'motor', ageBands: ['primary'], severities: ['severe'], tier: 'core', ar: 'يضع قطعة كبيرة في فتحة مناسبة', en: 'Places a large piece into a matching opening', source: 'ABA' }),

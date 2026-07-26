@@ -4,7 +4,6 @@ import AunakEcosystemHub from './components/AunakEcosystemHub';
 import AunakGate from './components/AunakGate';
 import AunakActivationGate from './components/AunakActivationGate';
 import AunakSummerAcademy from './components/AunakSummerAcademy';
-import ChildInteractiveShell from './components/child/ChildInteractiveShell';
 import ParentShell from './components/parent/ParentShell';
 import PostActivationBiometric from './components/PostActivationBiometric';
 import { AuthProvider, useAuth, isSubscriptionActive, isMinistryAuditor } from './lib/auth';
@@ -19,15 +18,11 @@ import { shouldShowTawasulShell } from './lib/tawasulConfig';
 import TawasulGate from './components/tawasul/TawasulGate';
 import TawasulHub from './components/tawasul/TawasulHub';
 import AunakMinistryDashboard from './components/AunakMinistryDashboard';
+import AunakUDIPassport from './components/AunakUDIPassport';
 
 function isSummerAcademyRoute() {
   const path = (typeof window !== 'undefined' ? window.location.pathname : '').replace(/\/$/, '') || '/';
   return path === '/summer-academy' || path.startsWith('/summer-academy/');
-}
-
-function isChildPlayRoute() {
-  const path = (typeof window !== 'undefined' ? window.location.pathname : '').replace(/\/$/, '') || '/';
-  return path === '/child' || path.startsWith('/child/') || path === '/islands' || path.startsWith('/islands/');
 }
 
 function isParentDashboardRoute() {
@@ -43,6 +38,11 @@ function isPaymentReturnRoute() {
 function isMinistryRoute() {
   const path = (typeof window !== 'undefined' ? window.location.pathname : '').replace(/\/$/, '') || '/';
   return path === '/ministry' || path.startsWith('/ministry/');
+}
+
+function isUDIRoute() {
+  const path = (typeof window !== 'undefined' ? window.location.pathname : '').replace(/\/$/, '') || '/';
+  return path === '/udi' || path.startsWith('/udi/');
 }
 
 function MinistryShell() {
@@ -196,30 +196,32 @@ function TawasulPlatform() {
 export default function App() {
   const tawasul = shouldShowTawasulShell();
   const summerRoute = isSummerAcademyRoute();
-  const childRoute = isChildPlayRoute();
   const parentRoute = isParentDashboardRoute();
   const paymentReturnRoute = isPaymentReturnRoute();
   const ministryRoute = isMinistryRoute();
+  const udiRoute = isUDIRoute();
 
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        {paymentReturnRoute ? (
-          <PaymentReturn lang="ar" />
-        ) : childRoute ? (
-          <ChildInteractiveShell />
-        ) : ministryRoute ? (
-          <MinistryShell />
-        ) : tawasul ? (
-          <TawasulPlatform />
-        ) : parentRoute ? (
-          <ParentShell />
-        ) : summerRoute ? (
-          <SummerAcademyShell />
-        ) : (
-          <GatedPlatform />
-        )}
-      </AuthProvider>
+      {udiRoute ? (
+        <AunakUDIPassport />
+      ) : (
+        <AuthProvider>
+          {paymentReturnRoute ? (
+            <PaymentReturn lang="ar" />
+          ) : ministryRoute ? (
+            <MinistryShell />
+          ) : tawasul ? (
+            <TawasulPlatform />
+          ) : parentRoute ? (
+            <ParentShell />
+          ) : summerRoute ? (
+            <SummerAcademyShell />
+          ) : (
+            <GatedPlatform />
+          )}
+        </AuthProvider>
+      )}
     </ErrorBoundary>
   );
 }

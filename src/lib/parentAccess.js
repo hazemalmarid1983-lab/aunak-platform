@@ -1,4 +1,4 @@
-import { fetchStudents, getField } from './airtable';
+import { fetchStudents, getField, MOCK_DATA_MODE } from './airtable';
 import { STUDENT as SF } from './airtableFields';
 import { isSubscriptionActive } from './auth';
 import {
@@ -39,7 +39,7 @@ export function parseMasterQueryParam() {
   return params.get('master') ?? params.get('sovereign_master');
 }
 
-/** Sovereign QA — auto-pass parent biometric when master key is valid. */
+/** Sovereign QA — auto-pass parent biometric when master key is valid (or mock demo). */
 export function tryParentMasterBypass({ token, studentId }) {
   if (!token || !studentId) return false;
 
@@ -48,7 +48,7 @@ export function tryParentMasterBypass({ token, studentId }) {
     activateMasterBypass(fromUrl);
   }
 
-  if (!isMasterBypassActive()) return false;
+  if (!isMasterBypassActive() && !MOCK_DATA_MODE) return false;
 
   writeParentSession({
     token,
@@ -62,6 +62,8 @@ export function tryParentMasterBypass({ token, studentId }) {
 }
 
 export function shouldAutoBypassParentBiometric() {
+  // Mock demo: parent URL token is the intentional login — skip camera gate.
+  if (MOCK_DATA_MODE) return true;
   return isMasterBypassActive();
 }
 

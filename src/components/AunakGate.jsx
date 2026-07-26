@@ -5,14 +5,22 @@ import AunakBiometrics from "./AunakBiometrics";
 import { toggleAppStealth } from "../lib/studentPrivacy";
 import AunakEnrollment from "./AunakEnrollment";
 import { useAuth, verifyAccessToken, ROLES } from "../lib/auth";
+import { MOCK_DATA_MODE } from "../lib/airtable";
 import { verifyTawasulSpecialistToken } from "../lib/tawasulAuth";
 import { isTawasulMvp, isTawasulSpecialistToken } from "../lib/tawasulConfig";
 import { isEnrollmentDeepLink, buildEnrollmentUrl, setEnrollmentUrl } from "../lib/enrollmentLink";
 import { LUX } from "../lib/luxTheme.js";
 
+function initialGateMode() {
+  if (isEnrollmentDeepLink()) return "enrollment";
+  // Mock demo: open directly on token login (no biometric auto-enter).
+  if (MOCK_DATA_MODE) return "token";
+  return "biometric";
+}
+
 export default function AunakGate({ lang = "ar" }) {
   const { login } = useAuth();
-  const [mode, setMode] = useState(() => (isEnrollmentDeepLink() ? "enrollment" : "biometric"));
+  const [mode, setMode] = useState(initialGateMode);
   const [token, setToken] = useState("");
   const [tokenState, setTokenState] = useState("idle");
   const [tokenError, setTokenError] = useState("");
@@ -25,8 +33,10 @@ export default function AunakGate({ lang = "ar" }) {
       enrollmentGate: "تسجيل مستفيد جديد",
       enrollmentDesc: "معالج التسجيل السيادي — بيانات وبصمة وجه في Airtable",
       specialistGate: "بوابة معلمي وأخصائيي التربية الخاصة والإدارة",
-      specialistDesc: "أدخل رمز الوصول الخاص المسجّل في صلاحيات الدخول",
-      tokenPlaceholder: "رمز الوصول الخاص...",
+      specialistDesc: MOCK_DATA_MODE
+        ? "أدخل أحد رموز العرض: MOCK-MINISTRY · MOCK-SUPERVISOR · MOCK-SPECIALIST · MOCK-ADMIN"
+        : "أدخل رمز الوصول الخاص المسجّل في صلاحيات الدخول",
+      tokenPlaceholder: MOCK_DATA_MODE ? "MOCK-MINISTRY" : "رمز الوصول الخاص...",
       verify: "تحقق ودخول",
       verifying: "جاري التحقق من سجل الصلاحيات...",
       tokenInvalid: "رمز الوصول غير صحيح أو غير مسجّل في صلاحيات الدخول",
@@ -42,8 +52,10 @@ export default function AunakGate({ lang = "ar" }) {
       enrollmentGate: "New beneficiary enrollment",
       enrollmentDesc: "Sovereign enrollment wizard — data and face biometric in Airtable",
       specialistGate: "Behavior Therapists & Admin Gate",
-      specialistDesc: "Enter the Private Access Token registered in the access control registry",
-      tokenPlaceholder: "Private Access Token...",
+      specialistDesc: MOCK_DATA_MODE
+        ? "Enter a demo code: MOCK-MINISTRY · MOCK-SUPERVISOR · MOCK-SPECIALIST · MOCK-ADMIN"
+        : "Enter the Private Access Token registered in the access control registry",
+      tokenPlaceholder: MOCK_DATA_MODE ? "MOCK-MINISTRY" : "Private Access Token...",
       verify: "Verify & Enter",
       verifying: "Verifying against access registry...",
       tokenInvalid: "Invalid token — not registered in AunakAccessControl",
@@ -81,7 +93,11 @@ export default function AunakGate({ lang = "ar" }) {
       const session = await verifyAccessToken(token);
       if (session) {
         login(session);
-        if (session.role === ROLES.MINISTRY && typeof window !== "undefined") {
+        if (
+          session.role === ROLES.MINISTRY &&
+          session.role !== ROLES.MINISTRY_SUPERVISOR &&
+          typeof window !== "undefined"
+        ) {
           window.history.replaceState({}, "", "/ministry");
         }
       } else {
@@ -117,7 +133,7 @@ export default function AunakGate({ lang = "ar" }) {
 
   const resetMode = () => {
     setEnrollmentUrl(false);
-    setMode("biometric");
+    setMode(MOCK_DATA_MODE ? "token" : "biometric");
     setToken("");
     setTokenState("idle");
     setTokenError("");
@@ -222,9 +238,22 @@ export default function AunakGate({ lang = "ar" }) {
               <button type="submit" disabled={tokenState === "verifying"} className={LUX.submitGold}>
                 {copy.verify}
               </button>
-              <button type="button" onClick={resetMode} className={`${LUX.backLink} block mx-auto`}>
-                {copy.back}
-              </button>
+              <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs font-mono">
+                <button type="button" onClick={openEnrollment} className={LUX.backLink}>
+                  <UserPlus className="w-3.5 h-3.5 inline mr-1" />
+                  {copy.enrollmentLink}
+                </button>
+                {!MOCK_DATA_MODE && (
+                  <button type="button" onClick={resetMode} className={LUX.backLink}>
+                    {copy.back}
+                  </button>
+                )}
+              </div>
+              {MOCK_DATA_MODE && (
+                <p className={`${LUX.muted} text-[11px] mt-4 text-center font-mono`} dir="ltr">
+                  Parent demo: /parent?token=AUN-PRT-MOCKSALEM0000000000000001
+                </p>
+              )}
             </form>
           )}
 

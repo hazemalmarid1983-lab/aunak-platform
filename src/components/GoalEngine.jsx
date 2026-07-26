@@ -142,9 +142,10 @@ export default function GoalEngine({
               <button
                 type="button"
                 onClick={() => switchGoal(advisory.suggestedGoal.key)}
-                className="ms-auto shrink-0 flex items-center gap-1 text-amber-100 underline"
+                className="ms-auto shrink-0 flex items-center gap-1 text-amber-100 underline whitespace-nowrap"
               >
                 <Shuffle className="w-3 h-3" />
+                {lang === 'en' ? 'Quick switch to suggested goal' : 'التبديل السريع للهدف المقترح'}
               </button>
             </div>
           )}

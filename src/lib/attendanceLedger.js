@@ -9,6 +9,8 @@ import {
   pushAttendanceCorrection,
   pushAttendanceSeal,
 } from './governanceCloud';
+import { assertDutyShiftWritable, normalizeDutyShift } from './dutyShiftFreeze';
+import { DUTY_SHIFT } from './airtableFields';
 
 const LS_KEY = 'aunak.attendanceLedger.v1';
 const CORRECTIONS_KEY = 'aunak.attendanceCorrections.v1';
@@ -101,12 +103,24 @@ export async function sealAttendanceDay({
   centerId = '',
   biometricVerified = false,
   note = '',
+  dutyShift = DUTY_SHIFT.morning,
 }) {
   const d = String(date).slice(0, 10);
   const sid = String(studentId ?? '').trim();
   if (!sid) return { ok: false, error: 'MISSING_STUDENT' };
   if (!Object.values(ATTENDANCE_STATUS).includes(status)) {
     return { ok: false, error: 'INVALID_STATUS' };
+  }
+
+  const shift = normalizeDutyShift(dutyShift) || DUTY_SHIFT.morning;
+  const freezeGate = assertDutyShiftWritable({ dutyShift: shift, attendanceDate: d });
+  if (!freezeGate.ok) {
+    return {
+      ok: false,
+      error: freezeGate.error,
+      freezeAt: freezeGate.freezeAt,
+      message: freezeGate.message,
+    };
   }
 
   const existing = getSealedAttendance(sid, d);
@@ -124,6 +138,7 @@ export async function sealAttendanceDay({
     centerId: String(centerId || '').trim(),
     biometricVerified: Boolean(biometricVerified),
     note: String(note || '').trim().slice(0, 500),
+    dutyShift: shift,
     sealedAt,
   };
   const immutableHash = await sha256Hex(JSON.stringify(payload));
@@ -157,6 +172,7 @@ export async function requestAttendanceCorrection({
   requestedStatus,
   reason,
   requestedBy,
+  dutyShift = DUTY_SHIFT.morning,
 }) {
   const existing = getSealedAttendance(studentId, date);
   if (!existing) return { ok: false, error: 'NO_SEALED_RECORD' };
@@ -165,6 +181,23 @@ export async function requestAttendanceCorrection({
   }
   const reasonText = String(reason ?? '').trim();
   if (reasonText.length < 8) return { ok: false, error: 'REASON_TOO_SHORT' };
+
+  const shift =
+    normalizeDutyShift(dutyShift) ||
+    normalizeDutyShift(existing.dutyShift) ||
+    DUTY_SHIFT.morning;
+  const freezeGate = assertDutyShiftWritable({
+    dutyShift: shift,
+    attendanceDate: String(date).slice(0, 10),
+  });
+  if (!freezeGate.ok) {
+    return {
+      ok: false,
+      error: freezeGate.error,
+      freezeAt: freezeGate.freezeAt,
+      message: freezeGate.message,
+    };
+  }
 
   const req = {
     id: `corr-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -177,6 +210,7 @@ export async function requestAttendanceCorrection({
     requestedAt: new Date().toISOString(),
     status: 'pending',
     originalHash: existing.immutableHash,
+    dutyShift: shift,
   };
   const list = readList(CORRECTIONS_KEY);
   list.push(req);

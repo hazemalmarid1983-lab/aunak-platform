@@ -17,7 +17,7 @@ import { LUX } from '../../lib/luxTheme';
 
 /**
  * Adaptive clinical stimuli — measures response latency (≤280ms) and gaze hold (T-Static ≥5s).
- * Level ± 1 fills 66 CARS/GARS-linked fields on Students (tblzYmBGmCxx2vdcr).
+ * Level ± 1 fills 66 sovereign clinical fields on Students (tblzYmBGmCxx2vdcr).
  */
 export default function AdaptiveClinicalAssessment({
   lang = 'ar',

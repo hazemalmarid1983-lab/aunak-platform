@@ -19,6 +19,7 @@ export const HUB_CORE_MAIN = [
   'assessmentProtocol',
   'enrollment',
   'registry',
+  'smartScheduler',
   'reports',
   'specialists',
   'access',

@@ -106,12 +106,16 @@ function resolveHandlerFile(root, pathname) {
   const indexFile = path.join(apiRoot, rel, 'index.js');
   if (fs.existsSync(indexFile)) return { file: indexFile, params: {} };
 
-  // Dynamic segments: api/payment/[action].js, api/tawasul/[action].js
+  // Dynamic segments: api/payment/[action].js, api/tawasul/[action].js, api/udi/[code].js
   const parts = rel.split('/');
   if (parts.length >= 2) {
-    const dyn = path.join(apiRoot, parts[0], '[action].js');
-    if (fs.existsSync(dyn)) {
-      return { file: dyn, params: { action: parts.slice(1).join('/') } };
+    const dynAction = path.join(apiRoot, parts[0], '[action].js');
+    if (fs.existsSync(dynAction)) {
+      return { file: dynAction, params: { action: parts.slice(1).join('/') } };
+    }
+    const dynCode = path.join(apiRoot, parts[0], '[code].js');
+    if (fs.existsSync(dynCode)) {
+      return { file: dynCode, params: { code: parts.slice(1).join('/') } };
     }
   }
 

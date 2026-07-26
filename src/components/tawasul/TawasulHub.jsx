@@ -4,7 +4,6 @@ import { useAuth } from '../../lib/auth';
 import { TAWASUL_COPY } from '../../lib/tawasulConfig';
 import { readTawasulApiError, tawasulFetchJson } from '../../lib/tawasulFetch';
 import PlatformLogo from '../PlatformLogo';
-import TawasulMirrorPanel from './TawasulMirrorPanel';
 
 function childUrl(token) {
   if (typeof window === 'undefined' || !token) return '';
@@ -258,18 +257,6 @@ export default function TawasulHub({ lang = 'ar', onOpenSovereign }) {
                 </button>
                 {saveError && <p className="text-xs text-rose-400">{saveError}</p>}
               </div>
-
-              <TawasulMirrorPanel
-                lang={lang}
-                student={selected}
-                goalDraft={goalDraft}
-                onGoalSynced={(goal) => {
-                  setStudents((prev) =>
-                    prev.map((s) => (s.id === selected.id ? { ...s, programmedGoal: goal } : s))
-                  );
-                  setGoalDraft(goal);
-                }}
-              />
             </>
           )}
         </section>

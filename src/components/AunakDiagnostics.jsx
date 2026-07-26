@@ -6,10 +6,12 @@ import { STUDENT as SF } from '../lib/airtableFields';
 import { hasB2BPremiumTag, B2B_PREMIUM_TAG } from '../lib/plans';
 import {
   buildZeroPointReport,
+  CLINICAL_SCALE_OPTIONS,
   fieldsForScale,
   parseZeroPointReport,
   saveZeroPointReport,
   serializeZeroPointReport,
+  SCALE_EBD,
 } from '../lib/zeroPointSchema';
 import { ClipboardList, BrainCircuit, Activity, CheckCircle, AlertTriangle, Lock, Loader2 } from 'lucide-react';
 import { StatusBadge, TruncateTooltip } from './ui/SovereignTable';
@@ -17,7 +19,7 @@ import { StatusBadge, TruncateTooltip } from './ui/SovereignTable';
 export default function AunakDiagnostics({ lang = 'ar' }) {
   const { students, refetch } = useStudents(lang);
   const { user } = useAuth();
-  const [activeScale, setActiveScale] = useState('CARS-2');
+  const [activeScale, setActiveScale] = useState(SCALE_EBD);
   const [reportRequested, setReportRequested] = useState(false);
   const [rawNotes, setRawNotes] = useState('');
   const [finalScore, setFinalScore] = useState('');
@@ -65,7 +67,7 @@ export default function AunakDiagnostics({ lang = 'ar' }) {
   const t = {
     ar: {
       title: 'مقاييس التشخيص والتقييم',
-      subtitle: 'إدارة مقاييس (CARS-2, GARS-3, VB-MAPP) وتقرير نقطة الصفر الذكي',
+      subtitle: 'إدارة مقاييس (الاضطرابات الانفعالية والسلوكية · مهارات التواصل والتفاعل) وتقرير نقطة الصفر الذكي',
       selectedStudent: 'المستفيد المحدد للمسح النمائي:',
       scaleTitle: 'مقياس',
       inProgress: 'قيد المسح النمائي',
@@ -86,7 +88,7 @@ export default function AunakDiagnostics({ lang = 'ar' }) {
     },
     en: {
       title: 'Diagnostics & Assessment Scales',
-      subtitle: 'Manage CARS-2, GARS-3, VB-MAPP scales and AI zero-point report',
+      subtitle: 'Manage Emotional-Behavioral & Communication-Interaction scales and AI zero-point report',
       selectedStudent: 'Selected beneficiary for developmental screening:',
       scaleTitle: 'Scale',
       inProgress: 'Screening in progress',
@@ -185,15 +187,15 @@ export default function AunakDiagnostics({ lang = 'ar' }) {
           </div>
 
           <nav className="space-y-2">
-            {['CARS-2', 'GARS-3', 'VB-MAPP'].map((scale) => (
+            {CLINICAL_SCALE_OPTIONS.map((scale) => (
               <button
                 key={scale}
                 type="button"
                 onClick={() => setActiveScale(scale)}
-                className={`w-full flex items-center justify-between p-4 rounded-xl border font-bold transition-all ${activeScale === scale ? 'bg-fuchsia-500/10 border-fuchsia-500/50 text-[#e8c872] shadow-lg' : 'bg-[#12121a]/70 border-[#c9a962]/15 text-slate-400 hover:bg-[#12121a]/90'}`}
+                className={`w-full flex items-center justify-between p-4 rounded-xl border font-bold transition-all text-sm ${activeScale === scale ? 'bg-fuchsia-500/10 border-fuchsia-500/50 text-[#e8c872] shadow-lg' : 'bg-[#12121a]/70 border-[#c9a962]/15 text-slate-400 hover:bg-[#12121a]/90'}`}
               >
-                {scale}
-                {activeScale === scale && <Activity className="w-4 h-4" />}
+                <span className="text-start leading-snug">{scale}</span>
+                {activeScale === scale && <Activity className="w-4 h-4 shrink-0" />}
               </button>
             ))}
           </nav>

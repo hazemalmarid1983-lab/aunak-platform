@@ -1,7 +1,7 @@
 /**
  * Independent Operational Assessment Protocol — MoSD / center gap-filler.
  *
- * NOT a licensed clinical instrument (not CARS/GARS/ADOS).
+ * NOT a licensed clinical instrument — sovereign operational assessment only.
  * Purpose: unified procedural screening for special-education centers in Oman:
  *  guide → structured observation choices → aggregate → draft report → assessor seal.
  */
@@ -334,9 +334,9 @@ export function composeProtocolReport({
       : agg.topWeaknesses.map((w) => `• ${w.en} (×${w.count})`).join('\n');
 
   const disclaimerAr =
-    'تنويه: هذا تقرير تقييم إجرائي موحّد للمراكز — ليس تشخيصاً طبياً ولا بديلاً عن مقاييس مرخّصة (مثل CARS/GARS). القرار النهائي للمقيم المعتمد.';
+    'تنويه: هذا تقرير تقييم إجرائي موحّد للمراكز — ليس تشخيصاً طبياً ولا بديلاً عن المقاييس المرخّصة الخارجية. القرار النهائي للمقيم المعتمد.';
   const disclaimerEn =
-    'Disclaimer: This is a unified operational center assessment report — not a medical diagnosis and not a substitute for licensed instruments (e.g. CARS/GARS). Final judgment rests with the sealed assessor.';
+    'Disclaimer: This is a unified operational center assessment report — not a medical diagnosis and not a substitute for external licensed instruments. Final judgment rests with the sealed assessor.';
 
   const supportAr =
     agg.supportNeedHint === 'mild'

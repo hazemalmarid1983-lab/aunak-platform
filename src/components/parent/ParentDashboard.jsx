@@ -22,6 +22,7 @@ import PlatformLogo from '../PlatformLogo';
 import { LUX } from '../../lib/luxTheme';
 import { monthAttendanceSummary, hydrateAttendanceFromCloud } from '../../lib/attendanceLedger';
 import { getStudentGoalPlan, listGoalEvidence, hydrateGoalsFromCloud } from '../../lib/iepGoalAssignment';
+import UDIQRCodeGenerator from '../UDIQRCodeGenerator';
 
 const METRIC_COLORS = {
   emerald: 'from-emerald-500 to-emerald-400',
@@ -272,6 +273,10 @@ export default function ParentDashboard({ lang = 'ar', student, parentToken, onL
               <p className="text-sm font-mono text-emerald-300">{subStatus}</p>
             </div>
           </section>
+
+          {student?.id && (
+            <UDIQRCodeGenerator recordId={student.id} lang={lang} />
+          )}
 
           {sealedMonth && (
             <section className={`${LUX.glassCard} space-y-3`} key={govTick}>

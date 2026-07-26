@@ -2,7 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScanFace, ShieldCheck, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useBiometricScan } from '../../hooks/useBiometricScan';
 import { SOVEREIGN_MATCH_CONFIDENCE } from '../../lib/biometricMatch';
-import { tryParentMasterBypass, writeParentSession } from '../../lib/parentAccess';
+import {
+  shouldAutoBypassParentBiometric,
+  tryParentMasterBypass,
+  writeParentSession,
+} from '../../lib/parentAccess';
 import { shouldAutoApproveBiometric } from '../../lib/sovereignMasterBypass';
 import PlatformLogo from '../PlatformLogo';
 import { LUX } from '../../lib/luxTheme';
@@ -65,7 +69,7 @@ export default function ParentBiometricGate({
     if (!student?.id || !parentToken || matchHandledRef.current) return;
 
     const viaMaster = tryParentMasterBypass({ token: parentToken, studentId: student.id });
-    const viaDev = shouldAutoApproveBiometric();
+    const viaDev = shouldAutoApproveBiometric() || shouldAutoBypassParentBiometric();
     if (!viaMaster && !viaDev) return;
 
     if (!viaMaster) {
@@ -93,7 +97,7 @@ export default function ParentBiometricGate({
 
   const busy = entering || scan.scanState === 'loading' || scan.scanState === 'scanning';
 
-  if (shouldAutoApproveBiometric()) {
+  if (shouldAutoApproveBiometric() || shouldAutoBypassParentBiometric()) {
     return (
       <div dir={lang === 'ar' ? 'rtl' : 'ltr'} className={LUX.pageWrap}>
         <div className={LUX.pageWrapGradient} aria-hidden />

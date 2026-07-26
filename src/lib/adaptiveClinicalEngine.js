@@ -1,12 +1,15 @@
 /**
  * Adaptive Clinical Stimuli Engine — V1 sovereign protocol.
- * Latency ≤ 280ms · T-Static ≥ 5s · Level ± 1 → fill 66 CARS/GARS/VB-MAPP fields.
+ * Latency ≤ 280ms · T-Static ≥ 5s · Level ± 1 → fill 66 sovereign clinical fields.
  */
 
 import { MELTDOWN_LATENCY_MS, GAZE_HOLD_MS, SESSION_FIELD_COUNT } from './sovereignProtocol';
 import {
   ZERO_POINT_FIELDS,
   ZERO_POINT_FIELD_COUNT,
+  SCALE_CIS,
+  SCALE_EBD,
+  SCALE_EBD_ALT,
   ensureFullFieldMap,
   buildZeroPointReport,
   zeroPointAirtableFields,
@@ -21,10 +24,10 @@ export const CLINICAL_FIELD_TARGET = SESSION_FIELD_COUNT;
 
 /** Map screening branch → primary clinical scale + stimulus track. */
 export const BRANCH_TO_SCALE = {
-  linguistic: { scale: 'VB-MAPP', track: 'language', carsRange: [1, 5], garsRange: [1, 4] },
-  behavioral: { scale: 'GARS-3', track: 'behavior', carsRange: [6, 10], garsRange: [5, 10] },
-  cognitive: { scale: 'CARS-2', track: 'cognition', carsRange: [11, 15], garsRange: [11, 14] },
-  motor: { scale: 'CARS-2', track: 'motor', carsRange: [1, 8], garsRange: [1, 7] },
+  linguistic: { scale: SCALE_CIS, track: 'language', ebdARange: [1, 5], ebdBRange: [1, 4] },
+  behavioral: { scale: SCALE_EBD_ALT, track: 'behavior', ebdARange: [6, 10], ebdBRange: [5, 10] },
+  cognitive: { scale: SCALE_EBD, track: 'cognition', ebdARange: [11, 15], ebdBRange: [11, 14] },
+  motor: { scale: SCALE_EBD, track: 'motor', ebdARange: [1, 8], ebdBRange: [1, 7] },
 };
 
 const STIMULUS_BANK = {
@@ -92,7 +95,7 @@ export function clampLevel(n) {
 export function scoreTrial({ latencyMs, correct, gazeHeldMs = 0, gazeHold = false }) {
   const latency = Number(latencyMs);
   let delta = 0;
-  let clinicalScore = 2; // 0–4 CARS-style
+  let clinicalScore = 2; // 0–4 clinical intensity
 
   if (gazeHold) {
     const held = Number(gazeHeldMs) || 0;
@@ -134,7 +137,7 @@ export function adaptLevel(currentLevel, delta) {
 }
 
 /**
- * Map trial results → partial 66-field zero-point map (CARS/GARS primary + VB-MAPP fillers).
+ * Map trial results → partial 66-field zero-point map (sovereign clinical domains).
  */
 export function mapTrialsToZeroPointFields(trialsResults = [], primaryDimension = 'behavioral') {
   const cfg = resolveBranchConfig(primaryDimension);
@@ -153,8 +156,8 @@ export function mapTrialsToZeroPointFields(trialsResults = [], primaryDimension 
     }
   };
 
-  fillRange('cars', cfg.carsRange[0], cfg.carsRange[1], avg);
-  fillRange('gars', cfg.garsRange[0], cfg.garsRange[1], avg);
+  fillRange('ebd_a', cfg.ebdARange[0], cfg.ebdARange[1], avg);
+  fillRange('ebd_b', cfg.ebdBRange[0], cfg.ebdBRange[1], avg);
 
   // Fill remaining score fields toward 66 with branch-weighted baseline
   for (const def of ZERO_POINT_FIELDS) {

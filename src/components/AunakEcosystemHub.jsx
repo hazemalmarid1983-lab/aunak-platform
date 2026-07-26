@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
-import { UserPlus, ScanFace, MessageSquare, ShieldAlert, ShieldCheck, Music, Target, Activity, FileText, ClipboardList, Video, TrendingDown, BookOpen, Database, Stethoscope, FolderOpen, LogOut, UserCircle2, Lock, Volume2, VolumeX, FlaskConical, Eye, PanelLeftClose, PanelLeftOpen, FileBarChart, ClipboardCheck, BookOpenCheck, Loader2, Globe, HandMetal, EyeOff, Map } from 'lucide-react';
+import { UserPlus, ScanFace, MessageSquare, ShieldAlert, ShieldCheck, Music, Target, Activity, FileText, ClipboardList, Video, TrendingDown, BookOpen, Database, Stethoscope, FolderOpen, LogOut, UserCircle2, Lock, Volume2, VolumeX, FlaskConical, Eye, PanelLeftClose, PanelLeftOpen, FileBarChart, ClipboardCheck, BookOpenCheck, Loader2, Globe, HandMetal, EyeOff, Map, CalendarClock } from 'lucide-react';
 import PlatformLogo, { HEADER_LOGO_CLASS } from './PlatformLogo';
 import AunakPaywall from './AunakPaywall';
 import { useAuth, ROLES, canAccessSection, isSovereignOwner, isSubscriptionActive } from '../lib/auth';
@@ -24,6 +24,7 @@ import AunakReportsDashboard from './AunakReportsDashboard';
 import AunakEnrollment from './AunakEnrollment';
 import AunakChildGovernance from './AunakChildGovernance';
 import AunakAssessmentProtocol from './AunakAssessmentProtocol';
+import AunakSmartScheduler from './AunakSmartScheduler';
 import SovereignCommandBar from './SovereignCommandBar';
 /** Theatrical / legacy — lazy (only used in ?full=1) */
 const AunakResources = lazy(() => import('./AunakResources'));
@@ -72,6 +73,7 @@ const MAIN_NAV_ITEMS = [
   { id: 'assessmentProtocol', icon: BookOpenCheck, activeClass: LUX.navActiveGold },
   { id: 'enrollment', icon: UserPlus, activeClass: LUX.navActiveGold },
   { id: 'registry', icon: FileText, activeClass: LUX.navActiveGold },
+  { id: 'smartScheduler', icon: CalendarClock, activeClass: LUX.navActiveGold },
   { id: 'diagnostics', icon: ClipboardList, activeClass: LUX.navActiveGold },
   { id: 'media', icon: Video, activeClass: LUX.navActiveGold },
   { id: 'behavior', icon: TrendingDown, activeClass: LUX.navActiveGold },
@@ -109,6 +111,7 @@ const MAIN_SECTIONS = {
   assessmentProtocol: AunakAssessmentProtocol,
   enrollment: AunakEnrollment,
   registry: AunakSessionRegistry,
+  smartScheduler: AunakSmartScheduler,
   diagnostics: AunakDiagnostics,
   media: AunakSafeMedia,
   behavior: AunakBehaviorMod,
@@ -127,6 +130,7 @@ const DEFAULT_TAB_BY_ROLE = {
   [ROLES.ADMIN]: 'governance',
   [ROLES.SPECIALIST]: 'governance',
   [ROLES.PARENT]: 'reports',
+  [ROLES.MINISTRY_SUPERVISOR]: 'assessmentProtocol',
 };
 
 function LazyPanel({ Component, ...props }) {
@@ -350,6 +354,7 @@ export default function AunakEcosystemHub() {
       assessmentProtocol: 'بروتوكول التقييم الإجرائي',
       enrollment: 'تسجيل المستفيدين',
       registry: 'سجل الجلسات اليومية',
+      smartScheduler: 'الجدول الشهري الذكي',
       diagnostics: 'مقاييس التقييم',
       media: 'مكتبة الوسائط الآمنة',
       behavior: 'تعديل السلوك',
@@ -387,6 +392,7 @@ export default function AunakEcosystemHub() {
       assessmentProtocol: 'Operational Assessment Protocol',
       enrollment: 'Beneficiary Registration',
       registry: 'Daily Session Register',
+      smartScheduler: 'Smart Monthly Scheduler',
       diagnostics: 'Assessment Scales',
       media: 'Safe Media Library',
       behavior: 'Behavior Support',

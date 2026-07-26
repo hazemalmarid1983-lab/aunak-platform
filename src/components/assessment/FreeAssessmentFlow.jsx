@@ -55,7 +55,7 @@ export default function FreeAssessmentFlow({
           encourage:
             'Four-dimension relative weights are sealed. Dynamic Branching will route the adaptive clinical stimuli.',
           encourageSub:
-            'No parent diagnosis. Symptoms + age only feed clinical engines (CARS/GARS · ≤280ms · T-Static ≥5s).',
+            'No parent diagnosis. Symptoms + age only feed clinical engines (emotional-behavioral · ≤280ms · T-Static ≥5s).',
           ctaPremium: 'Activate consultative license & full screening',
           ctaFree: 'Continue to free gateway & Home Behavior Shaping Protocol',
           ctaContinue: 'Continue',
@@ -85,7 +85,7 @@ export default function FreeAssessmentFlow({
           encourage:
             'أوزان الأبعاد الأربعة خُتمت. التفرع الديناميكي سيوجّه المثيرات العيادية التكيفية.',
           encourageSub:
-            'لا تشخيص من الأهل. الأعراض والعمر فقط يغذّيان المحركات السريرية (CARS/GARS · ≤280ms · ثبات نظرة ≥5ث).',
+            'لا تشخيص من الأهل. الأعراض والعمر فقط يغذّيان المحركات السريرية (الاضطرابات الانفعالية والسلوكية · ≤280ms · ثبات نظرة ≥5ث).',
           ctaPremium: 'تفعيل الرخصة الاستشارية والمسح الشامل',
           ctaFree: 'الاستمرار للبوابة المجانية وبروتوكول تشكيل السلوك المنزلي',
           ctaContinue: 'متابعة',

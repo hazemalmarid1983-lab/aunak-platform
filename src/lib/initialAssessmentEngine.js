@@ -327,7 +327,7 @@ function buildProfile({ band, scorePercent, strengths, focusAreas, primaryDimens
     moderate: {
       title: 'إشارات تستحق متابعة مركّزة',
       summary:
-        'الأوزان النسبية للأبعاد الأربعة تُظهر أنماطاً تحتاج دعماً منهجياً. التفرع الديناميكي يحدد أولوية CARS/GARS.',
+        'الأوزان النسبية للأبعاد الأربعة تُظهر أنماطاً تحتاج دعماً منهجياً. التفرع الديناميكي يحدد أولوية الاضطرابات الانفعالية والسلوكية.',
       recommendation: `التوجيه التكيفي: ${dimLabel} أولاً — ثم تعبئة الـ 66 حقلاً العيادياً.`,
     },
     elevated: {
@@ -348,7 +348,7 @@ function buildProfile({ band, scorePercent, strengths, focusAreas, primaryDimens
     moderate: {
       title: 'Patterns worth focused follow-up',
       summary:
-        'Four-dimension relative weights show multi-domain needs. Dynamic branching sets CARS/GARS priority.',
+        'Four-dimension relative weights show multi-domain needs. Dynamic branching sets emotional-behavioral priority.',
       recommendation: `Adaptive routing: ${dimLabel} first — then fill all 66 clinical fields.`,
     },
     elevated: {

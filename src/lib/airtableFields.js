@@ -151,7 +151,13 @@ export const STUDENT = {
 /** Required Single-select options for Access Control table */
 export const ACCESS_SELECT = {
   status: { active: "active" },
-  access_level: { parent: "parent", admin: "admin", specialist: "specialist", ministry_auditor: "ministry_auditor" },
+  access_level: {
+    parent: "parent",
+    admin: "admin",
+    specialist: "specialist",
+    ministry_auditor: "ministry_auditor",
+    ministry_supervisor: "ministry_supervisor",
+  },
 };
 
 export const STUDENT_SELECT = {

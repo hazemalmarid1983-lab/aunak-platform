@@ -24,6 +24,7 @@ describe('b2gAnonymization (shared module)', () => {
         harmony_score: 80,
         focus_level: 70,
         behavior_intensity: 20,
+        initial_assessment_score: 64,
         b2g_child_code: 'CHD-A3F2',
       },
     });
@@ -32,6 +33,7 @@ describe('b2gAnonymization (shared module)', () => {
     expect(view.harmonyScore).toBe(80);
     expect(view.focusLevel).toBe(70);
     expect(view.riskScore).toBeGreaterThanOrEqual(0);
+    expect(view.initialAssessmentScore).toBe(64);
     expect(view._b2g_anonymized).toBe(true);
   });
 

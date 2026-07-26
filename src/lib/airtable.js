@@ -1,5 +1,8 @@
 ﻿/**
  * Airtable REST client — native fetch only (no npm "airtable" package).
+ *
+ * ⚠️ MOCK_DATA_MODE — temporary demo bypass (Airtable 429 / offline).
+ * Set MOCK_DATA_MODE = false to restore live Airtable network calls.
  */
 
 import { AIRTABLE_TABLES } from "./airtableTables";
@@ -11,11 +14,41 @@ import {
   GOAL_ATTEMPT as GA_FIELDS,
   STUDENT_SELECT as SS,
 } from "./airtableFields";
+import { mockListRecords, mockWriteRecord } from "./mockAirtableStore";
 
 export { AIRTABLE_TABLES };
 export { STUDENT, DAILY_SESSION, ACCESS, GOAL_ATTEMPT, SPECIALIST, SUMMER_ACADEMY } from "./airtableFields";
+export { mockB2gChildCode, mockFindStudentByUdiCode } from "./mockAirtableStore";
 
 export const STUDENTS_TABLE = AIRTABLE_TABLES.students;
+
+/**
+ * DEMO ONLY — flip to `false` after the presentation to restore live Airtable.
+ * Login tokens: MOCK-MINISTRY · MOCK-SUPERVISOR · MOCK-SPECIALIST · MOCK-ADMIN
+ * Auth is token-only while mock is on — no auto-login / no default session.
+ */
+export const MOCK_DATA_MODE = true;
+
+/** Official mock Access Control tokens (login only via verifyAccessToken). */
+export const MOCK_LOGIN_TOKENS = Object.freeze([
+  "MOCK-MINISTRY",
+  "MOCK-SUPERVISOR",
+  "MOCK-SPECIALIST",
+  "MOCK-ADMIN",
+]);
+
+export function normalizeMockAccessToken(raw) {
+  return String(raw ?? "").trim().toUpperCase();
+}
+
+export function isMockAccessToken(raw) {
+  const token = normalizeMockAccessToken(raw);
+  return MOCK_LOGIN_TOKENS.includes(token);
+}
+
+function mockRecordsForTable(tableId) {
+  return mockListRecords(tableId);
+}
 
 /** @deprecated use STUDENT.* from airtableFields */
 export const STUDENT_NAME_FIELD = SF.name;
@@ -330,6 +363,28 @@ async function airtableFetchTable(tableId, params = {}) {
 }
 
 export async function fetchAllRecords(tableId, params = {}) {
+  // --- MOCK DATA MODE (demo) — bypass live Airtable ---
+  if (MOCK_DATA_MODE) {
+    console.info(`[airtable:mock] fetchAllRecords → ${tableId}`, params);
+    return mockRecordsForTable(tableId).map((r) => ({ ...r, fields: { ...r.fields } }));
+  }
+
+  /* ORIGINAL LIVE IMPLEMENTATION (restore when MOCK_DATA_MODE = false):
+  const allRecords = [];
+  let offset;
+  do {
+    const pageParams = { ...params };
+    if (offset) pageParams.offset = offset;
+    const page = await airtableFetchTable(tableId, pageParams);
+    if (!page || typeof page !== "object") {
+      throw new Error("Airtable response missing page body");
+    }
+    if (Array.isArray(page.records)) allRecords.push(...page.records);
+    offset = page.offset;
+  } while (offset);
+  return allRecords;
+  */
+
   const allRecords = [];
   let offset;
 
@@ -350,6 +405,27 @@ export async function fetchAllRecords(tableId, params = {}) {
 /** Fetch all records from any table; tries Grid view then falls back. */
 export async function fetchAirtableRecords(tableId, params = {}) {
   if (!tableId) return [];
+
+  // --- MOCK DATA MODE (demo) — bypass live Airtable ---
+  if (MOCK_DATA_MODE) {
+    console.info(`[airtable:mock] fetchAirtableRecords → ${tableId}`);
+    return mockRecordsForTable(tableId).map((r) => ({ ...r, fields: { ...r.fields } }));
+  }
+
+  /* ORIGINAL LIVE IMPLEMENTATION:
+  try {
+    return await fetchAllRecords(tableId, { view: "Grid view", ...params });
+  } catch (firstError) {
+    console.warn(`[airtable] Grid view failed for ${tableId}:`, firstError.message);
+    try {
+      return await fetchAllRecords(tableId, params);
+    } catch (secondError) {
+      console.error(`[airtable] fetch failed for ${tableId}:`, secondError);
+      throw secondError;
+    }
+  }
+  */
+
   try {
     return await fetchAllRecords(tableId, { view: "Grid view", ...params });
   } catch (firstError) {
@@ -415,6 +491,19 @@ export function findStudentByIdentifier(students, identifier) {
 }
 
 export async function fetchStudents() {
+  // --- MOCK DATA MODE (demo) — in-memory beneficiaries ---
+  if (MOCK_DATA_MODE) {
+    const rows = mockListRecords(AIRTABLE_TABLES.students);
+    console.info(`[airtable:mock] fetchStudents → ${rows.length} beneficiaries`);
+    return rows.map((record) => mapRecord(record));
+  }
+
+  /* ORIGINAL LIVE IMPLEMENTATION:
+  const records = await loadStudentRecords();
+  if (!Array.isArray(records)) return [];
+  return records.map(mapRecord);
+  */
+
   const records = await loadStudentRecords();
   if (!Array.isArray(records)) return [];
   return records.map(mapRecord);
@@ -423,6 +512,32 @@ export async function fetchStudents() {
 const ACTIVE_PERMISSION_MARKERS = ["active", "نشط", "مفعل", "فعال", "enabled", "approved", "معتمد"];
 
 async function airtableWrite(tableId, method, body, recordId) {
+  // --- MOCK DATA MODE (demo) — persist in memory for the session ---
+  if (MOCK_DATA_MODE) {
+    const saved = mockWriteRecord(tableId, method, body, recordId);
+    console.log(`[airtable:mock] ${method} ${tableId}`, {
+      recordId: saved?.id,
+      fields: saved?.fields ?? body?.fields,
+    });
+    return saved;
+  }
+
+  /* ORIGINAL LIVE IMPLEMENTATION:
+  const payload =
+    body != null && typeof body === "object" && "fields" in body && body.typecast == null
+      ? { ...body, typecast: true }
+      : body;
+  if (USE_PROXY) {
+    return proxyFetch(tableId, { method, body: payload, recordId });
+  }
+  if (!hasDirectApiKey()) {
+    throw new Error(
+      "Airtable API key missing. Set VITE_USE_AIRTABLE_PROXY=true or VITE_AIRTABLE_API_KEY in .env.local"
+    );
+  }
+  return directWrite(tableId, method, payload, recordId);
+  */
+
   const payload =
     body != null && typeof body === "object" && "fields" in body && body.typecast == null
       ? { ...body, typecast: true }
@@ -484,6 +599,24 @@ export function formatAirtableWriteError(err) {
 
 export async function createAirtableRecord(tableId, fields) {
   if (!tableId) throw new Error("tableId required");
+
+  // --- MOCK DATA MODE (demo) ---
+  if (MOCK_DATA_MODE) {
+    const scrubbed = scrubFields(fields);
+    const saved = mockWriteRecord(tableId, "POST", { fields: scrubbed });
+    console.log("[airtable:mock] createAirtableRecord", tableId, saved.id);
+    return saved;
+  }
+
+  /* ORIGINAL LIVE IMPLEMENTATION:
+  try {
+    const data = await airtableWrite(tableId, "POST", { fields: scrubFields(fields) });
+    return data?.id ? data : mapRecord(data);
+  } catch (err) {
+    throw new Error(formatAirtableWriteError(err));
+  }
+  */
+
   try {
     const data = await airtableWrite(tableId, "POST", { fields: scrubFields(fields) });
     return data?.id ? data : mapRecord(data);

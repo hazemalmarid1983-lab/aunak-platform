@@ -38,7 +38,8 @@ import {
 import { hydrateAttendanceFromCloud } from '../lib/attendanceLedger';
 import { governanceCloudReady } from '../lib/governanceCloud';
 import { updateStudentRecord, getField } from '../lib/airtable';
-import { STUDENT as SF } from '../lib/airtableFields';
+import { DUTY_SHIFT, STUDENT as SF } from '../lib/airtableFields';
+import { assertDutyShiftWritable, isDutyShiftHardFrozen } from '../lib/dutyShiftFreeze';
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10);
@@ -66,6 +67,7 @@ export default function AunakChildGovernance({ lang = 'ar' }) {
   const [photoDataUrl, setPhotoDataUrl] = useState(null);
   const [corrReason, setCorrReason] = useState('');
   const [corrStatus, setCorrStatus] = useState(ATTENDANCE_STATUS.ABSENT);
+  const [dutyShift, setDutyShift] = useState(DUTY_SHIFT.morning);
   const [tick, setTick] = useState(0);
   const [syncState, setSyncState] = useState('idle');
   const cloudReady = governanceCloudReady();
@@ -206,9 +208,20 @@ export default function AunakChildGovernance({ lang = 'ar' }) {
         status,
         recordedBy: user?.email || user?.name || '',
         biometricVerified,
+        dutyShift:
+          dutyShift ||
+          getField(student.fields ?? {}, SF.assigned_shift) ||
+          DUTY_SHIFT.morning,
       });
       if (!res.ok) {
-        flash(false, res.error === 'ALREADY_SEALED' ? copy.sealedLock : res.error);
+        flash(
+          false,
+          res.error === 'ALREADY_SEALED'
+            ? copy.sealedLock
+            : res.error === 'DUTY_SHIFT_HARD_FREEZE'
+              ? res.message || res.error
+              : res.error
+        );
         return;
       }
       flash(
@@ -232,9 +245,14 @@ export default function AunakChildGovernance({ lang = 'ar' }) {
         requestedStatus: corrStatus,
         reason: corrReason,
         requestedBy: user?.email || user?.name || '',
+        dutyShift:
+          dutyShift ||
+          sealedToday?.dutyShift ||
+          getField(student.fields ?? {}, SF.assigned_shift) ||
+          DUTY_SHIFT.morning,
       });
       if (!res.ok) {
-        flash(false, res.error);
+        flash(false, res.message || res.error);
         return;
       }
       flash(
@@ -412,6 +430,30 @@ export default function AunakChildGovernance({ lang = 'ar' }) {
 
       {tab === 'attendance' && (
         <section className={`${LUX.card} p-5 space-y-4`}>
+          <label className="block space-y-1.5 max-w-xs">
+            <span className="text-xs text-slate-500">
+              {ar ? 'فترة الدوام (duty_shift)' : 'Duty shift'}
+            </span>
+            <select
+              value={dutyShift}
+              onChange={(e) => setDutyShift(e.target.value)}
+              className="w-full rounded-xl bg-[#0d0d10] border border-white/10 px-3 py-2 text-sm text-slate-200"
+            >
+              <option value={DUTY_SHIFT.morning}>
+                {ar ? 'صباحي — قفل 14:00' : 'Morning — freeze 14:00'}
+              </option>
+              <option value={DUTY_SHIFT.evening}>
+                {ar ? 'مسائي — قفل 21:00' : 'Evening — freeze 21:00'}
+              </option>
+            </select>
+          </label>
+          {isDutyShiftHardFrozen({ dutyShift }) && (
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-rose-500/10 border border-rose-400/30 text-rose-200 text-xs">
+              <Lock className="w-4 h-4 shrink-0 mt-0.5" />
+              {assertDutyShiftWritable({ dutyShift, attendanceDate: todayIso() }).message ||
+                (ar ? 'الختم المزدوج مُقفل لهذه الفترة' : 'Dual hard freeze active for this shift')}
+            </div>
+          )}
           {sealedToday ? (
             <div className="flex items-start gap-3 p-4 rounded-xl bg-emerald-950/30 border border-emerald-500/25">
               <Lock className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />

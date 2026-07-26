@@ -18,6 +18,8 @@ import { playWarningPulse } from "../lib/sovereignAudio";
 import { isAppStealthActive } from "../lib/studentPrivacy";
 import { encryptSessionPayload } from "../lib/sovereignCrypto";
 import { StatusBadge, TruncateTooltip } from './ui/SovereignTable';
+import UDIQRCodeGenerator from './UDIQRCodeGenerator';
+import VoiceAssistant from './VoiceAssistant';
 
 function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
@@ -319,8 +321,24 @@ export default function AunakSessionRegistry({ lang = "ar" }) {
                 </p>
               </div>
             </div>
+            {activeStudent?.id && (
+              <div className="mb-6">
+                <UDIQRCodeGenerator recordId={activeStudent.id} lang={lang} compact />
+              </div>
+            )}
             <div>
-              <label className="text-sm text-slate-400 mb-2 block font-bold">{copy.notesLabel}</label>
+              <div className="flex items-center justify-between gap-3 mb-2">
+                <label className="text-sm text-slate-400 font-bold">{copy.notesLabel}</label>
+                <VoiceAssistant
+                  lang={lang}
+                  onTranscript={(text) => {
+                    setNotes((prev) => {
+                      const base = String(prev ?? '').trim();
+                      return base ? `${base} ${text}` : text;
+                    });
+                  }}
+                />
+              </div>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}

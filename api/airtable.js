@@ -9,6 +9,11 @@ import {
   filterAirtableResponseForB2G,
   isB2GRole,
 } from './_handlers/b2g/anonymize.js';
+import {
+  assertDutyShiftWritable,
+  extractAttendanceDateFromBody,
+  extractDutyShiftFromBody,
+} from '../src/lib/dutyShiftFreeze.js';
 
 function sanitizeAscii(value) {
   if (value == null) return "";
@@ -74,7 +79,15 @@ function resolveAttendanceTableId() {
   return (
     sanitizeAscii(process.env.AIRTABLE_ATTENDANCE_TABLE_ID) ||
     sanitizeAscii(process.env.VITE_AIRTABLE_ATTENDANCE_TABLE_ID) ||
-    ''
+    'tbl1oGzt0E5jYNA5e'
+  );
+}
+
+function resolveAttendanceCorrectionsTableId() {
+  return (
+    sanitizeAscii(process.env.AIRTABLE_ATTENDANCE_CORRECTIONS_TABLE_ID) ||
+    sanitizeAscii(process.env.VITE_AIRTABLE_ATTENDANCE_CORRECTIONS_TABLE_ID) ||
+    'tblpxTavOza4SAjlH'
   );
 }
 
@@ -84,6 +97,56 @@ function resolveGoalEvidenceTableId() {
     sanitizeAscii(process.env.VITE_AIRTABLE_GOAL_EVIDENCE_TABLE_ID) ||
     ''
   );
+}
+
+function isGovernanceWriteTable(tableId) {
+  const attendance = resolveAttendanceTableId();
+  const corrections = resolveAttendanceCorrectionsTableId();
+  return (
+    (attendance && tableId === attendance) ||
+    (corrections && tableId === corrections) ||
+    /attendance|correction/i.test(String(tableId))
+  );
+}
+
+/** Dual Hard Freeze — block POST/PATCH after morning 14:00 / evening 21:00. */
+function enforceDutyShiftHardFreeze(req, res, { method, tableId }) {
+  if (method === 'GET' || !isGovernanceWriteTable(tableId)) return false;
+
+  const body = req.body;
+  const dutyShift = extractDutyShiftFromBody(body);
+  const attendanceDate = extractAttendanceDateFromBody(body);
+  const gate = assertDutyShiftWritable({
+    dutyShift: dutyShift || 'morning',
+    attendanceDate: attendanceDate || new Date().toISOString().slice(0, 10),
+    now: new Date(),
+  });
+
+  if (!gate.ok && gate.error === 'DUTY_SHIFT_HARD_FREEZE') {
+    res.status(423).json({
+      error: 'DUTY_SHIFT_HARD_FREEZE',
+      dutyShift: gate.dutyShift,
+      freezeAt: gate.freezeAt,
+      message: gate.message,
+      hint: 'Attendance writes are hard-frozen for this duty_shift after the cutoff clock.',
+    });
+    return true;
+  }
+
+  if (!dutyShift && (method === 'POST' || method === 'PATCH')) {
+    /** Require duty_shift on new attendance seals so freeze clocks can apply. */
+    const looksLikeAttendance =
+      tableId === resolveAttendanceTableId() || /attendance.?ledger/i.test(String(tableId));
+    if (looksLikeAttendance) {
+      res.status(400).json({
+        error: 'DUTY_SHIFT_REQUIRED',
+        hint: 'Include fields.duty_shift = morning | evening on attendance writes.',
+      });
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function stripGovernancePii(body) {
@@ -198,6 +261,10 @@ export default async function handler(req, res) {
 
   if (isB2GRole(b2gRole) && method !== 'GET') {
     res.status(403).json({ error: 'B2G_READ_ONLY', hint: 'Ministry auditors may not write student records' });
+    return;
+  }
+
+  if (enforceDutyShiftHardFreeze(req, res, { method, tableId })) {
     return;
   }
 

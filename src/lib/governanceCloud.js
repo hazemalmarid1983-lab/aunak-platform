@@ -94,6 +94,7 @@ export async function pushAttendanceSeal(record) {
       [AL.biometric_verified]: Boolean(record.biometricVerified),
       [AL.note]: record.note || '',
       [AL.center_id]: record.centerId || '',
+      ...(record.dutyShift ? { [AL.duty_shift]: record.dutyShift } : {}),
     });
     return { ok: true, id: created?.id || created };
   } catch (err) {
@@ -115,6 +116,7 @@ export async function pushAttendanceCorrection(req) {
       [AC.requested_at]: req.requestedAt,
       [AC.status]: req.status || 'pending',
       [AC.original_hash]: req.originalHash || '',
+      ...(req.dutyShift ? { [AC.duty_shift]: req.dutyShift } : {}),
     });
     return { ok: true, id: created?.id || created };
   } catch (err) {

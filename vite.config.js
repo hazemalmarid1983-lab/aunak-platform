@@ -1,10 +1,11 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { aunakApiDevPlugin } from './scripts/vite-api-dev-plugin.mjs'
 
-// Production-safe config only. Local API middleware is optional via:
-// scripts/vite-api-dev-plugin.mjs (not imported here — avoids Vercel UNRESOLVED_IMPORT).
+// Local /api/* middleware for enrollment + UDI while developing.
+// Vercel production uses api/ routes directly (this plugin is not bundled there).
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), aunakApiDevPlugin()],
   test: {
     environment: 'node',
     include: ['tests/**/*.test.js'],

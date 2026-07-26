@@ -1,6 +1,6 @@
 /**
  * Zero Point Report — 66 clinical field schema (flat Students.zero_point_report JSON).
- * Domains: CARS-2 (15) · GARS-3 (14) · VB-MAPP (27) · Meta (10) = 66 fields.
+ * Domains: Emotional-Behavioral (15+14) · Communication & Interaction (27) · Meta (10) = 66.
  */
 
 import { SESSION_FIELD_COUNT } from './sovereignProtocol';
@@ -10,6 +10,13 @@ import { STUDENT as SF } from './airtableFields';
 export const ZERO_POINT_SCHEMA_VERSION = '1.0';
 export const ZERO_POINT_FIELD_COUNT = SESSION_FIELD_COUNT;
 
+/** Sovereign scale labels — no commercial instrument trademarks. */
+export const SCALE_EBD = 'الاضطرابات الانفعالية والسلوكية';
+export const SCALE_EBD_ALT = 'الاضطرابات الانفعالية والسلوكية · ب';
+export const SCALE_CIS = 'مهارات التواصل والتفاعل';
+
+export const CLINICAL_SCALE_OPTIONS = [SCALE_EBD, SCALE_EBD_ALT, SCALE_CIS];
+
 function scoreField(id, scale, domain, labelEn, labelAr) {
   return { id, scale, domain, type: 'score_0_4', labelEn, labelAr };
 }
@@ -18,29 +25,29 @@ function scoreField(id, scale, domain, labelEn, labelAr) {
 export const ZERO_POINT_FIELDS = [
   ...Array.from({ length: 15 }, (_, i) =>
     scoreField(
-      `cars_${String(i + 1).padStart(2, '0')}`,
-      'CARS-2',
-      'autism_severity',
-      `CARS-2 item ${i + 1}`,
-      `CARS-2 بند ${i + 1}`
+      `ebd_a_${String(i + 1).padStart(2, '0')}`,
+      SCALE_EBD,
+      'emotional_behavioral',
+      `Emotional-behavioral item ${i + 1}`,
+      `بند الاضطرابات الانفعالية والسلوكية ${i + 1}`
     )
   ),
   ...Array.from({ length: 14 }, (_, i) =>
     scoreField(
-      `gars_${String(i + 1).padStart(2, '0')}`,
-      'GARS-3',
-      'autism_risk',
-      `GARS-3 item ${i + 1}`,
-      `GARS-3 بند ${i + 1}`
+      `ebd_b_${String(i + 1).padStart(2, '0')}`,
+      SCALE_EBD_ALT,
+      'emotional_behavioral_alt',
+      `Emotional-behavioral track B item ${i + 1}`,
+      `بند الاضطرابات الانفعالية والسلوكية (ب) ${i + 1}`
     )
   ),
   ...Array.from({ length: 27 }, (_, i) =>
     scoreField(
-      `vbmapp_${String(i + 1).padStart(2, '0')}`,
-      'VB-MAPP',
-      'developmental_milestone',
-      `VB-MAPP milestone ${i + 1}`,
-      `VB-MAPP معلم ${i + 1}`
+      `cis_${String(i + 1).padStart(2, '0')}`,
+      SCALE_CIS,
+      'communication_interaction',
+      `Communication & interaction skill ${i + 1}`,
+      `مهارة التواصل والتفاعل ${i + 1}`
     )
   ),
   { id: 'meta_assessor', scale: 'META', domain: 'admin', type: 'text', labelEn: 'Assessor name', labelAr: 'اسم المقيّم' },
@@ -91,7 +98,7 @@ function clampScore(value) {
  * @param {{ activeScale, rawNotes, finalScore, assessor, fieldValues? }} input
  */
 export function buildZeroPointReport(input = {}) {
-  const activeScale = String(input.activeScale ?? 'CARS-2');
+  const activeScale = String(input.activeScale ?? SCALE_EBD);
   const assessedAt = new Date().toISOString();
   const fieldValues = mergePriorFieldValues(input.existingReport, input.fieldValues ?? {});
 
@@ -150,12 +157,12 @@ export function buildZeroPointReport(input = {}) {
 /** Derive programmed_goal from weakest domain / scale profile. */
 export function extractProgrammedGoal(report) {
   const composite = report?.composite_score ?? report?.fields?.meta_final_score;
-  const scale = report?.active_scale ?? report?.fields?.meta_primary_scale ?? 'CARS-2';
+  const scale = report?.active_scale ?? report?.fields?.meta_primary_scale ?? SCALE_EBD;
 
-  if (scale === 'VB-MAPP') {
-    return 'Increase manding and tacting — 3 novel requests per session with visual prompt fade.';
+  if (scale === SCALE_CIS) {
+    return 'Increase functional requests — 3 novel communication bids per session with prompt fade.';
   }
-  if (scale === 'GARS-3') {
+  if (scale === SCALE_EBD_ALT) {
     return 'Strengthen social reciprocity — joint attention game 5 minutes with peer or specialist.';
   }
   if (composite != null && composite < 50) {
