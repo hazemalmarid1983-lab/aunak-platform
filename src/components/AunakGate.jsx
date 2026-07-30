@@ -40,6 +40,8 @@ export default function AunakGate({ lang = "ar" }) {
       verify: "تحقق ودخول",
       verifying: "جاري التحقق من سجل الصلاحيات...",
       tokenInvalid: "رمز الوصول غير صحيح أو غير مسجّل في صلاحيات الدخول",
+      quotaExceeded:
+        "حصة Airtable الشهرية منتهية — ترقية الخطة أو انتظر إعادة التعيين، ثم أعد المحاولة",
       back: "رجوع",
       shareEnrollmentLink: "رابط التسجيل للمشاركة",
       specialistLink: "دخول الأخصائي / معلم التربية الخاصة",
@@ -59,6 +61,8 @@ export default function AunakGate({ lang = "ar" }) {
       verify: "Verify & Enter",
       verifying: "Verifying against access registry...",
       tokenInvalid: "Invalid token — not registered in AunakAccessControl",
+      quotaExceeded:
+        "Airtable monthly API quota exceeded — upgrade plan or wait for reset, then retry",
       back: "Back",
       shareEnrollmentLink: "Shareable enrollment link",
       specialistLink: "Behavior therapist login",
@@ -106,7 +110,9 @@ export default function AunakGate({ lang = "ar" }) {
       }
     } catch (err) {
       setTokenState("error");
-      setTokenError(err?.message ?? copy.tokenInvalid);
+      setTokenError(
+        err?.code === "AIRTABLE_QUOTA_EXCEEDED" ? copy.quotaExceeded : (err?.message ?? copy.tokenInvalid)
+      );
     }
   };
 

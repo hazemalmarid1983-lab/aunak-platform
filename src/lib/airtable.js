@@ -231,6 +231,12 @@ async function proxyFetch(tableId, { method = "GET", params = {}, recordId, body
   const response = await fetch("/api/airtable?" + qs.toString(), init);
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
+    if (response.status === 429 || /BILLING_LIMIT_EXCEEDED/i.test(detail)) {
+      const err = new Error("AIRTABLE_QUOTA_EXCEEDED");
+      err.code = "AIRTABLE_QUOTA_EXCEEDED";
+      err.status = 429;
+      throw err;
+    }
     throw new Error("Airtable proxy " + response.status + (detail ? ": " + detail : ""));
   }
   return response.json();
