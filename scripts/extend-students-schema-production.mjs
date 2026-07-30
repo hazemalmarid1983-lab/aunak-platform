@@ -28,9 +28,18 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
 /** Central multi-center base (live Jul 2026). Legacy archive: appaGfKj4vYhMw0cb */
-const PROD_BASE_ID = 'appcjitgWsbvIebwf';
-const PROD_STUDENTS_TABLE_ID = 'tblTidBPaVM4cf3O9';
-const PROD_SPECIALISTS_TABLE_ID = 'tblqTYEHCPBO23DBa';
+const PROD_BASE_ID =
+  process.env.AUNAK_CENTRAL_BASE_ID ||
+  process.env.AIRTABLE_BASE_ID ||
+  'appcjitgWsbvIebwf';
+const PROD_STUDENTS_TABLE_ID =
+  process.env.AIRTABLE_STUDENTS_TABLE_ID ||
+  process.env.VITE_AIRTABLE_STUDENTS_TABLE_ID ||
+  'tblTidBPaVM4cf3O9';
+const PROD_SPECIALISTS_TABLE_ID =
+  process.env.AIRTABLE_SPECIALISTS_TABLE_ID ||
+  process.env.VITE_AIRTABLE_SPECIALISTS_TABLE_ID ||
+  'tblqTYEHCPBO23DBa';
 
 const args = new Set(process.argv.slice(2));
 const APPLY = args.has('--apply') || args.has('--force-apply');

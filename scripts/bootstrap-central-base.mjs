@@ -236,6 +236,7 @@ const TABLES = [
         options: select('not_started', 'in_progress', 'completed'),
       },
       { name: 'assessment_protocol_json', type: 'multilineText' },
+      { name: 'clinical_questionnaire_json', type: 'multilineText', description: '36-item clinical questionnaire sessions JSON' },
       {
         name: 'assessment_protocol_status',
         type: 'singleSelect',
@@ -287,7 +288,7 @@ const TABLES = [
       {
         name: 'access_level',
         type: 'singleSelect',
-        options: select('parent', 'admin', 'specialist', 'center_manager', 'ministry_auditor'),
+        options: select('parent', 'admin', 'specialist', 'center_manager', 'ministry_auditor', 'ministry_supervisor'),
       },
       { name: 'access_areas', type: 'multilineText' },
       { name: 'access_token', type: 'singleLineText' },
@@ -602,7 +603,16 @@ VITE_AIRTABLE_ATTENDANCE_CORRECTIONS_TABLE_ID=${ids['VITE_AIRTABLE_ATTENDANCE_CO
     upsertEnv('VITE_AIRTABLE_BASE_ID', BASE_ID);
     upsertEnv('AIRTABLE_BASE_ID', BASE_ID);
     for (const def of TABLES) {
-      if (ids[def.envKey]) upsertEnv(def.envKey, ids[def.envKey]);
+      if (ids[def.envKey]) {
+      upsertEnv(def.envKey, ids[def.envKey]);
+      // Server-side mirrors for Vercel / api routes
+      if (def.envKey === 'VITE_AIRTABLE_STUDENTS_TABLE_ID') {
+        upsertEnv('AIRTABLE_STUDENTS_TABLE_ID', ids[def.envKey]);
+      }
+      if (def.envKey === 'VITE_AIRTABLE_DAILY_SESSIONS_TABLE_ID') {
+        upsertEnv('AIRTABLE_DAILY_SESSIONS_TABLE_ID', ids[def.envKey]);
+      }
+    }
     }
     // Keep legacy access key alias used in some scripts
     if (ids.VITE_AIRTABLE_ACCESS_TABLE_ID) {

@@ -12,15 +12,19 @@ import { randomBytes } from 'node:crypto';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
-const BASE_ID = 'appcjitgWsbvIebwf';
+const BASE_ID =
+  process.env.AUNAK_CENTRAL_BASE_ID ||
+  process.env.AIRTABLE_BASE_ID ||
+  process.env.VITE_AIRTABLE_BASE_ID ||
+  'appcjitgWsbvIebwf';
 const APPLY = process.argv.includes('--apply');
 
 const TABLES = {
-  centers: 'tblm1ayaXTG0vdm7d',
-  specialists: 'tblqTYEHCPBO23DBa',
-  students: 'tblTidBPaVM4cf3O9',
-  accessControl: 'tblsGNIKRfTpMZ8Kn',
-  dailySessions: 'tblnNGiaKccMSpizT',
+  centers: process.env.VITE_AIRTABLE_CENTERS_TABLE_ID || 'tblm1ayaXTG0vdm7d',
+  specialists: process.env.VITE_AIRTABLE_SPECIALISTS_TABLE_ID || 'tblqTYEHCPBO23DBa',
+  students: process.env.AIRTABLE_STUDENTS_TABLE_ID || process.env.VITE_AIRTABLE_STUDENTS_TABLE_ID || 'tblTidBPaVM4cf3O9',
+  accessControl: process.env.VITE_AIRTABLE_ACCESS_CONTROL_TABLE_ID || process.env.VITE_AIRTABLE_ACCESS_TABLE_ID || 'tblsGNIKRfTpMZ8Kn',
+  dailySessions: process.env.VITE_AIRTABLE_DAILY_SESSIONS_TABLE_ID || 'tblnNGiaKccMSpizT',
 };
 
 function loadPat() {

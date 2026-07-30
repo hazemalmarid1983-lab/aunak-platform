@@ -14,6 +14,8 @@
     "schema:students:dry": "node scripts/extend-students-schema-production.mjs --dry-run",
     "schema:students:apply": "node scripts/extend-students-schema-production.mjs --apply",
     "live:ready": "node scripts/live-readiness.mjs",
+    "live:bootstrap": "node scripts/setup-fresh-airtable.mjs --apply",
+    "live:bootstrap:dry": "node scripts/setup-fresh-airtable.mjs --dry-run",
     "live:seed:dry": "node scripts/seed-live-operational-data.mjs --dry-run",
     "live:seed": "node scripts/seed-live-operational-data.mjs --apply",
     "test:enrollment": "node scripts/test-enrollment-funnel.mjs"
