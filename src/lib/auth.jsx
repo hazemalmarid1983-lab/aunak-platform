@@ -57,7 +57,7 @@ export const BIOMETRIC_SOVEREIGN_SECTIONS = [
 const ROLE_ACCESS = {
   [ROLES.ADMIN]: null,
   [ROLES.SPECIALIST]: [
-    'live', 'governance', 'assessmentProtocol', 'registry', 'diagnostics', 'behavior', 'classrooms',
+    'live', 'governance', 'assessmentProtocol', 'clinicalAssessment', 'registry', 'diagnostics', 'behavior', 'classrooms',
     'scientific', 'learning', 'emotion', 'crisis', 'media', 'enrollment',
     'biometrics', 'community', 'research', 'reports', 'smartScheduler',
   ],
@@ -65,6 +65,7 @@ const ROLE_ACCESS = {
   [ROLES.MINISTRY]: ['ministry'],
   [ROLES.MINISTRY_SUPERVISOR]: [
     'assessmentProtocol',
+    'clinicalAssessment',
     'diagnostics',
     'governance',
     'reports',

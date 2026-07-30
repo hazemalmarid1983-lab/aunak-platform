@@ -129,6 +129,8 @@ export const STUDENT = {
   /** JSON — sealed/draft operational assessment protocol session */
   assessment_protocol_json: "assessment_protocol_json",
   assessment_protocol_status: "assessment_protocol_status",
+  /** JSON — clinical questionnaire sessions (36-item bank, 8 domains) */
+  clinical_questionnaire_json: "clinical_questionnaire_json",
   ai_session_report: "ai_session_report",
   payment_status: "payment_status",
   session_fee: "session_fee",

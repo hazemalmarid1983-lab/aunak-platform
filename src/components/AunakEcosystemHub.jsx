@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect, useRef, useMemo, lazy, Suspense } from 'react';
-import { UserPlus, ScanFace, MessageSquare, ShieldAlert, ShieldCheck, Music, Target, Activity, FileText, ClipboardList, Video, TrendingDown, BookOpen, Database, Stethoscope, FolderOpen, LogOut, UserCircle2, Lock, Volume2, VolumeX, FlaskConical, Eye, PanelLeftClose, PanelLeftOpen, FileBarChart, ClipboardCheck, BookOpenCheck, Loader2, Globe, HandMetal, EyeOff, Map, CalendarClock } from 'lucide-react';
+import { UserPlus, ScanFace, MessageSquare, ShieldAlert, ShieldCheck, Music, Target, Activity, FileText, ClipboardList, Video, TrendingDown, BookOpen, Database, Stethoscope, FolderOpen, LogOut, UserCircle2, Lock, Volume2, VolumeX, FlaskConical, Eye, PanelLeftClose, PanelLeftOpen, FileBarChart, ClipboardCheck, BookOpenCheck, Loader2, Globe, HandMetal, EyeOff, Map, CalendarClock, ListChecks } from 'lucide-react';
 import PlatformLogo, { HEADER_LOGO_CLASS } from './PlatformLogo';
 import AunakPaywall from './AunakPaywall';
 import { useAuth, ROLES, canAccessSection, isSovereignOwner, isSubscriptionActive } from '../lib/auth';
@@ -24,6 +24,7 @@ import AunakReportsDashboard from './AunakReportsDashboard';
 import AunakEnrollment from './AunakEnrollment';
 import AunakChildGovernance from './AunakChildGovernance';
 import AunakAssessmentProtocol from './AunakAssessmentProtocol';
+import AunakClinicalAssessment from './AunakClinicalAssessment';
 import AunakSmartScheduler from './AunakSmartScheduler';
 import SovereignCommandBar from './SovereignCommandBar';
 /** Theatrical / legacy — lazy (only used in ?full=1) */
@@ -71,6 +72,7 @@ const TAB_ALIASES = {
 const MAIN_NAV_ITEMS = [
   { id: 'governance', icon: ClipboardCheck, activeClass: LUX.navActiveGold },
   { id: 'assessmentProtocol', icon: BookOpenCheck, activeClass: LUX.navActiveGold },
+  { id: 'clinicalAssessment', icon: ListChecks, activeClass: LUX.navActiveGold },
   { id: 'enrollment', icon: UserPlus, activeClass: LUX.navActiveGold },
   { id: 'registry', icon: FileText, activeClass: LUX.navActiveGold },
   { id: 'smartScheduler', icon: CalendarClock, activeClass: LUX.navActiveGold },
@@ -109,6 +111,7 @@ const TAB_IDS = Object.keys(TABS);
 const MAIN_SECTIONS = {
   governance: AunakChildGovernance,
   assessmentProtocol: AunakAssessmentProtocol,
+  clinicalAssessment: AunakClinicalAssessment,
   enrollment: AunakEnrollment,
   registry: AunakSessionRegistry,
   smartScheduler: AunakSmartScheduler,
@@ -153,7 +156,7 @@ function LazyPanel({ Component, ...props }) {
 function sectionCanAccess(user, role, sectionId) {
   const plan = user?.plan ?? PLAN_CODES.FREE;
   if (plan === PLAN_CODES.ASSESSMENT_ONLY || user?.assessmentOnlyMode) {
-    if (!['assessmentProtocol', 'enrollment', 'diagnostics'].includes(sectionId)) return false;
+    if (!['assessmentProtocol', 'clinicalAssessment', 'enrollment', 'diagnostics'].includes(sectionId)) return false;
   }
   return canAccessSection(user, role, sectionId) && !isSectionHiddenInStealth(sectionId);
 }
@@ -352,6 +355,7 @@ export default function AunakEcosystemHub() {
       community: TABS.community.ar,
       governance: 'الحضور والأهداف الفردية',
       assessmentProtocol: 'بروتوكول التقييم الإجرائي',
+      clinicalAssessment: 'الاستبيان السريري الشامل',
       enrollment: 'تسجيل المستفيدين',
       registry: 'سجل الجلسات اليومية',
       smartScheduler: 'الجدول الشهري الذكي',
@@ -390,6 +394,7 @@ export default function AunakEcosystemHub() {
       community: TABS.community.en,
       governance: 'Attendance & IEP Goals',
       assessmentProtocol: 'Operational Assessment Protocol',
+      clinicalAssessment: 'Comprehensive Clinical Questionnaire',
       enrollment: 'Beneficiary Registration',
       registry: 'Daily Session Register',
       smartScheduler: 'Smart Monthly Scheduler',
