@@ -23,11 +23,10 @@ export { mockB2gChildCode, mockFindStudentByUdiCode } from "./mockAirtableStore"
 export const STUDENTS_TABLE = AIRTABLE_TABLES.students;
 
 /**
- * DEMO ONLY — flip to `false` after the presentation to restore live Airtable.
- * Login tokens: MOCK-MINISTRY · MOCK-SUPERVISOR · MOCK-SPECIALIST · MOCK-ADMIN
- * Auth is token-only while mock is on — no auto-login / no default session.
+ * DEMO ONLY — keep `false` for live Airtable.
+ * Set `true` only for offline demos (MOCK-* tokens + in-memory store).
  */
-export const MOCK_DATA_MODE = true;
+export const MOCK_DATA_MODE = false;
 
 /** Official mock Access Control tokens (login only via verifyAccessToken). */
 export const MOCK_LOGIN_TOKENS = Object.freeze([

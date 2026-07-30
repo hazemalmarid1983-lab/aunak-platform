@@ -1,9 +1,9 @@
 /**
  * Production Students schema — safe P0 + P1 field extension.
  *
- * Target (hard-locked to sovereign production):
- *   Base:  appaGfKj4vYhMw0cb
- *   Table: tblzYmBGmCxx2vdcr  (جدول الطالب / Students)
+ * Target (central multi-center base — Jul 2026):
+ *   Base:  appcjitgWsbvIebwf
+ *   Table: tblTidBPaVM4cf3O9  (Students)
  *
  * Safety rules:
  *   - NEVER deletes fields
@@ -27,10 +27,10 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 
-/** Sovereign production — do not override via env (prevents sandbox accidents). */
-const PROD_BASE_ID = 'appaGfKj4vYhMw0cb';
-const PROD_STUDENTS_TABLE_ID = 'tblzYmBGmCxx2vdcr';
-const PROD_SPECIALISTS_TABLE_ID = 'tblnmcLd5M3U6sErl';
+/** Central multi-center base (live Jul 2026). Legacy archive: appaGfKj4vYhMw0cb */
+const PROD_BASE_ID = 'appcjitgWsbvIebwf';
+const PROD_STUDENTS_TABLE_ID = 'tblTidBPaVM4cf3O9';
+const PROD_SPECIALISTS_TABLE_ID = 'tblqTYEHCPBO23DBa';
 
 const args = new Set(process.argv.slice(2));
 const APPLY = args.has('--apply') || args.has('--force-apply');
@@ -180,6 +180,55 @@ const FIELDS_TO_CREATE = [
     },
     description: 'P1 — link → Specialists (الأخصائيين)',
   },
+
+  // —— P2 assessment funnel ——
+  {
+    name: 'initial_assessment_score',
+    type: 'number',
+    options: { precision: 0 },
+    description: 'P2 — free quick scan 0–100',
+  },
+  {
+    name: 'screening_weights',
+    type: 'multilineText',
+    description: 'P2 — 4-dimension relative weights JSON',
+  },
+  {
+    name: 'presenting_symptoms',
+    type: 'multilineText',
+    description: 'P2 — guardian-reported symptoms (no parent diagnosis)',
+  },
+  {
+    name: 'assessment_protocol_json',
+    type: 'multilineText',
+    description: 'P2 — operational assessment protocol session JSON',
+  },
+  {
+    name: 'assessment_protocol_status',
+    type: 'singleSelect',
+    options: selectChoices('not_started', 'in_progress', 'draft_report', 'sealed'),
+    description: 'P2 — protocol lifecycle',
+  },
+  {
+    name: 'clinical_questionnaire_json',
+    type: 'multilineText',
+    description: 'P2 — clinical questionnaire sessions JSON (36-item bank)',
+  },
+  {
+    name: 'zero_point_report',
+    type: 'multilineText',
+    description: 'P2 — 66-field zero-point clinical JSON',
+  },
+  {
+    name: 'active_iep_goals',
+    type: 'multilineText',
+    description: 'P2 — active IEP goal bank JSON array',
+  },
+  {
+    name: 'iep_support_severity',
+    type: 'singleLineText',
+    description: 'P2 — mild | moderate | severe support hint',
+  },
 ];
 
 /**
@@ -202,6 +251,10 @@ const SELECT_OPTION_MERGES = [
   {
     name: 'comprehensive_assessment_status',
     ensure: ['not_started', 'in_progress', 'completed'],
+  },
+  {
+    name: 'assessment_protocol_status',
+    ensure: ['not_started', 'in_progress', 'draft_report', 'sealed'],
   },
   {
     name: 'status',

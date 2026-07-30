@@ -4,9 +4,9 @@
  *
  * Activate via:
  *   - URL: ?master=AUNAK-MASTER-2026
- *   - sessionStorage after validateMasterKey()
- *   - Local DEV: shouldAutoApproveBiometric() skips camera entirely
+ *   - sessionStorage after validateMasterKey() / SovereignMasterBypassPanel
  * Optional override: VITE_AUNAK_MASTER_KEY in .env.local
+ * DEV alone does NOT auto-login.
  */
 
 import { MOCK_DATA_MODE } from './airtable.js';
@@ -17,16 +17,6 @@ const BYPASS_STORAGE = 'aunak.sovereignMasterBypass.v1';
 /** Production builds never honor master bypass (P0 hardening). */
 export function isMasterBypassAllowedInEnvironment() {
   return !import.meta.env.PROD;
-}
-
-/**
- * Local QA: auto-approve biometric without camera / timeout.
- * Always on in Vite DEV; never in production builds.
- * Disabled while MOCK_DATA_MODE is on — demo login must use MOCK-* tokens only.
- */
-export function shouldAutoApproveBiometric() {
-  if (MOCK_DATA_MODE) return false;
-  return isMasterBypassAllowedInEnvironment() && Boolean(import.meta.env.DEV);
 }
 
 function expectedMasterKey() {
@@ -64,7 +54,6 @@ export function clearMasterBypass() {
 
 export function isMasterBypassActive() {
   if (!isMasterBypassAllowedInEnvironment()) return false;
-  if (shouldAutoApproveBiometric()) return true;
   try {
     const stored = sessionStorage.getItem(BYPASS_STORAGE);
     if (stored && stored === expectedMasterKey()) return true;
@@ -72,6 +61,16 @@ export function isMasterBypassActive() {
     /* ignore */
   }
   return false;
+}
+
+/**
+ * Local QA: auto-approve biometric without camera / timeout.
+ * Only when master bypass is explicitly active (?master=… / panel) — never by DEV alone.
+ * Never in production builds. Disabled while MOCK_DATA_MODE is on.
+ */
+export function shouldAutoApproveBiometric() {
+  if (MOCK_DATA_MODE) return false;
+  return isMasterBypassActive();
 }
 
 /** Call once on app boot — reads ?master= from URL and activates if valid. */
